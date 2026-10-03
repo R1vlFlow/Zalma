@@ -1470,7 +1470,7 @@ def main():
         raise RuntimeError('SYNC VALIDATION FAILED:\n'+'\n'.join('  - '+w for w in course_warnings))
     generated_at=datetime.datetime.now(datetime.timezone.utc).isoformat()
     payload={'schemaVersion':7,'dataState':'live-generated','generatedAt':generated_at,'sourcePage':PAGE,'specialty':'31.05.01','courses':courses,'assessmentPeriods':assessment_periods,'kugSources':kug_sources,'bootstrapNote':'Generated from the official Almazov student schedule page. KUG periods are date ranges for attestation; exact exam appointments are a separate source layer when published.'}
-    OUT.parent.mkdir(parents=True,exist_ok=True); tmp=OUT.with_suffix('.json.tmp'); tmp.write_text(json.dumps(payload,ensure_ascii=False,indent=2),encoding='utf-8'); tmp.replace(OUT)
+    OUT.parent.mkdir(parents=True,exist_ok=True); tmp=OUT.with_suffix('.json.tmp'); tmp.write_text(json.dumps(payload,ensure_ascii=False,separators=(',',':')),encoding='utf-8'); tmp.replace(OUT)
     total=sum(len(c['events']) for c in courses.values())
     status={
         'status':'ok','dataState':'live-generated','engineVersion':Path('SCHEDULE_ENGINE_VERSION.txt').read_text(encoding='utf-8').strip(),

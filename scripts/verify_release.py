@@ -60,6 +60,9 @@ if shutil.which('node'):
         try: subprocess.run(['node','--check',str(tmp)],cwd=root,check=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
         finally: tmp.unlink(missing_ok=True)
 
+index_text = Path('index.html').read_text(encoding='utf-8')
+if 'R1vlFlow/Almazov_Student_beta/main/data/official-schedules.json' in index_text:
+    raise SystemExit('RELEASE CHECK FAILED: stale raw GitHub schedule fallback still points to Almazov_Student_beta')
 print('RELEASE CHECK: OK')
 print('Engine version: 4.3.0-pre5')
 print('UI version: PRE-RELEASE 2.0')

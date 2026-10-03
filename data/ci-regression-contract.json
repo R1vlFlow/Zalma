@@ -9,6 +9,7 @@
     "scripts/test_5k_matrix_real_pdf.py",
     "scripts/test_5k_lecture_regression.py",
     "scripts/test_6k_matrix_real_pdf.py",
-    "scripts/test_6k_lecture_regression.py"
+    "scripts/test_6k_lecture_regression.py",
+    "scripts/test_prerelease2_final_contract.py"
   ]
 }
