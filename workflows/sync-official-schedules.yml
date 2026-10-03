@@ -1,0 +1,141 @@
+name: Sync official Almazov schedules
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'data/official-schedules.json'
+      - 'data/official-sync-status.json'
+  workflow_dispatch:
+  schedule:
+    - cron: '*/30 * * * *'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: official-schedule-sync-main
+  cancel-in-progress: false
+
+env:
+  SCHEDULE_ENGINE_VERSION: '4.3.0-pre6'
+
+jobs:
+  sync:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: requirements-official-sync.txt
+
+      - name: Install parser dependencies
+        run: python -m pip install -r requirements-official-sync.txt
+
+      - name: Verify workflow shell contract
+        run: python scripts/test_workflow_shell.py
+
+      - name: Verify workflow contract
+        run: python scripts/verify_workflow_contract.py
+
+      - name: Run stability regression gate
+        run: python scripts/test_stability_hotfix.py
+
+      - name: Verify engine version
+        # The verifier checks package.json, SCHEDULE_ENGINE_VERSION.txt and this env value.
+        run: python scripts/verify_engine_version.py "$SCHEDULE_ENGINE_VERSION"
+
+      - name: Run offline parser regression tests
+        run: python scripts/test_schedule_parser.py
+      - name: Run weekly matrix geometry regression
+        run: python scripts/test_matrix_geometry_regression.py
+
+      - name: Run schedule source, CI consistency and coverage contracts
+        run: |
+          set -euo pipefail
+          python scripts/test_schedule_sources.py
+          python scripts/test_ci_consistency.py
+          python scripts/test_schedule_coverage_contract.py
+
+      - name: Run KUG grid, UI controls and final static audit
+        run: |
+          set -euo pipefail
+          python scripts/test_kug_grid_contract.py
+          python scripts/test_ui_controls_contract.py
+          python scripts/final_static_audit.py
+
+      - name: Run release and universal parser regression tests
+        run: python scripts/run_regression_suite.py
+
+      - name: Sync official schedules
+        id: sync
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/build_official_schedule.py 2>&1 | tee sync.log
+
+      - name: Upload sync log
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: official-schedule-sync-log-${{ github.run_number }}
+          path: sync.log
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Validate generated index
+        run: python scripts/validate_generated_index.py
+
+      - name: Validate schedule data
+        run: python scripts/validate_schedule_data.py
+
+      - name: Run deep schedule audit
+        run: python scripts/deep_schedule_audit.py
+
+      - name: Commit synchronized index (race-safe, no rebase)
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          for attempt in 1 2 3 4 5; do
+            echo "--- race-safe sync attempt ${attempt} ---"
+            git rebase --abort >/dev/null 2>&1 || true
+            git fetch --prune origin main
+            git reset --hard origin/main
+            git clean -fd
+
+            python scripts/build_official_schedule.py 2>&1 | tee sync.log
+            python scripts/validate_generated_index.py
+            python scripts/validate_schedule_data.py
+            python scripts/deep_schedule_audit.py
+
+            state="$(python scripts/compare_schedule_content.py)"
+            if [ "$state" = "unchanged" ]; then
+              echo 'Official schedule content is unchanged; no commit is required.'
+              exit 0
+            fi
+
+            git add data/official-schedules.json data/official-sync-status.json
+            if git diff --cached --quiet; then
+              echo 'No generated schedule changes remain after staging.'
+              exit 0
+            fi
+
+            git commit -m 'chore: sync official Almazov schedules'
+            if git push origin HEAD:main; then
+              echo 'Official schedule index pushed successfully.'
+              exit 0
+            fi
+            echo 'Push raced with another main update; retrying from newest main.'
+          done
+          echo 'Unable to push synchronized schedule after 5 race-safe attempts.'
+          exit 1
