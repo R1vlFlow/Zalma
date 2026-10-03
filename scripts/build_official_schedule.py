@@ -6,6 +6,7 @@ import requests
 from bs4 import BeautifulSoup
 import fitz
 import pdfplumber
+from universal_schedule_ingest import sniff_format, decode_rows, parse_source_bytes
 
 PAGE='https://education.almazovcentre.ru/about_institute/programm/specialist_programme/student/'
 OUT=Path('data/official-schedules.json')
@@ -56,6 +57,34 @@ def normalize_event_time(event):
         return False
     event['start'],event['end']=start,end
     return True
+
+
+def _clock_minutes(value):
+    h,m=map(int,str(value).split(':')); return h*60+m
+
+def _clock_from_minutes(value):
+    value=value%(24*60); return f'{value//60:02d}:{value%60:02d}'
+
+def expand_double_lesson_events(events):
+    """Split long official blocks that represent two standard consecutive pairs."""
+    out=[]
+    for e in events:
+        try:
+            a=_clock_minutes(e['start']); b=_clock_minutes(e['end']); duration=b-a
+        except Exception:
+            out.append(e); continue
+        # Current Almazov exports use 09:00–12:25, 09:20–12:25 and
+        # 13:30–16:55 as two equal slots with a 15-minute break.
+        if 180 <= duration <= 210 and (duration-15)%2==0:
+            slot=(duration-15)//2
+            if 75 <= slot <= 105:
+                first=dict(e); second=dict(e)
+                parent=f"{e.get('group','ALL')}|{e.get('weekNumber','')}|{e.get('weekday','')}|{e.get('subject','')}|{e.get('location','')}|{e.get('start')}|{e.get('end')}"
+                first.update({'end':_clock_from_minutes(a+slot),'double':True,'doubleIndex':1,'doubleOf':parent,'durationMinutes':slot})
+                second.update({'start':_clock_from_minutes(a+slot+15),'double':True,'doubleIndex':2,'doubleOf':parent,'durationMinutes':slot})
+                out.extend([first,second]); continue
+        out.append(e)
+    return out
 
 def weekday_sort_value(value):
     """Return a total-order key for weekday values.
@@ -1108,7 +1137,7 @@ def session():
     s=requests.Session()
     retry=requests.adapters.Retry(total=4,connect=4,read=4,backoff_factor=1.2,status_forcelist=(429,500,502,503,504),allowed_methods=frozenset(['GET']))
     s.mount('https://',requests.adapters.HTTPAdapter(max_retries=retry,pool_connections=20,pool_maxsize=20))
-    s.headers.update({'User-Agent':'Almazov-Student-Schedule-Sync/4.3.0-pre5','Accept':'text/html,application/pdf,*/*'})
+    s.headers.update({'User-Agent':'Almazov-Student-Schedule-Sync/4.3.0-pre6','Accept':'text/html,application/pdf,*/*'})
     return s
 
 def classify_pdf(text, url, hinted_course=None, hinted_stream=None, hinted_kind=None):
@@ -1263,94 +1292,145 @@ def build_assessment_index(sess):
     return periods,sources
 
 def discover_sources(sess):
+    """Discover schedule documents by semantic hints, never by extension.
+
+    The official page currently exposes links whose visible name says `.xlsx`
+    while the actual URL serves a PDF export.  We therefore accept common
+    document/table extensions *and* upload URLs, then sniff the response bytes.
+    """
     found=[]
     try:
         r=sess.get(PAGE,timeout=(15,45)); r.raise_for_status()
         soup=BeautifulSoup(r.text,'html.parser')
         for a in soup.find_all('a',href=True):
             href=urljoin(PAGE,a['href'])
-            if not href.lower().split('?')[0].endswith('.pdf'): continue
-            txt=norm(a.get_text(' ',strip=True))
-            low=(txt+' '+href).lower()
+            txt=norm(a.get_text(' ',strip=True)); low=(txt+' '+href).lower()
             if any(x in low for x in ('педиатрия','клиническая психология','куг','календар','индивидуаль','зач.кн')): continue
             if not re.search(r'(?:[1-6]k|[1-6]\s*курс)',low,re.I): continue
+            # Schedule documents may be PDF, XLSX, XLS, ODS, DOCX, HTML, CSV,
+            # or have no meaningful extension at all. The payload is sniffed later.
+            if not any(x in low for x in ('распис','лекц','семинар','занят','_ld','lechebnoe','/uploads/')):
+                continue
             found.append((None,None,None,href,txt))
     except Exception as e:
         print(f'DISCOVERY WARNING: {type(e).__name__}: {e}',file=sys.stderr)
     return found
 
-def fetch_pdf(sess,url):
+def fetch_source(sess,url):
     r=sess.get(url,timeout=(20,90)); r.raise_for_status()
     data=r.content
-    if not data.startswith(b'%PDF'):
-        raise RuntimeError(f'not a PDF (content-type={r.headers.get("content-type")}, bytes={len(data)})')
+    if len(data)>35*1024*1024:
+        raise RuntimeError(f'source too large: {len(data)} bytes')
+    fmt=sniff_format(data,r.headers.get('content-type',''),url)
+    if fmt in {'binary',''}:
+        raise RuntimeError(f'unknown document format (content-type={r.headers.get("content-type")}, bytes={len(data)})')
+    return data,fmt,r.headers.get('content-type','')
+
+def fetch_pdf(sess,url):
+    data,fmt,ct=fetch_source(sess,url)
+    if fmt!='pdf':
+        raise RuntimeError(f'not a PDF (detected={fmt}, content-type={ct}, bytes={len(data)})')
     return data
+
+def source_preview_text(data,fmt):
+    if fmt=='pdf':
+        doc=fitz.open(stream=data,filetype='pdf')
+        return norm('\n'.join(doc[i].get_text('text') for i in range(min(3,len(doc)))))
+    if fmt in {'xlsx','xls','ods','csv','tsv','html'}:
+        rows=decode_rows(data,fmt)
+        return norm('\n'.join(' '.join(str(x or '') for x in row) for row in rows[:80]))
+    if fmt=='docx':
+        from docx import Document
+        doc=Document(__import__('io').BytesIO(data))
+        rows=[' '.join(c.text for c in r.cells) for t in doc.tables for r in t.rows]
+        rows += [p.text for p in doc.paragraphs]
+        return norm('\n'.join(rows[:100]))
+    if fmt=='pptx':
+        from pptx import Presentation
+        prs=Presentation(__import__('io').BytesIO(data)); vals=[]
+        for slide in prs.slides:
+            for shape in slide.shapes:
+                if hasattr(shape,'text') and shape.text: vals.append(shape.text)
+        return norm('\n'.join(vals[:100]))
+    if fmt in {'txt','rtf'}:
+        from universal_schedule_ingest import decode_text
+        return norm(decode_text(data,fmt)[:30000])
+    return ''
+
+def classify_source(data,fmt,url,title,hinted_course=None,hinted_stream=None,hinted_kind=None):
+    text=source_preview_text(data,fmt)
+    meta=classify_pdf(text,url,hinted_course,hinted_stream,hinted_kind)
+    if meta:return meta
+    # A future table export may omit the exact phrase used by the PDF parser;
+    # recover semantic metadata from the link/title and the document body.
+    low=(text+' '+url+' '+title).lower()
+    m=re.search(r'(?<!\d)([1-6])\s*(?:курс|k)(?!\d)',low)
+    course=m.group(1) if m else hinted_course
+    if not course:
+        m=re.search(r'(?<!\d)([1-6])k(?:[_-]|\.)',url,re.I)
+        course=m.group(1) if m else None
+    sm=re.search(r'поток\s*([аaбb])',low,re.I) or re.search(r'[_-]([ab])(?:[_\-.]|$)',url,re.I)
+    stream=('A' if sm and sm.group(1).upper() in ('A','А') else 'B' if sm else (hinted_stream or ''))
+    kind=hinted_kind
+    if not kind:
+        kind='practice' if re.search(r'семинар|практи|занятий\s+семинар',low,re.I) or '_ld' in url.lower() else 'lecture' if re.search(r'лекц',low,re.I) else None
+    if course and kind and (stream or int(course)==6): return str(course),stream,kind
+    return None
 
 def source_manifest(sess):
     discovered=discover_sources(sess)
     candidates=[]
-    # Download discovered candidates and classify by the actual PDF text, not
-    # the fragile anchor label on the web page.
     for _,_,_,url,title in discovered:
         try:
-            data=fetch_pdf(sess,url); doc=fitz.open(stream=data,filetype='pdf')
-            sample='\n'.join(doc[i].get_text('text') for i in range(min(2,len(doc))))
-            meta=classify_pdf(sample,url)
-            if meta: candidates.append((*meta,url,norm(title),data))
+            data,fmt,_=fetch_source(sess,url)
+            meta=classify_source(data,fmt,url,title)
+            if meta: candidates.append((*meta,url,norm(title),data,fmt))
         except Exception as e:
-            print(f'DISCOVERY PDF WARNING {url}: {e}',file=sys.stderr)
-    # Fallback manifest fills missing document roles. A stream normally has a
-    # first-week lecture PDF plus a semester lecture PDF, and one practice PDF.
+            print(f'DISCOVERY SOURCE WARNING {url}: {e}',file=sys.stderr)
     def role(url,kind):
-        low=url.lower()
         if kind=='practice': return 'practice'
-        if '1-nedelya' in low: return 'lecture-first-week'
-        return 'lecture-semester'
+        return 'lecture-first-week' if '1-nedelya' in url.lower() else 'lecture-semester'
     have_roles={(c,st,role(url,k)) for c,st,k,url,*_ in candidates}
     for c,st,k,url in FALLBACK_SOURCES:
         r=role(url,k)
         if (c,st,r) in have_roles: continue
-        candidates.append((c,st,k,url,Path(url.split('?')[0]).name,None))
+        candidates.append((c,st,k,url,Path(url.split('?')[0]).name,None,None))
         have_roles.add((c,st,r))
-    # Deduplicate URLs; keep discovered bytes when available.
     out=[]; seen=set()
     for item in candidates:
         url=item[3]
         if url in seen: continue
         seen.add(url); out.append(item)
-
-    # The official page sometimes changes anchor text while keeping the PDF.
-    # Before parsing, enforce that every required role has at least one source.
-    # This prevents a seemingly successful sync from silently dropping a whole
-    # stream/course when discovery changes.
-    required_roles = {(str(c), str(st), role(url, kind))
-                      for c, st, kind, url in FALLBACK_SOURCES}
-    present_roles = {(str(c), str(st or ''), role(url, kind))
-                     for c, st, kind, url, *_ in out}
-    missing_roles = sorted(required_roles - present_roles)
+    required_roles={(str(c),str(st),role(url,k)) for c,st,k,url in FALLBACK_SOURCES}
+    present_roles={(str(c),str(st or ''),role(url,k)) for c,st,k,url,*_ in out}
+    missing_roles=sorted(required_roles-present_roles)
     if missing_roles:
-        raise RuntimeError('SOURCE MANIFEST INCOMPLETE: '+', '.join(
-            f'{c}/{st or "NONE"}/{r}' for c, st, r in missing_roles))
+        raise RuntimeError('SOURCE MANIFEST INCOMPLETE: '+', '.join(f'{c}/{st or "NONE"}/{r}' for c,st,r in missing_roles))
     return out
 
 def parse_source(item,sess):
-    c,stream,kind,url,title,data=item
-    # Canonical stream key: course 6 has no A/B stream, and discovery may
-    # represent that absence as None while the internal schema uses ''.
-    stream = stream or ''
-    if data is None: data=fetch_pdf(sess,url)
-    doc=fitz.open(stream=data,filetype='pdf')
-    # Verify classification against actual document text.
-    sample='\n'.join(doc[i].get_text('text') for i in range(min(3,len(doc))))
-    actual=classify_pdf(sample,url,int(c),stream or None,kind)
+    # Manifest rows are now `(course, stream, kind, url, title, bytes, fmt)`.
+    c,stream,kind,url,title,data,fmt=item
+    stream=stream or ''
+    if data is None:
+        data,fmt,_=fetch_source(sess,url)
+    else:
+        fmt=fmt or sniff_format(data,'',url)
+    actual=classify_source(data,fmt,url,title,int(c),stream or None,kind)
     if not actual or actual[0]!=str(c) or (stream and actual[1]!=stream):
-        raise RuntimeError(f'classification mismatch: expected {c}/{stream}/{kind}, got {actual}')
-    if kind=='lecture': events=parse_lecture(doc,int(c),url,stream)
-    else: events=parse_practice(data, int(c), url, stream)
-    # Defensive normalization for discovered course-6 PDFs: parsers and
-    # downstream validation must never receive stream=None.
+        raise RuntimeError(f'classification mismatch: expected {c}/{stream}/{kind}, got {actual}; detected format={fmt}')
+    events=parse_source_bytes(data,fmt,int(c),stream,kind,url,sys.modules[__name__])
+    # Text-list importers return a legacy week structure; flatten it.
+    if isinstance(events,list) and events and isinstance(events[0],dict) and 'subject' not in events[0] and 'events' in events[0]:
+        flat=[]
+        for w in events:
+            for e in w.get('events',[]):
+                x=dict(e);x.setdefault('weekStart',w.get('start'));flat.append(x)
+        events=flat
     for e in events:
-        e['stream'] = e.get('stream') or ''
+        e['stream']=e.get('stream') or ''
+        e.setdefault('parser',f'universal-ingest-{fmt}-v1')
+        e['sourceFormat']=fmt
     return c,stream,kind,url,title,events
 
 def validate_course(course_id,c):
@@ -1443,6 +1523,9 @@ def main():
             failures.append(f'{item[0]}/{item[1]}/{item[2]} {item[3]}: {e}')
             print('SOURCE FAILED: '+failures[-1],file=sys.stderr)
     if failures: raise RuntimeError('SYNC FAILED: '+str(len(failures))+' source(s) failed:\n'+'\n'.join(failures))
+    for cid,c in courses.items():
+        c['events']=expand_double_lesson_events(c['events'])
+
     applied_overrides=apply_verified_schedule_overrides(courses)
     if applied_overrides:
         print(f'APPLIED VERIFIED SCHEDULE OVERRIDES: {applied_overrides}')

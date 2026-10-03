@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Pre-release 2.0 / schedule engine 4.3.0-pre5 acceptance tests."""
+"""Pre-release 2.0 / schedule engine 4.3.0-pre6 acceptance tests."""
 from pathlib import Path
 import json,re,subprocess,sys,shutil
 ROOT=Path(__file__).resolve().parents[1]
@@ -11,8 +11,8 @@ DATA=json.loads((ROOT/'data/official-schedules.json').read_text(encoding='utf-8'
 checks=[]
 def check(name,cond):
     checks.append((name,bool(cond)))
-check('release version 4.3.0-pre5',PKG['version']=='4.3.0-pre5' and VER['version']=='4.3.0-pre5')
-check('schedule sync user-agent','Almazov-Student-Schedule-Sync/4.3.0-pre5' in (ROOT/'scripts/build_official_schedule.py').read_text(encoding='utf-8'))
+check('release version 4.3.0-pre6',PKG['version']=='4.3.0-pre6' and VER['version']=='4.3.0-pre6')
+check('schedule sync user-agent','Almazov-Student-Schedule-Sync/4.3.0-pre6' in (ROOT/'scripts/build_official_schedule.py').read_text(encoding='utf-8'))
 check('workflow 30 minute cron',"cron: '*/30 * * * *'" in WF)
 check('workflow manual dispatch','workflow_dispatch:' in WF)
 check('workflow concurrency','concurrency:' in WF and 'cancel-in-progress: false' in WF)
@@ -41,7 +41,7 @@ check('app cache clear control','async function clearAppCache()' in HTML and 'ca
 check('profile data survives cache clear','localStorage.clear()' not in HTML)
 check('no pictographic emoji in UI','\ud83c' not in HTML and '📚' not in HTML and '💙' not in HTML and '🩺' not in HTML)
 check('portal above modal','z-index:2147483647!important' in HTML)
-check('touch pointerdown selection',"menu.addEventListener('pointerdown'" in HTML)
+check('touch native selection fallback',".as-select-native{position:static!important" in HTML and "appearance:auto!important" in HTML)
 check('no direct schedule overwrite by incomplete index',"Текущее расписание сохранено" in HTML)
 check('schema 7 bootstrap',DATA.get('schemaVersion')==7 and set(DATA.get('courses',{}))==set('123456'))
 check('bootstrap locations contain no approval footer', all('Заведующий Отделом' not in str(e.get('location','')) and '_________________' not in str(e.get('location','')) for c in DATA.get('courses',{}).values() for e in c.get('events',[])))

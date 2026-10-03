@@ -1,8 +1,8 @@
 {
   "product": "Almazov Student",
-  "version": "4.3.0-pre5",
+  "version": "4.3.0-pre6",
   "title": "Almazov Student — PRE-RELEASE 2.0",
-  "message": "PRE-RELEASE 2.0: адаптивный интерфейс, премиальные выпадающие шторки на touch и desktop, course-scoped official sync и универсальный Schedule Engine 4.3.0-pre5.",
+  "message": "PRE-RELEASE 2.0 PRE6: repaired controls, double-lesson normalization, event bookmarks, universal source sniffing and 30-minute official sync.",
   "mandatory": false,
   "releasedAt": "2026-10-03"
 }

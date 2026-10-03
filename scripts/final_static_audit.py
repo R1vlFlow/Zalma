@@ -23,7 +23,7 @@ funcs=re.findall(r'(?m)^function\s+([A-Za-z_$][\w$]*)\s*\(',HTML)
 c('no duplicate function declarations',len(funcs)==len(set(funcs)))
 # Release identity.
 c('UI version is PRE-RELEASE 2.0','PRE-RELEASE 2.0' in HTML and '4.0 BETA' not in HTML)
-c('engine version consistent',V.get('version')=='4.3.0-pre5' and '4.3.0-pre5' in WF)
+c('engine version consistent',V.get('version')=='4.3.0-pre6' and '4.3.0-pre6' in WF)
 # Workflow includes required gates.
 for needle in ['test_kug_grid_contract.py','final_static_audit.py','deep_schedule_audit.py','validate_generated_index.py','validate_schedule_data.py']:
     c('workflow gate '+needle,needle in WF)

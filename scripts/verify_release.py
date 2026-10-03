@@ -15,7 +15,7 @@ missing=[str(p) for p in required if not (root/p).exists()]
 if missing: raise SystemExit('RELEASE CHECK FAILED: missing '+', '.join(missing))
 
 pkg=json.loads((root/'package.json').read_text(encoding='utf-8'))
-assert pkg.get('version')=='4.3.0-pre5', pkg.get('version')
+assert pkg.get('version')=='4.3.0-pre6', pkg.get('version')
 
 d=json.loads((root/'data/official-schedules.json').read_text(encoding='utf-8'))
 assert d.get('schemaVersion')==7
@@ -41,7 +41,7 @@ idx=(root/'index.html').read_text(encoding='utf-8')
 assert 'official-schedules.json' in idx
 assert 'schemaVersion)!==7' in idx
 sw=(root/'sw.js').read_text(encoding='utf-8')
-assert 'almazov-student-ui-prerelease-2.0-cache2' in sw
+assert 'almazov-student-ui-prerelease-2.0-cache4' in sw
 
 # Parser compilation and regression suite.
 subprocess.run([sys.executable,'-m','py_compile','scripts/build_official_schedule.py','scripts/test_schedule_parser.py'],cwd=root,check=True)
@@ -64,7 +64,7 @@ index_text = Path('index.html').read_text(encoding='utf-8')
 if 'R1vlFlow/Almazov_Student_beta/main/data/official-schedules.json' in index_text:
     raise SystemExit('RELEASE CHECK FAILED: stale raw GitHub schedule fallback still points to Almazov_Student_beta')
 print('RELEASE CHECK: OK')
-print('Engine version: 4.3.0-pre5')
+print('Engine version: 4.3.0-pre6')
 print('UI version: PRE-RELEASE 2.0')
 print('Workflow: present')
 print('Parser regression: OK')
