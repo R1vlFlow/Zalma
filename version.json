@@ -1,8 +1,8 @@
 {
   "product": "Almazov Student",
-  "version": "4.3.0-pre6",
-  "title": "Almazov Student — PRE-RELEASE 2.0",
-  "message": "PRE-RELEASE 2.0 PRE6: repaired controls, double-lesson normalization, event bookmarks, universal source sniffing and 30-minute official sync.",
+  "version": "4.3.0-pre7",
+  "title": "Almazov Student — PRE-RELEASE 2.0.1",
+  "message": "Закладки, ДЗ до следующей пары и исправление сдвоенных занятий",
   "mandatory": false,
   "releasedAt": "2026-10-03"
 }

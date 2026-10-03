@@ -21,5 +21,4 @@ assert any(e['weekNumber']==2 for e in events)
 # A long block is intentionally expanded by the main builder; the generic
 # table parser itself preserves the source time range.
 assert events[0]['start']=='09:20' and events[0]['end']=='10:45'
-# Long published blocks are normalized by the official builder, not by the generic table reader.
 print('UNIVERSAL INGEST: PASS')

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Final PRE-RELEASE 2.0 client/runtime contract checks."""
+"""Final PRE-RELEASE 2.0.1 client/runtime contract checks."""
 from pathlib import Path
 import json
 import re
@@ -26,12 +26,12 @@ check('all six course rosters exist', all(str(i) in DATA.get('courses',{}) and D
 check('all six courses have bootstrap events', all(DATA['courses'][str(i)].get('events') for i in range(1,7)))
 check('bootstrap index is transfer-optimized', (ROOT/'data/official-schedules.json').stat().st_size < 1400000)
 check('current raw GitHub fallback', 'https://raw.githubusercontent.com/R1vlFlow/Zalma/main/data/official-schedules.json' in HTML)
-check('current release metadata', VERSION.get('version')=='4.3.0-pre6' and VERSION.get('title')=='Almazov Student — PRE-RELEASE 2.0')
+check('current release metadata', VERSION.get('version')=='4.3.0-pre7' and VERSION.get('title')=='Almazov Student — PRE-RELEASE 2.0.1')
 check('no stale README engine version', '4.3.0-pre2' not in README and 'Almazov_Test' not in README)
 check('no stale APK repository in sync fallback', 'Almazov_Student_beta/main/data/official-schedules.json' not in HTML)
 
 failed=[n for n,o in checks if not o]
-print(f'PRE-RELEASE 2.0 FINAL CONTRACT: {len(checks)-len(failed)}/{len(checks)} passed')
+print(f'PRE-RELEASE 2.0.1 FINAL CONTRACT: {len(checks)-len(failed)}/{len(checks)} passed')
 if failed:
     print('FAILED:')
     for n in failed: print(' -',n)

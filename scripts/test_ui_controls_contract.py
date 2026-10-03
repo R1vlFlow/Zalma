@@ -20,7 +20,7 @@ check('IndexedDB materials are preserved','indexedDB.open(MATERIAL_DB' in HTML a
 check('dropdown Escape support',"ev.key==='Escape'" in HTML)
 check('dropdown ARIA state','aria-controls' in HTML and 'aria-selected' in HTML)
 check('dropdown portal is viewport anchored',"menu.style.position='fixed'" in HTML)
-check('new service worker cache generation',"almazov-student-ui-prerelease-2.0-cache2" in SW)
+check('new service worker cache generation',"almazov-student-ui-prerelease-2.0-cache4" in SW)
 check('official sync is specialty-scoped', 'OFFICIAL_SCHEDULE_SPECIALTIES' in HTML and 'officialScheduleSupportsSpecialty' in HTML)
 check('profile change cannot leak another identity schedule', 'identityChanged&&data.schedule?.ownerKey&&data.schedule.ownerKey!==subjectKey()' in HTML and 'data.schedule=JSON.parse(JSON.stringify(DEFAULT_SCHEDULE))' in HTML)
 check('dynamic IDs are HTML-escaped in material handlers', "openMaterial('${esc(m.id)}')" in HTML and "removeMaterial('${esc(m.id)}')" in HTML)

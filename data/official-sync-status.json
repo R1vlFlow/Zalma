@@ -4,7 +4,7 @@
   "generatedAt": null,
   "message": "Bootstrap snapshot содержит известные группы 1–6 и доступные официальные события; полнота практики/лекций проверяется live GitHub Actions перед публикацией окончательного индекса.",
   "sourcePage": "https://education.almazovcentre.ru/about_institute/programm/specialist_programme/student/",
-  "engineVersion": "4.3.0-pre6",
+  "engineVersion": "4.3.0-pre7",
   "nextSync": "GitHub Actions: every 30 minutes",
   "dataState": "bootstrap-pending",
   "note": "UI не блокирует курс из-за неполного bootstrap-слоя: имеющиеся официальные события доступны пользователю, а live sync достраивает полный источник."

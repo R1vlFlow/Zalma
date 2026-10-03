@@ -27,7 +27,7 @@ if not p.exists():
 
 text = p.read_text(encoding='utf-8')
 required = [
-    "SCHEDULE_ENGINE_VERSION: '4.3.0-pre6'",
+    "SCHEDULE_ENGINE_VERSION: '4.3.0-pre7'",
     'SCHEDULE_ENGINE_VERSION.txt',
     'scripts/test_schedule_parser.py',
     'scripts/build_official_schedule.py',

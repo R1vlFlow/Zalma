@@ -1137,7 +1137,7 @@ def session():
     s=requests.Session()
     retry=requests.adapters.Retry(total=4,connect=4,read=4,backoff_factor=1.2,status_forcelist=(429,500,502,503,504),allowed_methods=frozenset(['GET']))
     s.mount('https://',requests.adapters.HTTPAdapter(max_retries=retry,pool_connections=20,pool_maxsize=20))
-    s.headers.update({'User-Agent':'Almazov-Student-Schedule-Sync/4.3.0-pre6','Accept':'text/html,application/pdf,*/*'})
+    s.headers.update({'User-Agent':'Almazov-Student-Schedule-Sync/4.3.0-pre7','Accept':'text/html,application/pdf,*/*'})
     return s
 
 def classify_pdf(text, url, hinted_course=None, hinted_stream=None, hinted_kind=None):
@@ -1523,9 +1523,17 @@ def main():
             failures.append(f'{item[0]}/{item[1]}/{item[2]} {item[3]}: {e}')
             print('SOURCE FAILED: '+failures[-1],file=sys.stderr)
     if failures: raise RuntimeError('SYNC FAILED: '+str(len(failures))+' source(s) failed:\n'+'\n'.join(failures))
-    for cid,c in courses.items():
-        c['events']=expand_double_lesson_events(c['events'])
-
+    # Normalize long blocks into the two standard consecutive Almazov pairs
+    # before any validation/publication.  The previous implementation had the
+    # splitter defined but never invoked for the official live pipeline, so
+    # matrix/PDF imports could still publish a single 3h+ event.
+    split_total=0
+    for cc in courses.values():
+        before=len(cc['events'])
+        cc['events']=expand_double_lesson_events(cc['events'])
+        split_total += len(cc['events'])-before
+    if split_total:
+        print(f'EXPANDED DOUBLE LESSON BLOCKS: {split_total} additional events')
     applied_overrides=apply_verified_schedule_overrides(courses)
     if applied_overrides:
         print(f'APPLIED VERIFIED SCHEDULE OVERRIDES: {applied_overrides}')

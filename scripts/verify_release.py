@@ -15,7 +15,7 @@ missing=[str(p) for p in required if not (root/p).exists()]
 if missing: raise SystemExit('RELEASE CHECK FAILED: missing '+', '.join(missing))
 
 pkg=json.loads((root/'package.json').read_text(encoding='utf-8'))
-assert pkg.get('version')=='4.3.0-pre6', pkg.get('version')
+assert pkg.get('version')=='4.3.0-pre7', pkg.get('version')
 
 d=json.loads((root/'data/official-schedules.json').read_text(encoding='utf-8'))
 assert d.get('schemaVersion')==7
@@ -64,8 +64,8 @@ index_text = Path('index.html').read_text(encoding='utf-8')
 if 'R1vlFlow/Almazov_Student_beta/main/data/official-schedules.json' in index_text:
     raise SystemExit('RELEASE CHECK FAILED: stale raw GitHub schedule fallback still points to Almazov_Student_beta')
 print('RELEASE CHECK: OK')
-print('Engine version: 4.3.0-pre6')
-print('UI version: PRE-RELEASE 2.0')
+print('Engine version: 4.3.0-pre7')
+print('UI version: PRE-RELEASE 2.0.1')
 print('Workflow: present')
 print('Parser regression: OK')
 print('Frontend JavaScript syntax: OK')

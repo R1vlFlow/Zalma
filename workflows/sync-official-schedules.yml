@@ -18,7 +18,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  SCHEDULE_ENGINE_VERSION: '4.3.0-pre6'
+  SCHEDULE_ENGINE_VERSION: '4.3.0-pre7'
 
 jobs:
   sync:

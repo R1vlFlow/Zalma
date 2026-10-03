@@ -2,6 +2,7 @@
   "version": 1,
   "description": "Canonical offline regression suite for the official schedule sync gate.",
   "tests": [
+    "scripts/test_pre7_bookmarks_homework.py",
     "scripts/test_pre5_regressions.py",
     "scripts/test_full_schedule_prerelease.py",
     "scripts/test_universal_parser.py",
@@ -12,7 +13,6 @@
     "scripts/test_5k_lecture_regression.py",
     "scripts/test_6k_matrix_real_pdf.py",
     "scripts/test_6k_lecture_regression.py",
-    "scripts/test_prerelease2_final_contract.py",
-    "scripts/test_double_lesson_and_bookmark_contract.py"
+    "scripts/test_prerelease2_final_contract.py"
   ]
 }

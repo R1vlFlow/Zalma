@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Pre-release 2.0 / schedule engine 4.3.0-pre6 acceptance tests."""
+"""Pre-release 2.0 / schedule engine 4.3.0-pre7 acceptance tests."""
 from pathlib import Path
 import json,re,subprocess,sys,shutil
 ROOT=Path(__file__).resolve().parents[1]
@@ -11,8 +11,8 @@ DATA=json.loads((ROOT/'data/official-schedules.json').read_text(encoding='utf-8'
 checks=[]
 def check(name,cond):
     checks.append((name,bool(cond)))
-check('release version 4.3.0-pre6',PKG['version']=='4.3.0-pre6' and VER['version']=='4.3.0-pre6')
-check('schedule sync user-agent','Almazov-Student-Schedule-Sync/4.3.0-pre6' in (ROOT/'scripts/build_official_schedule.py').read_text(encoding='utf-8'))
+check('release version 4.3.0-pre7',PKG['version']=='4.3.0-pre7' and VER['version']=='4.3.0-pre7')
+check('schedule sync user-agent','Almazov-Student-Schedule-Sync/4.3.0-pre7' in (ROOT/'scripts/build_official_schedule.py').read_text(encoding='utf-8'))
 check('workflow 30 minute cron',"cron: '*/30 * * * *'" in WF)
 check('workflow manual dispatch','workflow_dispatch:' in WF)
 check('workflow concurrency','concurrency:' in WF and 'cancel-in-progress: false' in WF)

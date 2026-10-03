@@ -5,8 +5,8 @@ root=Path(__file__).resolve().parents[1]
 s=(root/'index.html').read_text(encoding='utf-8')
 checks=[]
 def ck(name,ok): checks.append((name,bool(ok)))
-ck('release version pre6', json.loads((root/'package.json').read_text())['version']=='4.3.0-pre6')
-ck('workflow version pre6', "SCHEDULE_ENGINE_VERSION: '4.3.0-pre6'" in (root/'.github/workflows/sync-official-schedules.yml').read_text())
+ck('release version pre5', json.loads((root/'package.json').read_text())['version']=='4.3.0-pre7')
+ck('workflow version pre5', "SCHEDULE_ENGINE_VERSION: '4.3.0-pre7'" in (root/'.github/workflows/sync-official-schedules.yml').read_text())
 wf=(root/'.github/workflows/sync-official-schedules.yml').read_text(encoding='utf-8')
 ck('workflow has no heredoc', '<<' not in wf)
 ck('workflow has no stale active version', all(v not in wf for v in ['4.1.1','4.3.0-pre2','4.3.0-pre3']))
