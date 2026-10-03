@@ -1,0 +1,9 @@
+{
+  "name": "almazov-student",
+  "private": true,
+  "version": "4.3.0-pre5",
+  "description": "Almazov Student — official schedule synchronization tools",
+  "scripts": {
+    "check": "python scripts/verify_release.py"
+  }
+}

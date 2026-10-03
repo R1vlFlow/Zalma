@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "status": "bootstrap-pending",
+  "generatedAt": null,
+  "message": "Bootstrap index is retained until the first successful GitHub Actions sync. The sync is strict: incomplete 1–6 course data is never published as a fresh official index.",
+  "sourcePage": "https://education.almazovcentre.ru/about_institute/programm/specialist_programme/student/",
+  "engineVersion": "4.3.0-pre5",
+  "nextSync": "GitHub Actions: every 30 minutes",
+  "dataState": "bootstrap-pending",
+  "note": "Bootstrap data is intentionally incomplete until GitHub live sync succeeds."
+}

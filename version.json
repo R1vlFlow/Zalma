@@ -1,0 +1,8 @@
+{
+  "product": "Almazov Student",
+  "version": "4.3.0-pre5",
+  "title": "Almazov Student — Pre-release 2.0 Text Rendering Hotfix",
+  "message": "Schedule Engine 4.3.0-pre5: стабильная синхронизация официального расписания 1–6 курсов, защита от неполного индекса и снижение сетевой/DOM-нагрузки.",
+  "mandatory": false,
+  "releasedAt": "2026-10-02"
+}
