@@ -1,33 +1,24 @@
-# Almazov Student — GitHub-ready release
+# Almazov Student — PRE-RELEASE 2.0.2
 
-Корень репозитория уже готов для GitHub Pages: `index.html` лежит в корне.
+Пользовательская версия интерфейса: **PRE-RELEASE 2.0.2**.
+Движок официального расписания: **4.3.0-pre8**.
 
-## Расписание
+## Установка
 
-Приложение использует два слоя расписания:
+1. Распакуй ZIP локально.
+2. Загрузи содержимое в корень GitHub-репозитория.
+3. Обязательно сохрани `.github/workflows/sync-official-schedules.yml`.
+4. Открой **Actions → Sync official Almazov schedules → Run workflow**.
+5. GitHub Actions обнаружит документы на официальной странице независимо от расширения, определит реальный формат по содержимому (PDF/XLSX/XLS/ODS/CSV/DOCX/PPTX/HTML/TXT), распознает их универсальным parser и опубликует `data/official-schedules.json`.
 
-1. `data/official-schedules.json` — локальный восстановительный снимок, поэтому расписание не исчезает при первом запуске и отсутствии сети.
-2. Официальный синхронизатор `scripts/build_official_schedule.py` — при запуске GitHub Actions скачивает актуальные PDF со страницы кабинета студента НМИЦ им. В. А. Алмазова, распознаёт лекции и ПЗ для 1–6 курсов и заменяет локальный снимок только после валидации.
+## Важное
 
-Для 4–6 курсов используется универсальный геометрический парсер матриц недель; для 4Б, 5Б и 6 курса в репозитории также лежат реальные regression-fixtures.
+- Локальный `data/official-schedules.json` является bootstrap-слоем и не блокирует отображение уже имеющихся официальных событий.
+- Полнота live-расписания 1–6 курсов проверяется отдельно CI и генератором перед публикацией.
+- На Android/iPhone/iPad используется настоящий нативный `<select>` для гарантированного системного выбора; на ПК сохраняется премиальное кастомное меню.
+- Личные данные, задачи, заметки, ДЗ и ручное расписание не заменяются автоматической синхронизацией.
+- GitHub Pages не распаковывает ZIP автоматически: в репозиторий загружается содержимое архива, а не сам ZIP.
 
-## Публикация
+**Ручной импорт:** PDF, XLSX/XLS, ODS, CSV/TSV, DOCX, PPTX, HTML, TXT/RTF и изображения с OCR; формат определяется по содержимому, а не только по расширению.
 
-В GitHub: **Settings → Pages → Source → GitHub Actions**.
-
-После первого push можно вручную запустить workflow:
-`Actions → Sync official schedules and deploy → Run workflow`.
-
-Workflow не публикует неполный результат: если курс или поток потерял практические занятия, сборка завершается ошибкой до публикации.
-
-## Локальная проверка
-
-```bash
-python scripts/validate_js.py
-python scripts/validate_release.py
-python scripts/validate_generated_index.py
-python scripts/validate_schedule_data.py
-python scripts/test_4k_matrix_real_pdf.py
-python scripts/test_5k_matrix_real_pdf.py
-python scripts/test_6k_matrix_real_pdf.py
-```
+Официальный источник расписания: https://education.almazovcentre.ru/about_institute/programm/specialist_programme/student/

@@ -1,12 +1,18 @@
 {
-  "name":"Almazov Student",
-  "short_name":"Almazov Student",
-  "description":"Студенческий кабинет и расписание НМИЦ им. В. А. Алмазова",
-  "start_url":"./",
-  "scope":"./",
-  "display":"standalone",
-  "background_color":"#071226",
-  "theme_color":"#167ff0",
-  "lang":"ru",
-  "icons":[{"src":"logo.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}]
+  "name": "Almazov Student",
+  "short_name": "Almazov Student",
+  "lang": "ru",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#06132d",
+  "theme_color": "#071632",
+  "icons": [
+    {
+      "src": "logo-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
 }

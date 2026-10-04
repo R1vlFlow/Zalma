@@ -1,11 +1,33 @@
-const CACHE='almazov-student-4.6.3';
-const CORE=['./','./index.html','./offline.html','./manifest.webmanifest','./version.json','./data/official-schedules.json','./logo.png'];
-self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE).catch(()=>{})).then(()=>self.skipWaiting())));
-self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
-self.addEventListener('message',e=>{if(e.data==='SKIP_WAITING')self.skipWaiting()});
-self.addEventListener('fetch',e=>{
-  if(e.request.method!=='GET')return;
-  const u=new URL(e.request.url);
-  if(u.origin!==location.origin)return;
-  e.respondWith(fetch(e.request).then(r=>{if(r.ok&&u.pathname.endsWith('.json')){const copy=r.clone();caches.open(CACHE).then(c=>c.put(e.request,copy)).catch(()=>{});}return r}).catch(()=>caches.match(e.request).then(r=>r||caches.match('./offline.html'))));
+const CACHE_VERSION='almazov-student-v4.3.0-pre8';
+const APP_SHELL=['./','./index.html','./offline.html','./404.html','./logo.png','./logo-512.png','./manifest.webmanifest','./version.json'];
+self.addEventListener('install',event=>{
+  event.waitUntil(caches.open(CACHE_VERSION).then(cache=>cache.addAll(APP_SHELL)).then(()=>self.skipWaiting()));
+});
+self.addEventListener('activate',event=>{
+  event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE_VERSION).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));
+});
+self.addEventListener('message',event=>{if(event.data==='SKIP_WAITING')self.skipWaiting()});
+self.addEventListener('fetch',event=>{
+  const req=event.request;
+  if(req.method!=='GET')return;
+  const url=new URL(req.url);
+  if(url.origin!==self.location.origin)return;
+  if(url.pathname.endsWith('/data/official-schedules.json')){
+    event.respondWith(fetch(req,{cache:'no-store'}).then(res=>{
+      if(res.ok){const copy=res.clone();caches.open(CACHE_VERSION).then(c=>c.put(req,copy));}
+      return res;
+    }).catch(()=>caches.match(req)));
+    return;
+  }
+  if(req.mode==='navigate'){
+    event.respondWith(fetch(req).then(res=>{
+      if(res.ok){const copy=res.clone();caches.open(CACHE_VERSION).then(c=>c.put('./index.html',copy));}
+      return res;
+    }).catch(()=>caches.match(req).then(c=>c||caches.match('./index.html')).catch(()=>caches.match('./offline.html'))));
+    return;
+  }
+  event.respondWith(caches.match(req).then(hit=>hit||fetch(req).then(res=>{
+    if(res.ok){const copy=res.clone();caches.open(CACHE_VERSION).then(c=>c.put(req,copy));}
+    return res;
+  })));
 });
