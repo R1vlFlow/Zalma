@@ -21,7 +21,7 @@ check('schedule renderer no longer runs every 60 seconds', 'setInterval(()=>{try
 check('manual week navigation remains', 'prevWeek' in HTML and 'nextWeek' in HTML)
 check('manual week navigation is not overwritten by live layer', '__liveWeekKey="__manual__"' in HTML)
 check('auto sync preserves selected week', 'const viewBefore=new Date(scheduleViewDate)' in HTML and 'targetWeek=isoDate(startOfWeek(viewBefore))' in HTML)
-check('mobile premium select remains active', '.as-select-native{position:absolute!important' in HTML and '.as-select-trigger{display:flex!important' in HTML and "trigger.addEventListener('pointerdown'" in HTML)
+check('mobile premium select remains active', '.as-select-native{position:absolute!important' in HTML and '.as-select-trigger{display:flex!important' in HTML and "trigger.addEventListener('click'" in HTML and "trigger.addEventListener('pointerdown'" not in HTML)
 check('desktop custom portal remains active', '.as-select-menu.as-select-portal.portal-open' in HTML and 'z-index:2147483647!important' in HTML)
 check('subject icons rendered inside schedule cards', 'event-subject-icon' in HTML and '${lessonIcon(e.subject)}' in HTML)
 check('live layer only rebuilds today block on day change', 'if(__liveDayKey!==dayKey)' in HTML and 'renderToday(d)' in HTML)

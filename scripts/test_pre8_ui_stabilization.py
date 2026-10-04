@@ -55,11 +55,13 @@ def test_static_contract(source: str) -> None:
     if "scheduleMode===\'weekly-block\'" not in sb or "e.weekday==null" not in sb:
         fail("schedule sanitizer must preserve weekly-block events with null weekday")
 
-    # Pointerdown must work for touch as well as mouse.
-    if "if(ev.pointerType==='touch')return" in source:
-        fail("touch pointerdown shortcut disables universal dropdown interaction")
-    if "trigger.addEventListener('pointerdown'" not in source:
-        fail("premium select trigger has no pointerdown interaction")
+    # Touch/mobile interaction uses the browser's canonical click activation.
+    # A preventDefault() pointerdown toggle was intentionally removed because it
+    # could suppress the synthesized tap/click and leave the portal effectively unusable.
+    if "trigger.addEventListener('pointerdown'" in source:
+        fail("legacy pointerdown dropdown toggle still present")
+    if "trigger.addEventListener('click'" not in source:
+        fail("premium select trigger has no click/tap interaction")
 
     # No final display-level dedupe may collapse two identical-looking consecutive lessons.
     sanitizer = re.search(r"function sanitizeActiveSchedule\(\)\{([\s\S]*?)\n\}", source)
@@ -86,6 +88,29 @@ def test_static_contract(source: str) -> None:
         fail("personal event list is not refreshed after changing event date")
     if 'return true;' not in source[source.find('function savePersonalEvent()'):source.find('function editPersonalEvent')]:
         fail("savePersonalEvent() has no explicit success result")
+
+    if 'function changeScheduleWeek(delta)' not in source:
+        fail("canonical week navigation helper is missing")
+    if 'scheduleViewRevision++' not in source:
+        fail("manual schedule navigation revision guard is missing")
+    if 'const viewRevisionBefore=scheduleViewRevision' not in source or 'viewRevisionBefore===scheduleViewRevision' not in source:
+        fail("auto-sync can still revert a manually selected week")
+    if 'СИНХРОНИЗАЦИЯ ИСТОЧНИКА' in source or '>ИСТОЧНИК</div>' in source:
+        fail("old 'Источник' wording remains in schedule settings")
+    if 'Открыть официальный источник ↗' in source:
+        fail("old schedule-settings link wording remains")
+    if 'Проверяем официальный источник' in source or '>Источник</b>' in source:
+        fail("schedule settings still contains source wording")
+    if 'function personalEventCategoryLabel(category)' not in source:
+        fail("personal event category label helper is missing")
+    if 'function renderNotesList()' not in source:
+        fail("notes list renderer is missing")
+    if "let taskFilter='all'" not in source:
+        fail("task filter state is missing")
+    if 'version:"4.0.0-beta"' in source or '4.0.0-beta-' in source:
+        fail("export still contains stale beta version")
+    if "if(native.dataset.premiumReady==='1'){const existing=native.closest('.as-select');existing?._refresh?.();return existing;}" not in source:
+        fail("premium selects cannot self-refresh after their native options change")
 
     # Universal layout guards for compact screens.
     for token in (
