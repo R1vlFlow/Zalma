@@ -126,7 +126,7 @@ def bootstrap_event_errors(data: dict) -> list[str]:
                     errors.append(f'{p}: invalid doubleIndex {event.get("doubleIndex")!r}')
                 if not event.get('doubleOf'):
                     errors.append(f'{p}: double event missing doubleOf')
-                if event.get('durationMinutes') not in {85, 95}:
+                if event.get('durationMinutes') not in {85, 90, 95}:
                     errors.append(f'{p}: invalid double durationMinutes {event.get("durationMinutes")!r}')
             key = (
                 typ, stream, event.get('group'), wk, event.get('date'), wd,

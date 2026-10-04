@@ -850,6 +850,100 @@ def _horizontal_border_overlap(horizontal, y_target, x0, x1, tolerance=2.5):
         best=max(best,overlap/span)
     return best
 
+
+def _find_matrix_table(pdf_page):
+    try:
+        tables=pdf_page.find_tables()
+    except Exception:
+        tables=[]
+    return max(tables,key=lambda t:(t.bbox[2]-t.bbox[0])*(t.bbox[3]-t.bbox[1])) if tables else None
+
+
+def _matrix_week_bands_from_date_row(table):
+    try:
+        rows=table.extract(); row_objs=table.rows
+    except Exception:
+        return {}
+    candidates=[]
+    for i,row in enumerate(rows):
+        if not row or str(row[0] or '').strip().casefold()!='даты':
+            continue
+        vals=[norm(x) for x in row[1:] if norm(x)]
+        date_hits=sum(bool(re.search(r'\d{1,2}\.\d{1,2}\.(?:\d{2}|\d{4})',x)) for x in vals)
+        candidates.append((date_hits,len(vals),i))
+    if not candidates:
+        return {}
+    date_i=max(candidates,key=lambda x:(x[0],x[1]))[2]
+    bands={}; wk=0
+    for ci,val in enumerate(rows[date_i][1:],1):
+        if not norm(val):
+            continue
+        cell=row_objs[date_i].cells[ci] if ci<len(row_objs[date_i].cells) else None
+        if not cell:
+            continue
+        wk+=1
+        bands[wk]=(float(cell[0]),float(cell[2]))
+    return bands
+
+
+def parse_week_matrix_pdfplumber_cells(doc_bytes, course, url, stream):
+    """Parse an intact weekly matrix from actual merged PDF cell geometry."""
+    import io
+    out=[]
+    try:
+        with pdfplumber.open(io.BytesIO(doc_bytes)) as pdf:
+            for page in pdf.pages:
+                table=_find_matrix_table(page)
+                if not table:
+                    continue
+                bands=_matrix_week_bands_from_date_row(table)
+                if len(bands)<6:
+                    continue
+                rows=table.extract(); row_objs=table.rows
+                text=norm(page.extract_text() or '')
+                m=re.search(r'(\d{1,2}[:.]\d{2})\s*[-–—]\s*(\d{1,2}[:.]\d{2})',text)
+                if not m:
+                    continue
+                start,end=normalize_clock(m.group(1)),normalize_clock(m.group(2))
+                if not start or not end:
+                    continue
+                for ri,row in enumerate(rows):
+                    group=next((norm(v) for v in (row or [])[:2] if re.fullmatch(r'\d{3}',norm(v))),None)
+                    if not group or ri>=len(row_objs):
+                        continue
+                    for ci,val in enumerate(row or []):
+                        if ci==0 or not norm(val):
+                            continue
+                        cell=row_objs[ri].cells[ci] if ci<len(row_objs[ri].cells) else None
+                        if not cell:
+                            continue
+                        x0,y0,x1,y1=map(float,cell)
+                        subject,location=split_matrix_cell(norm(val))
+                        if not subject or subject in {'Практика','Практика и элективы'}:
+                            continue
+                        center=(x0+x1)/2
+                        overlaps=[]
+                        for w,(a,b) in bands.items():
+                            if min(x1,b)-max(x0,a)>0.75:
+                                overlaps.append(w)
+                        if not overlaps:
+                            for w,(a,b) in bands.items():
+                                if a-0.5<=center<=b+0.5:
+                                    overlaps=[w]; break
+                        for w in overlaps:
+                            out.append({'weekday':None,'start':start,'end':end,'subject':subject,'location':location,
+                                'group':group,'stream':stream or '','type':'practice','weekNumber':w,'weekStart':week_start(w),
+                                'sourceUrl':url,'scheduleMode':'weekly-block','matrixBBox':[round(x0,3),round(y0,3),round(x1,3),round(y1,3)],
+                                'parser':'pdfplumber-merged-cell-matrix-v6'})
+    except Exception as exc:
+        print(f'MERGED CELL MATRIX WARNING: {type(exc).__name__}: {exc}',file=sys.stderr)
+    seen=set(); clean=[]
+    for e in out:
+        k=(e['group'],e['weekNumber'],e['subject'],e['location'],e['start'],e['end'])
+        if k not in seen:
+            seen.add(k); clean.append(e)
+    return clean
+
 def parse_week_matrix_coordinate(doc_bytes, course, url, stream):
     """Parse 4–6 course spreadsheet PDFs using PDF geometry.
 
@@ -1488,7 +1582,7 @@ def apply_verified_schedule_overrides(courses):
             kept.append(e)
         record={k:v for k,v in o.items() if k not in {'course'}}
         normalize_event_time(record)
-        record.update({'group':group,'stream':o.get('stream',''),'type':'practice','parser':'verified-schedule-overlay-v1','verifiedSource':'Расписание.pdf'})
+        record.update({'group':group,'stream':o.get('stream',''),'type':'practice','parser':'verified-double-overlay-v2','verifiedSource':'Пользовательская проверка Расписание.pdf'})
         c['events']=kept+[record]
         applied+=1
     return applied

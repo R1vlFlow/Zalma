@@ -450,7 +450,13 @@
           "weekStart": "2026-09-07",
           "sourceUrl": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_ld_b-26-27-_removed.pdf",
           "parser": "pdfplumber-grid-v2",
-          "date": "2026-09-07"
+          "date": "2026-09-07",
+          "double": true,
+          "doubleIndex": 1,
+          "doubleOf": "verified-123-2-chem",
+          "provenance": "verified-double-overlay-v2",
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "durationMinutes": 95
         },
         {
           "group": "124",
@@ -463,7 +469,14 @@
           "location": "ЦДТИ, ауд.4.2.11",
           "type": "practice",
           "parser": "verified-schedule-overlay-v1",
-          "verifiedSource": "Расписание.pdf"
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 1,
+          "doubleOf": "verified-124-2-chem",
+          "provenance": "verified-double-overlay-v2",
+          "weekStart": "2026-09-07",
+          "date": "2026-09-07",
+          "durationMinutes": 95
         },
         {
           "weekday": 0,
@@ -655,7 +668,14 @@
           "location": "ЦДТИ, ауд.4.2.11",
           "type": "practice",
           "parser": "verified-schedule-overlay-v1",
-          "verifiedSource": "Расписание.pdf"
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 2,
+          "doubleOf": "verified-124-2-chem",
+          "provenance": "verified-double-overlay-v2",
+          "weekStart": "2026-09-07",
+          "date": "2026-09-07",
+          "durationMinutes": 90
         },
         {
           "weekday": 0,
@@ -684,7 +704,13 @@
           "weekStart": "2026-09-07",
           "sourceUrl": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_ld_b-26-27-_removed.pdf",
           "parser": "pdfplumber-grid-v2",
-          "date": "2026-09-07"
+          "date": "2026-09-07",
+          "double": true,
+          "doubleIndex": 1,
+          "doubleOf": "verified-123-2-anat",
+          "provenance": "verified-double-overlay-v2",
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "durationMinutes": 95
         },
         {
           "group": "124",
@@ -697,7 +723,14 @@
           "location": "школа, ауд.4",
           "type": "practice",
           "parser": "verified-schedule-overlay-v1",
-          "verifiedSource": "Расписание.pdf"
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 1,
+          "doubleOf": "verified-124-2-anat",
+          "provenance": "verified-double-overlay-v2",
+          "weekStart": "2026-09-07",
+          "date": "2026-09-07",
+          "durationMinutes": 95
         },
         {
           "weekday": 0,
@@ -1016,7 +1049,14 @@
           "location": "школа, ауд.4",
           "type": "practice",
           "parser": "verified-schedule-overlay-v1",
-          "verifiedSource": "Расписание.pdf"
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 2,
+          "doubleOf": "verified-124-2-anat",
+          "provenance": "verified-double-overlay-v2",
+          "weekStart": "2026-09-07",
+          "date": "2026-09-07",
+          "durationMinutes": 95
         },
         {
           "weekday": 1,
@@ -2801,7 +2841,13 @@
           "weekStart": "2026-09-14",
           "sourceUrl": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_ld_b-26-27-_removed.pdf",
           "parser": "pdfplumber-grid-v2",
-          "date": "2026-09-14"
+          "date": "2026-09-14",
+          "double": true,
+          "doubleIndex": 1,
+          "doubleOf": "verified-123-3-chem",
+          "provenance": "verified-double-overlay-v2",
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "durationMinutes": 95
         },
         {
           "group": "124",
@@ -2814,7 +2860,14 @@
           "location": "ЦДТИ, ауд.4.2.11",
           "type": "practice",
           "parser": "verified-schedule-overlay-v1",
-          "verifiedSource": "Расписание.pdf"
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 1,
+          "doubleOf": "verified-124-3-chem",
+          "provenance": "verified-double-overlay-v2",
+          "weekStart": "2026-09-14",
+          "date": "2026-09-14",
+          "durationMinutes": 95
         },
         {
           "weekday": 0,
@@ -3006,7 +3059,14 @@
           "location": "ЦДТИ, ауд.4.2.11",
           "type": "practice",
           "parser": "verified-schedule-overlay-v1",
-          "verifiedSource": "Расписание.pdf"
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 2,
+          "doubleOf": "verified-124-3-chem",
+          "provenance": "verified-double-overlay-v2",
+          "weekStart": "2026-09-14",
+          "date": "2026-09-14",
+          "durationMinutes": 90
         },
         {
           "weekday": 0,
@@ -3035,7 +3095,13 @@
           "weekStart": "2026-09-14",
           "sourceUrl": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_ld_b-26-27-_removed.pdf",
           "parser": "pdfplumber-grid-v2",
-          "date": "2026-09-14"
+          "date": "2026-09-14",
+          "double": true,
+          "doubleIndex": 1,
+          "doubleOf": "verified-123-3-anat",
+          "provenance": "verified-double-overlay-v2",
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "durationMinutes": 95
         },
         {
           "group": "124",
@@ -3048,7 +3114,14 @@
           "location": "школа, ауд.4",
           "type": "practice",
           "parser": "verified-schedule-overlay-v1",
-          "verifiedSource": "Расписание.pdf"
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 1,
+          "doubleOf": "verified-124-3-anat",
+          "provenance": "verified-double-overlay-v2",
+          "weekStart": "2026-09-14",
+          "date": "2026-09-14",
+          "durationMinutes": 95
         },
         {
           "weekday": 0,
@@ -3367,7 +3440,14 @@
           "location": "школа, ауд.4",
           "type": "practice",
           "parser": "verified-schedule-overlay-v1",
-          "verifiedSource": "Расписание.pdf"
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 2,
+          "doubleOf": "verified-124-3-anat",
+          "provenance": "verified-double-overlay-v2",
+          "weekStart": "2026-09-14",
+          "date": "2026-09-14",
+          "durationMinutes": 95
         },
         {
           "weekday": 1,
@@ -5152,7 +5232,13 @@
           "weekStart": "2026-09-21",
           "sourceUrl": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_ld_b-26-27-_removed.pdf",
           "parser": "pdfplumber-grid-v2",
-          "date": "2026-09-21"
+          "date": "2026-09-21",
+          "double": true,
+          "doubleIndex": 1,
+          "doubleOf": "verified-123-4-chem",
+          "provenance": "verified-double-overlay-v2",
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "durationMinutes": 95
         },
         {
           "group": "124",
@@ -5165,7 +5251,14 @@
           "location": "ЦДТИ, ауд.4.2.11",
           "type": "practice",
           "parser": "verified-schedule-overlay-v1",
-          "verifiedSource": "Расписание.pdf"
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 1,
+          "doubleOf": "verified-124-4-chem",
+          "provenance": "verified-double-overlay-v2",
+          "weekStart": "2026-09-21",
+          "date": "2026-09-21",
+          "durationMinutes": 95
         },
         {
           "weekday": 0,
@@ -5357,7 +5450,14 @@
           "location": "ЦДТИ, ауд.4.2.11",
           "type": "practice",
           "parser": "verified-schedule-overlay-v1",
-          "verifiedSource": "Расписание.pdf"
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 2,
+          "doubleOf": "verified-124-4-chem",
+          "provenance": "verified-double-overlay-v2",
+          "weekStart": "2026-09-21",
+          "date": "2026-09-21",
+          "durationMinutes": 90
         },
         {
           "weekday": 0,
@@ -5386,7 +5486,13 @@
           "weekStart": "2026-09-21",
           "sourceUrl": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_ld_b-26-27-_removed.pdf",
           "parser": "pdfplumber-grid-v2",
-          "date": "2026-09-21"
+          "date": "2026-09-21",
+          "double": true,
+          "doubleIndex": 1,
+          "doubleOf": "verified-123-4-anat",
+          "provenance": "verified-double-overlay-v2",
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "durationMinutes": 95
         },
         {
           "group": "124",
@@ -5399,7 +5505,14 @@
           "location": "школа, ауд.4",
           "type": "practice",
           "parser": "verified-schedule-overlay-v1",
-          "verifiedSource": "Расписание.pdf"
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 1,
+          "doubleOf": "verified-124-4-anat",
+          "provenance": "verified-double-overlay-v2",
+          "weekStart": "2026-09-21",
+          "date": "2026-09-21",
+          "durationMinutes": 95
         },
         {
           "weekday": 0,
@@ -5731,7 +5844,14 @@
           "location": "школа, ауд.4",
           "type": "practice",
           "parser": "verified-schedule-overlay-v1",
-          "verifiedSource": "Расписание.pdf"
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 2,
+          "doubleOf": "verified-124-4-anat",
+          "provenance": "verified-double-overlay-v2",
+          "weekStart": "2026-09-21",
+          "date": "2026-09-21",
+          "durationMinutes": 95
         },
         {
           "weekday": 1,
@@ -7532,7 +7652,13 @@
           "weekStart": "2026-09-28",
           "sourceUrl": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_ld_b-26-27-_removed.pdf",
           "parser": "pdfplumber-grid-v2",
-          "date": "2026-09-28"
+          "date": "2026-09-28",
+          "double": true,
+          "doubleIndex": 1,
+          "doubleOf": "verified-123-5-chem",
+          "provenance": "verified-double-overlay-v2",
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "durationMinutes": 95
         },
         {
           "group": "124",
@@ -7545,7 +7671,14 @@
           "location": "ЦДТИ, ауд.4.2.11",
           "type": "practice",
           "parser": "verified-schedule-overlay-v1",
-          "verifiedSource": "Расписание.pdf"
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 1,
+          "doubleOf": "verified-124-5-chem",
+          "provenance": "verified-double-overlay-v2",
+          "weekStart": "2026-09-28",
+          "date": "2026-09-28",
+          "durationMinutes": 95
         },
         {
           "weekday": 0,
@@ -7737,7 +7870,14 @@
           "location": "ЦДТИ, ауд.4.2.11",
           "type": "practice",
           "parser": "verified-schedule-overlay-v1",
-          "verifiedSource": "Расписание.pdf"
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 2,
+          "doubleOf": "verified-124-5-chem",
+          "provenance": "verified-double-overlay-v2",
+          "weekStart": "2026-09-28",
+          "date": "2026-09-28",
+          "durationMinutes": 90
         },
         {
           "weekday": 0,
@@ -7766,7 +7906,13 @@
           "weekStart": "2026-09-28",
           "sourceUrl": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_ld_b-26-27-_removed.pdf",
           "parser": "pdfplumber-grid-v2",
-          "date": "2026-09-28"
+          "date": "2026-09-28",
+          "double": true,
+          "doubleIndex": 1,
+          "doubleOf": "verified-123-5-anat",
+          "provenance": "verified-double-overlay-v2",
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "durationMinutes": 95
         },
         {
           "group": "124",
@@ -7779,7 +7925,14 @@
           "location": "школа, ауд.4",
           "type": "practice",
           "parser": "verified-schedule-overlay-v1",
-          "verifiedSource": "Расписание.pdf"
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 1,
+          "doubleOf": "verified-124-5-anat",
+          "provenance": "verified-double-overlay-v2",
+          "weekStart": "2026-09-28",
+          "date": "2026-09-28",
+          "durationMinutes": 95
         },
         {
           "weekday": 0,
@@ -8083,7 +8236,14 @@
           "location": "школа, ауд.4",
           "type": "practice",
           "parser": "verified-schedule-overlay-v1",
-          "verifiedSource": "Расписание.pdf"
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 2,
+          "doubleOf": "verified-124-5-anat",
+          "provenance": "verified-double-overlay-v2",
+          "weekStart": "2026-09-28",
+          "date": "2026-09-28",
+          "durationMinutes": 95
         },
         {
           "weekday": 1,
@@ -9780,7 +9940,13 @@
           "weekStart": "2026-10-05",
           "sourceUrl": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_ld_b-26-27-_removed.pdf",
           "parser": "pdfplumber-grid-v2",
-          "date": "2026-10-05"
+          "date": "2026-10-05",
+          "double": true,
+          "doubleIndex": 1,
+          "doubleOf": "verified-123-6-chem",
+          "provenance": "verified-double-overlay-v2",
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "durationMinutes": 95
         },
         {
           "group": "124",
@@ -9793,7 +9959,14 @@
           "location": "ЦДТИ, ауд.4.2.11",
           "type": "practice",
           "parser": "verified-schedule-overlay-v1",
-          "verifiedSource": "Расписание.pdf"
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 1,
+          "doubleOf": "verified-124-6-chem",
+          "provenance": "verified-double-overlay-v2",
+          "weekStart": "2026-10-05",
+          "date": "2026-10-05",
+          "durationMinutes": 95
         },
         {
           "weekday": 0,
@@ -9985,7 +10158,14 @@
           "location": "ЦДТИ, ауд.4.2.11",
           "type": "practice",
           "parser": "verified-schedule-overlay-v1",
-          "verifiedSource": "Расписание.pdf"
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 2,
+          "doubleOf": "verified-124-6-chem",
+          "provenance": "verified-double-overlay-v2",
+          "weekStart": "2026-10-05",
+          "date": "2026-10-05",
+          "durationMinutes": 90
         },
         {
           "weekday": 0,
@@ -10014,7 +10194,13 @@
           "weekStart": "2026-10-05",
           "sourceUrl": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_ld_b-26-27-_removed.pdf",
           "parser": "pdfplumber-grid-v2",
-          "date": "2026-10-05"
+          "date": "2026-10-05",
+          "double": true,
+          "doubleIndex": 1,
+          "doubleOf": "verified-123-6-anat",
+          "provenance": "verified-double-overlay-v2",
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "durationMinutes": 95
         },
         {
           "group": "124",
@@ -10027,7 +10213,14 @@
           "location": "школа, ауд.4",
           "type": "practice",
           "parser": "verified-schedule-overlay-v1",
-          "verifiedSource": "Расписание.pdf"
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 1,
+          "doubleOf": "verified-124-6-anat",
+          "provenance": "verified-double-overlay-v2",
+          "weekStart": "2026-10-05",
+          "date": "2026-10-05",
+          "durationMinutes": 95
         },
         {
           "weekday": 0,
@@ -10331,7 +10524,14 @@
           "location": "школа, ауд.4",
           "type": "practice",
           "parser": "verified-schedule-overlay-v1",
-          "verifiedSource": "Расписание.pdf"
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 2,
+          "doubleOf": "verified-124-6-anat",
+          "provenance": "verified-double-overlay-v2",
+          "weekStart": "2026-10-05",
+          "date": "2026-10-05",
+          "durationMinutes": 95
         },
         {
           "weekday": 1,
@@ -12222,7 +12422,13 @@
           "weekStart": "2026-10-12",
           "sourceUrl": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_ld_b-26-27-_removed.pdf",
           "parser": "pdfplumber-grid-v2",
-          "date": "2026-10-12"
+          "date": "2026-10-12",
+          "double": true,
+          "doubleIndex": 1,
+          "doubleOf": "verified-123-7-chem",
+          "provenance": "verified-double-overlay-v2",
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "durationMinutes": 95
         },
         {
           "group": "124",
@@ -12235,7 +12441,14 @@
           "location": "ЦДТИ, ауд.4.2.11",
           "type": "practice",
           "parser": "verified-schedule-overlay-v1",
-          "verifiedSource": "Расписание.pdf"
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 1,
+          "doubleOf": "verified-124-7-chem",
+          "provenance": "verified-double-overlay-v2",
+          "weekStart": "2026-10-12",
+          "date": "2026-10-12",
+          "durationMinutes": 95
         },
         {
           "weekday": 0,
@@ -12427,7 +12640,14 @@
           "location": "ЦДТИ, ауд.4.2.11",
           "type": "practice",
           "parser": "verified-schedule-overlay-v1",
-          "verifiedSource": "Расписание.pdf"
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 2,
+          "doubleOf": "verified-124-7-chem",
+          "provenance": "verified-double-overlay-v2",
+          "weekStart": "2026-10-12",
+          "date": "2026-10-12",
+          "durationMinutes": 90
         },
         {
           "weekday": 0,
@@ -12456,7 +12676,13 @@
           "weekStart": "2026-10-12",
           "sourceUrl": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_ld_b-26-27-_removed.pdf",
           "parser": "pdfplumber-grid-v2",
-          "date": "2026-10-12"
+          "date": "2026-10-12",
+          "double": true,
+          "doubleIndex": 1,
+          "doubleOf": "verified-123-7-anat",
+          "provenance": "verified-double-overlay-v2",
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "durationMinutes": 95
         },
         {
           "group": "124",
@@ -12469,7 +12695,14 @@
           "location": "школа, ауд.4",
           "type": "practice",
           "parser": "verified-schedule-overlay-v1",
-          "verifiedSource": "Расписание.pdf"
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 1,
+          "doubleOf": "verified-124-7-anat",
+          "provenance": "verified-double-overlay-v2",
+          "weekStart": "2026-10-12",
+          "date": "2026-10-12",
+          "durationMinutes": 95
         },
         {
           "weekday": 0,
@@ -12801,7 +13034,14 @@
           "location": "школа, ауд.4",
           "type": "practice",
           "parser": "verified-schedule-overlay-v1",
-          "verifiedSource": "Расписание.pdf"
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 2,
+          "doubleOf": "verified-124-7-anat",
+          "provenance": "verified-double-overlay-v2",
+          "weekStart": "2026-10-12",
+          "date": "2026-10-12",
+          "durationMinutes": 95
         },
         {
           "weekday": 1,
@@ -14647,7 +14887,13 @@
           "weekStart": "2026-10-19",
           "sourceUrl": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_ld_b-26-27-_removed.pdf",
           "parser": "pdfplumber-grid-v2",
-          "date": "2026-10-19"
+          "date": "2026-10-19",
+          "double": true,
+          "doubleIndex": 1,
+          "doubleOf": "verified-123-8-chem",
+          "provenance": "verified-double-overlay-v2",
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "durationMinutes": 95
         },
         {
           "group": "124",
@@ -14660,7 +14906,14 @@
           "location": "ЦДТИ, ауд.4.2.11",
           "type": "practice",
           "parser": "verified-schedule-overlay-v1",
-          "verifiedSource": "Расписание.pdf"
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 1,
+          "doubleOf": "verified-124-8-chem",
+          "provenance": "verified-double-overlay-v2",
+          "weekStart": "2026-10-19",
+          "date": "2026-10-19",
+          "durationMinutes": 95
         },
         {
           "weekday": 0,
@@ -14852,7 +15105,14 @@
           "location": "ЦДТИ, ауд.4.2.11",
           "type": "practice",
           "parser": "verified-schedule-overlay-v1",
-          "verifiedSource": "Расписание.pdf"
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 2,
+          "doubleOf": "verified-124-8-chem",
+          "provenance": "verified-double-overlay-v2",
+          "weekStart": "2026-10-19",
+          "date": "2026-10-19",
+          "durationMinutes": 90
         },
         {
           "weekday": 0,
@@ -14881,7 +15141,13 @@
           "weekStart": "2026-10-19",
           "sourceUrl": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_ld_b-26-27-_removed.pdf",
           "parser": "pdfplumber-grid-v2",
-          "date": "2026-10-19"
+          "date": "2026-10-19",
+          "double": true,
+          "doubleIndex": 1,
+          "doubleOf": "verified-123-8-anat",
+          "provenance": "verified-double-overlay-v2",
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "durationMinutes": 95
         },
         {
           "group": "124",
@@ -14894,7 +15160,14 @@
           "location": "школа, ауд.4",
           "type": "practice",
           "parser": "verified-schedule-overlay-v1",
-          "verifiedSource": "Расписание.pdf"
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 1,
+          "doubleOf": "verified-124-8-anat",
+          "provenance": "verified-double-overlay-v2",
+          "weekStart": "2026-10-19",
+          "date": "2026-10-19",
+          "durationMinutes": 95
         },
         {
           "weekday": 0,
@@ -15198,7 +15471,14 @@
           "location": "школа, ауд.4",
           "type": "practice",
           "parser": "verified-schedule-overlay-v1",
-          "verifiedSource": "Расписание.pdf"
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 2,
+          "doubleOf": "verified-124-8-anat",
+          "provenance": "verified-double-overlay-v2",
+          "weekStart": "2026-10-19",
+          "date": "2026-10-19",
+          "durationMinutes": 95
         },
         {
           "weekday": 1,
@@ -16986,7 +17266,13 @@
           "weekStart": "2026-10-26",
           "sourceUrl": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_ld_b-26-27-_removed.pdf",
           "parser": "pdfplumber-grid-v2",
-          "date": "2026-10-26"
+          "date": "2026-10-26",
+          "double": true,
+          "doubleIndex": 1,
+          "doubleOf": "verified-123-9-chem",
+          "provenance": "verified-double-overlay-v2",
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "durationMinutes": 95
         },
         {
           "group": "124",
@@ -16999,7 +17285,14 @@
           "location": "ЦДТИ, ауд.4.2.11",
           "type": "practice",
           "parser": "verified-schedule-overlay-v1",
-          "verifiedSource": "Расписание.pdf"
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 1,
+          "doubleOf": "verified-124-9-chem",
+          "provenance": "verified-double-overlay-v2",
+          "weekStart": "2026-10-26",
+          "date": "2026-10-26",
+          "durationMinutes": 95
         },
         {
           "weekday": 0,
@@ -17191,7 +17484,14 @@
           "location": "ЦДТИ, ауд.4.2.11",
           "type": "practice",
           "parser": "verified-schedule-overlay-v1",
-          "verifiedSource": "Расписание.pdf"
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 2,
+          "doubleOf": "verified-124-9-chem",
+          "provenance": "verified-double-overlay-v2",
+          "weekStart": "2026-10-26",
+          "date": "2026-10-26",
+          "durationMinutes": 90
         },
         {
           "weekday": 0,
@@ -17220,7 +17520,13 @@
           "weekStart": "2026-10-26",
           "sourceUrl": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_ld_b-26-27-_removed.pdf",
           "parser": "pdfplumber-grid-v2",
-          "date": "2026-10-26"
+          "date": "2026-10-26",
+          "double": true,
+          "doubleIndex": 1,
+          "doubleOf": "verified-123-9-anat",
+          "provenance": "verified-double-overlay-v2",
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "durationMinutes": 95
         },
         {
           "group": "124",
@@ -17233,7 +17539,14 @@
           "location": "школа, ауд.4",
           "type": "practice",
           "parser": "verified-schedule-overlay-v1",
-          "verifiedSource": "Расписание.pdf"
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 1,
+          "doubleOf": "verified-124-9-anat",
+          "provenance": "verified-double-overlay-v2",
+          "weekStart": "2026-10-26",
+          "date": "2026-10-26",
+          "durationMinutes": 95
         },
         {
           "weekday": 0,
@@ -17550,7 +17863,14 @@
           "location": "школа, ауд.4",
           "type": "practice",
           "parser": "verified-schedule-overlay-v1",
-          "verifiedSource": "Расписание.pdf"
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 2,
+          "doubleOf": "verified-124-9-anat",
+          "provenance": "verified-double-overlay-v2",
+          "weekStart": "2026-10-26",
+          "date": "2026-10-26",
+          "durationMinutes": 95
         },
         {
           "weekday": 1,
@@ -19340,7 +19660,13 @@
           "weekStart": "2026-11-02",
           "sourceUrl": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_ld_b-26-27-_removed.pdf",
           "parser": "pdfplumber-grid-v2",
-          "date": "2026-11-02"
+          "date": "2026-11-02",
+          "double": true,
+          "doubleIndex": 1,
+          "doubleOf": "verified-123-10-chem",
+          "provenance": "verified-double-overlay-v2",
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "durationMinutes": 95
         },
         {
           "group": "124",
@@ -19353,7 +19679,14 @@
           "location": "ЦДТИ, ауд.4.2.11",
           "type": "practice",
           "parser": "verified-schedule-overlay-v1",
-          "verifiedSource": "Расписание.pdf"
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 1,
+          "doubleOf": "verified-124-10-chem",
+          "provenance": "verified-double-overlay-v2",
+          "weekStart": "2026-11-02",
+          "date": "2026-11-02",
+          "durationMinutes": 95
         },
         {
           "weekday": 0,
@@ -19530,7 +19863,14 @@
           "location": "ЦДТИ, ауд.4.2.11",
           "type": "practice",
           "parser": "verified-schedule-overlay-v1",
-          "verifiedSource": "Расписание.pdf"
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 2,
+          "doubleOf": "verified-124-10-chem",
+          "provenance": "verified-double-overlay-v2",
+          "weekStart": "2026-11-02",
+          "date": "2026-11-02",
+          "durationMinutes": 90
         },
         {
           "weekday": 0,
@@ -19559,7 +19899,13 @@
           "weekStart": "2026-11-02",
           "sourceUrl": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_ld_b-26-27-_removed.pdf",
           "parser": "pdfplumber-grid-v2",
-          "date": "2026-11-02"
+          "date": "2026-11-02",
+          "double": true,
+          "doubleIndex": 1,
+          "doubleOf": "verified-123-10-anat",
+          "provenance": "verified-double-overlay-v2",
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "durationMinutes": 95
         },
         {
           "group": "124",
@@ -19572,7 +19918,14 @@
           "location": "школа, ауд.4",
           "type": "practice",
           "parser": "verified-schedule-overlay-v1",
-          "verifiedSource": "Расписание.pdf"
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 1,
+          "doubleOf": "verified-124-10-anat",
+          "provenance": "verified-double-overlay-v2",
+          "weekStart": "2026-11-02",
+          "date": "2026-11-02",
+          "durationMinutes": 95
         },
         {
           "weekday": 0,
@@ -19889,7 +20242,14 @@
           "location": "школа, ауд.4",
           "type": "practice",
           "parser": "verified-schedule-overlay-v1",
-          "verifiedSource": "Расписание.pdf"
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 2,
+          "doubleOf": "verified-124-10-anat",
+          "provenance": "verified-double-overlay-v2",
+          "weekStart": "2026-11-02",
+          "date": "2026-11-02",
+          "durationMinutes": 95
         },
         {
           "weekday": 1,
@@ -21381,7 +21741,13 @@
           "weekStart": "2026-11-09",
           "sourceUrl": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_ld_b-26-27-_removed.pdf",
           "parser": "pdfplumber-grid-v2",
-          "date": "2026-11-09"
+          "date": "2026-11-09",
+          "double": true,
+          "doubleIndex": 1,
+          "doubleOf": "verified-123-11-chem",
+          "provenance": "verified-double-overlay-v2",
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "durationMinutes": 95
         },
         {
           "group": "124",
@@ -21394,7 +21760,14 @@
           "location": "ЦДТИ, ауд.4.2.11",
           "type": "practice",
           "parser": "verified-schedule-overlay-v1",
-          "verifiedSource": "Расписание.pdf"
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 1,
+          "doubleOf": "verified-124-11-chem",
+          "provenance": "verified-double-overlay-v2",
+          "weekStart": "2026-11-09",
+          "date": "2026-11-09",
+          "durationMinutes": 95
         },
         {
           "weekday": 0,
@@ -21571,7 +21944,14 @@
           "location": "ЦДТИ, ауд.4.2.11",
           "type": "practice",
           "parser": "verified-schedule-overlay-v1",
-          "verifiedSource": "Расписание.pdf"
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 2,
+          "doubleOf": "verified-124-11-chem",
+          "provenance": "verified-double-overlay-v2",
+          "weekStart": "2026-11-09",
+          "date": "2026-11-09",
+          "durationMinutes": 90
         },
         {
           "weekday": 0,
@@ -21600,7 +21980,13 @@
           "weekStart": "2026-11-09",
           "sourceUrl": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_ld_b-26-27-_removed.pdf",
           "parser": "pdfplumber-grid-v2",
-          "date": "2026-11-09"
+          "date": "2026-11-09",
+          "double": true,
+          "doubleIndex": 1,
+          "doubleOf": "verified-123-11-anat",
+          "provenance": "verified-double-overlay-v2",
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "durationMinutes": 95
         },
         {
           "group": "124",
@@ -21613,7 +21999,14 @@
           "location": "школа, ауд.4",
           "type": "practice",
           "parser": "verified-schedule-overlay-v1",
-          "verifiedSource": "Расписание.pdf"
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 1,
+          "doubleOf": "verified-124-11-anat",
+          "provenance": "verified-double-overlay-v2",
+          "weekStart": "2026-11-09",
+          "date": "2026-11-09",
+          "durationMinutes": 95
         },
         {
           "weekday": 0,
@@ -21958,7 +22351,14 @@
           "location": "школа, ауд.4",
           "type": "practice",
           "parser": "verified-schedule-overlay-v1",
-          "verifiedSource": "Расписание.pdf"
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 2,
+          "doubleOf": "verified-124-11-anat",
+          "provenance": "verified-double-overlay-v2",
+          "weekStart": "2026-11-09",
+          "date": "2026-11-09",
+          "durationMinutes": 95
         },
         {
           "weekday": 1,
@@ -23403,7 +23803,13 @@
           "weekStart": "2026-11-16",
           "sourceUrl": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_ld_b-26-27-_removed.pdf",
           "parser": "pdfplumber-grid-v2",
-          "date": "2026-11-16"
+          "date": "2026-11-16",
+          "double": true,
+          "doubleIndex": 1,
+          "doubleOf": "verified-123-12-chem",
+          "provenance": "verified-double-overlay-v2",
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "durationMinutes": 95
         },
         {
           "group": "124",
@@ -23416,7 +23822,14 @@
           "location": "ЦДТИ, ауд.4.2.11",
           "type": "practice",
           "parser": "verified-schedule-overlay-v1",
-          "verifiedSource": "Расписание.pdf"
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 1,
+          "doubleOf": "verified-124-12-chem",
+          "provenance": "verified-double-overlay-v2",
+          "weekStart": "2026-11-16",
+          "date": "2026-11-16",
+          "durationMinutes": 95
         },
         {
           "weekday": 0,
@@ -23593,7 +24006,14 @@
           "location": "ЦДТИ, ауд.4.2.11",
           "type": "practice",
           "parser": "verified-schedule-overlay-v1",
-          "verifiedSource": "Расписание.pdf"
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 2,
+          "doubleOf": "verified-124-12-chem",
+          "provenance": "verified-double-overlay-v2",
+          "weekStart": "2026-11-16",
+          "date": "2026-11-16",
+          "durationMinutes": 90
         },
         {
           "weekday": 0,
@@ -23622,7 +24042,13 @@
           "weekStart": "2026-11-16",
           "sourceUrl": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_ld_b-26-27-_removed.pdf",
           "parser": "pdfplumber-grid-v2",
-          "date": "2026-11-16"
+          "date": "2026-11-16",
+          "double": true,
+          "doubleIndex": 1,
+          "doubleOf": "verified-123-12-anat",
+          "provenance": "verified-double-overlay-v2",
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "durationMinutes": 95
         },
         {
           "group": "124",
@@ -23635,7 +24061,14 @@
           "location": "школа, ауд.4",
           "type": "practice",
           "parser": "verified-schedule-overlay-v1",
-          "verifiedSource": "Расписание.pdf"
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 1,
+          "doubleOf": "verified-124-12-anat",
+          "provenance": "verified-double-overlay-v2",
+          "weekStart": "2026-11-16",
+          "date": "2026-11-16",
+          "durationMinutes": 95
         },
         {
           "weekday": 0,
@@ -23924,7 +24357,14 @@
           "location": "школа, ауд.4",
           "type": "practice",
           "parser": "verified-schedule-overlay-v1",
-          "verifiedSource": "Расписание.pdf"
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 2,
+          "doubleOf": "verified-124-12-anat",
+          "provenance": "verified-double-overlay-v2",
+          "weekStart": "2026-11-16",
+          "date": "2026-11-16",
+          "durationMinutes": 95
         },
         {
           "weekday": 1,
@@ -25384,7 +25824,13 @@
           "weekStart": "2026-11-23",
           "sourceUrl": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_ld_b-26-27-_removed.pdf",
           "parser": "pdfplumber-grid-v2",
-          "date": "2026-11-23"
+          "date": "2026-11-23",
+          "double": true,
+          "doubleIndex": 1,
+          "doubleOf": "verified-123-13-chem",
+          "provenance": "verified-double-overlay-v2",
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "durationMinutes": 95
         },
         {
           "group": "124",
@@ -25397,7 +25843,14 @@
           "location": "ЦДТИ, ауд.4.2.11",
           "type": "practice",
           "parser": "verified-schedule-overlay-v1",
-          "verifiedSource": "Расписание.pdf"
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 1,
+          "doubleOf": "verified-124-13-chem",
+          "provenance": "verified-double-overlay-v2",
+          "weekStart": "2026-11-23",
+          "date": "2026-11-23",
+          "durationMinutes": 95
         },
         {
           "weekday": 0,
@@ -25574,7 +26027,14 @@
           "location": "ЦДТИ, ауд.4.2.11",
           "type": "practice",
           "parser": "verified-schedule-overlay-v1",
-          "verifiedSource": "Расписание.pdf"
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 2,
+          "doubleOf": "verified-124-13-chem",
+          "provenance": "verified-double-overlay-v2",
+          "weekStart": "2026-11-23",
+          "date": "2026-11-23",
+          "durationMinutes": 90
         },
         {
           "weekday": 0,
@@ -25603,7 +26063,13 @@
           "weekStart": "2026-11-23",
           "sourceUrl": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_ld_b-26-27-_removed.pdf",
           "parser": "pdfplumber-grid-v2",
-          "date": "2026-11-23"
+          "date": "2026-11-23",
+          "double": true,
+          "doubleIndex": 1,
+          "doubleOf": "verified-123-13-anat",
+          "provenance": "verified-double-overlay-v2",
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "durationMinutes": 95
         },
         {
           "group": "124",
@@ -25616,7 +26082,14 @@
           "location": "школа, ауд.4",
           "type": "practice",
           "parser": "verified-schedule-overlay-v1",
-          "verifiedSource": "Расписание.pdf"
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 1,
+          "doubleOf": "verified-124-13-anat",
+          "provenance": "verified-double-overlay-v2",
+          "weekStart": "2026-11-23",
+          "date": "2026-11-23",
+          "durationMinutes": 95
         },
         {
           "weekday": 0,
@@ -25877,7 +26350,14 @@
           "location": "школа, ауд.4",
           "type": "practice",
           "parser": "verified-schedule-overlay-v1",
-          "verifiedSource": "Расписание.pdf"
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 2,
+          "doubleOf": "verified-124-13-anat",
+          "provenance": "verified-double-overlay-v2",
+          "weekStart": "2026-11-23",
+          "date": "2026-11-23",
+          "durationMinutes": 95
         },
         {
           "weekday": 1,
@@ -27202,7 +27682,13 @@
           "weekStart": "2026-11-30",
           "sourceUrl": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_ld_b-26-27-_removed.pdf",
           "parser": "pdfplumber-grid-v2",
-          "date": "2026-11-30"
+          "date": "2026-11-30",
+          "double": true,
+          "doubleIndex": 1,
+          "doubleOf": "verified-123-14-chem",
+          "provenance": "verified-double-overlay-v2",
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "durationMinutes": 95
         },
         {
           "group": "124",
@@ -27215,7 +27701,14 @@
           "location": "ЦДТИ, ауд.4.2.11",
           "type": "practice",
           "parser": "verified-schedule-overlay-v1",
-          "verifiedSource": "Расписание.pdf"
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 1,
+          "doubleOf": "verified-124-14-chem",
+          "provenance": "verified-double-overlay-v2",
+          "weekStart": "2026-11-30",
+          "date": "2026-11-30",
+          "durationMinutes": 95
         },
         {
           "weekday": 0,
@@ -27378,7 +27871,14 @@
           "location": "ЦДТИ, ауд.4.2.11",
           "type": "practice",
           "parser": "verified-schedule-overlay-v1",
-          "verifiedSource": "Расписание.pdf"
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 2,
+          "doubleOf": "verified-124-14-chem",
+          "provenance": "verified-double-overlay-v2",
+          "weekStart": "2026-11-30",
+          "date": "2026-11-30",
+          "durationMinutes": 90
         },
         {
           "weekday": 0,
@@ -27407,7 +27907,13 @@
           "weekStart": "2026-11-30",
           "sourceUrl": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_ld_b-26-27-_removed.pdf",
           "parser": "pdfplumber-grid-v2",
-          "date": "2026-11-30"
+          "date": "2026-11-30",
+          "double": true,
+          "doubleIndex": 1,
+          "doubleOf": "verified-123-14-anat",
+          "provenance": "verified-double-overlay-v2",
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "durationMinutes": 95
         },
         {
           "group": "124",
@@ -27420,7 +27926,14 @@
           "location": "школа, ауд.4",
           "type": "practice",
           "parser": "verified-schedule-overlay-v1",
-          "verifiedSource": "Расписание.pdf"
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 1,
+          "doubleOf": "verified-124-14-anat",
+          "provenance": "verified-double-overlay-v2",
+          "weekStart": "2026-11-30",
+          "date": "2026-11-30",
+          "durationMinutes": 95
         },
         {
           "weekday": 0,
@@ -27681,7 +28194,14 @@
           "location": "школа, ауд.4",
           "type": "practice",
           "parser": "verified-schedule-overlay-v1",
-          "verifiedSource": "Расписание.pdf"
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 2,
+          "doubleOf": "verified-124-14-anat",
+          "provenance": "verified-double-overlay-v2",
+          "weekStart": "2026-11-30",
+          "date": "2026-11-30",
+          "durationMinutes": 95
         },
         {
           "weekday": 1,
@@ -28887,7 +29407,13 @@
           "weekStart": "2026-12-07",
           "sourceUrl": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_ld_b-26-27-_removed.pdf",
           "parser": "pdfplumber-grid-v2",
-          "date": "2026-12-07"
+          "date": "2026-12-07",
+          "double": true,
+          "doubleIndex": 1,
+          "doubleOf": "verified-123-15-chem",
+          "provenance": "verified-double-overlay-v2",
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "durationMinutes": 95
         },
         {
           "group": "124",
@@ -28900,7 +29426,14 @@
           "location": "ЦДТИ, ауд.4.2.11",
           "type": "practice",
           "parser": "verified-schedule-overlay-v1",
-          "verifiedSource": "Расписание.pdf"
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 1,
+          "doubleOf": "verified-124-15-chem",
+          "provenance": "verified-double-overlay-v2",
+          "weekStart": "2026-12-07",
+          "date": "2026-12-07",
+          "durationMinutes": 95
         },
         {
           "weekday": 0,
@@ -29063,7 +29596,14 @@
           "location": "ЦДТИ, ауд.4.2.11",
           "type": "practice",
           "parser": "verified-schedule-overlay-v1",
-          "verifiedSource": "Расписание.pdf"
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 2,
+          "doubleOf": "verified-124-15-chem",
+          "provenance": "verified-double-overlay-v2",
+          "weekStart": "2026-12-07",
+          "date": "2026-12-07",
+          "durationMinutes": 90
         },
         {
           "weekday": 0,
@@ -29092,7 +29632,13 @@
           "weekStart": "2026-12-07",
           "sourceUrl": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_ld_b-26-27-_removed.pdf",
           "parser": "pdfplumber-grid-v2",
-          "date": "2026-12-07"
+          "date": "2026-12-07",
+          "double": true,
+          "doubleIndex": 1,
+          "doubleOf": "verified-123-15-anat",
+          "provenance": "verified-double-overlay-v2",
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "durationMinutes": 95
         },
         {
           "group": "124",
@@ -29105,7 +29651,14 @@
           "location": "школа, ауд.4",
           "type": "practice",
           "parser": "verified-schedule-overlay-v1",
-          "verifiedSource": "Расписание.pdf"
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 1,
+          "doubleOf": "verified-124-15-anat",
+          "provenance": "verified-double-overlay-v2",
+          "weekStart": "2026-12-07",
+          "date": "2026-12-07",
+          "durationMinutes": 95
         },
         {
           "weekday": 0,
@@ -29366,7 +29919,14 @@
           "location": "школа, ауд.4",
           "type": "practice",
           "parser": "verified-schedule-overlay-v1",
-          "verifiedSource": "Расписание.pdf"
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 2,
+          "doubleOf": "verified-124-15-anat",
+          "provenance": "verified-double-overlay-v2",
+          "weekStart": "2026-12-07",
+          "date": "2026-12-07",
+          "durationMinutes": 95
         },
         {
           "weekday": 1,
@@ -30482,7 +31042,13 @@
           "weekStart": "2026-12-14",
           "sourceUrl": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_ld_b-26-27-_removed.pdf",
           "parser": "pdfplumber-grid-v2",
-          "date": "2026-12-14"
+          "date": "2026-12-14",
+          "double": true,
+          "doubleIndex": 1,
+          "doubleOf": "verified-123-16-chem",
+          "provenance": "verified-double-overlay-v2",
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "durationMinutes": 95
         },
         {
           "group": "124",
@@ -30495,7 +31061,14 @@
           "location": "ЦДТИ, ауд.4.2.11",
           "type": "practice",
           "parser": "verified-schedule-overlay-v1",
-          "verifiedSource": "Расписание.pdf"
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 1,
+          "doubleOf": "verified-124-16-chem",
+          "provenance": "verified-double-overlay-v2",
+          "weekStart": "2026-12-14",
+          "date": "2026-12-14",
+          "durationMinutes": 95
         },
         {
           "weekday": 0,
@@ -30658,7 +31231,14 @@
           "location": "ЦДТИ, ауд.4.2.11",
           "type": "practice",
           "parser": "verified-schedule-overlay-v1",
-          "verifiedSource": "Расписание.pdf"
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 2,
+          "doubleOf": "verified-124-16-chem",
+          "provenance": "verified-double-overlay-v2",
+          "weekStart": "2026-12-14",
+          "date": "2026-12-14",
+          "durationMinutes": 90
         },
         {
           "weekday": 0,
@@ -30687,7 +31267,13 @@
           "weekStart": "2026-12-14",
           "sourceUrl": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_ld_b-26-27-_removed.pdf",
           "parser": "pdfplumber-grid-v2",
-          "date": "2026-12-14"
+          "date": "2026-12-14",
+          "double": true,
+          "doubleIndex": 1,
+          "doubleOf": "verified-123-16-anat",
+          "provenance": "verified-double-overlay-v2",
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "durationMinutes": 95
         },
         {
           "group": "124",
@@ -30700,7 +31286,14 @@
           "location": "школа, ауд.4",
           "type": "practice",
           "parser": "verified-schedule-overlay-v1",
-          "verifiedSource": "Расписание.pdf"
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 1,
+          "doubleOf": "verified-124-16-anat",
+          "provenance": "verified-double-overlay-v2",
+          "weekStart": "2026-12-14",
+          "date": "2026-12-14",
+          "durationMinutes": 95
         },
         {
           "weekday": 0,
@@ -30961,7 +31554,14 @@
           "location": "школа, ауд.4",
           "type": "practice",
           "parser": "verified-schedule-overlay-v1",
-          "verifiedSource": "Расписание.pdf"
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 2,
+          "doubleOf": "verified-124-16-anat",
+          "provenance": "verified-double-overlay-v2",
+          "weekStart": "2026-12-14",
+          "date": "2026-12-14",
+          "durationMinutes": 95
         },
         {
           "weekday": 1,
@@ -31962,6 +32562,636 @@
           "sourceUrl": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_ld_b-26-27-_removed.pdf",
           "parser": "pdfplumber-grid-v2",
           "date": "2026-12-19"
+        },
+        {
+          "date": "2026-09-07",
+          "end": "12:25",
+          "group": "123",
+          "location": "ЦДТИ, ауд. 4.2.10",
+          "sourceUrl": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_ld_b-26-27-_removed.pdf",
+          "start": "10:55",
+          "stream": "B",
+          "subject": "Химия",
+          "type": "practice",
+          "weekday": 0,
+          "weekNumber": 2,
+          "weekStart": "2026-09-07",
+          "parser": "verified-double-overlay-v2",
+          "provenance": "verified-double-overlay-v2",
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 2,
+          "doubleOf": "verified-123-2-chem",
+          "durationMinutes": 90
+        },
+        {
+          "date": "2026-09-07",
+          "end": "16:55",
+          "group": "123",
+          "location": "ШКОЛА, ауд. 4",
+          "sourceUrl": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_ld_b-26-27-_removed.pdf",
+          "start": "15:20",
+          "stream": "B",
+          "subject": "Анатомия человека",
+          "type": "practice",
+          "weekday": 0,
+          "weekNumber": 2,
+          "weekStart": "2026-09-07",
+          "parser": "verified-double-overlay-v2",
+          "provenance": "verified-double-overlay-v2",
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 2,
+          "doubleOf": "verified-123-2-anat",
+          "durationMinutes": 95
+        },
+        {
+          "date": "2026-09-14",
+          "end": "12:25",
+          "group": "123",
+          "location": "ЦДТИ, ауд. 4.2.10",
+          "sourceUrl": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_ld_b-26-27-_removed.pdf",
+          "start": "10:55",
+          "stream": "B",
+          "subject": "Химия",
+          "type": "practice",
+          "weekday": 0,
+          "weekNumber": 3,
+          "weekStart": "2026-09-14",
+          "parser": "verified-double-overlay-v2",
+          "provenance": "verified-double-overlay-v2",
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 2,
+          "doubleOf": "verified-123-3-chem",
+          "durationMinutes": 90
+        },
+        {
+          "date": "2026-09-14",
+          "end": "16:55",
+          "group": "123",
+          "location": "ШКОЛА, ауд. 4",
+          "sourceUrl": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_ld_b-26-27-_removed.pdf",
+          "start": "15:20",
+          "stream": "B",
+          "subject": "Анатомия человека",
+          "type": "practice",
+          "weekday": 0,
+          "weekNumber": 3,
+          "weekStart": "2026-09-14",
+          "parser": "verified-double-overlay-v2",
+          "provenance": "verified-double-overlay-v2",
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 2,
+          "doubleOf": "verified-123-3-anat",
+          "durationMinutes": 95
+        },
+        {
+          "date": "2026-09-21",
+          "end": "12:25",
+          "group": "123",
+          "location": "ЦДТИ, ауд. 4.2.10",
+          "sourceUrl": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_ld_b-26-27-_removed.pdf",
+          "start": "10:55",
+          "stream": "B",
+          "subject": "Химия",
+          "type": "practice",
+          "weekday": 0,
+          "weekNumber": 4,
+          "weekStart": "2026-09-21",
+          "parser": "verified-double-overlay-v2",
+          "provenance": "verified-double-overlay-v2",
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 2,
+          "doubleOf": "verified-123-4-chem",
+          "durationMinutes": 90
+        },
+        {
+          "date": "2026-09-21",
+          "end": "16:55",
+          "group": "123",
+          "location": "ШКОЛА, ауд. 4",
+          "sourceUrl": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_ld_b-26-27-_removed.pdf",
+          "start": "15:20",
+          "stream": "B",
+          "subject": "Анатомия человека",
+          "type": "practice",
+          "weekday": 0,
+          "weekNumber": 4,
+          "weekStart": "2026-09-21",
+          "parser": "verified-double-overlay-v2",
+          "provenance": "verified-double-overlay-v2",
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 2,
+          "doubleOf": "verified-123-4-anat",
+          "durationMinutes": 95
+        },
+        {
+          "date": "2026-09-28",
+          "end": "12:25",
+          "group": "123",
+          "location": "ЦДТИ, ауд. 4.2.10",
+          "sourceUrl": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_ld_b-26-27-_removed.pdf",
+          "start": "10:55",
+          "stream": "B",
+          "subject": "Химия",
+          "type": "practice",
+          "weekday": 0,
+          "weekNumber": 5,
+          "weekStart": "2026-09-28",
+          "parser": "verified-double-overlay-v2",
+          "provenance": "verified-double-overlay-v2",
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 2,
+          "doubleOf": "verified-123-5-chem",
+          "durationMinutes": 90
+        },
+        {
+          "date": "2026-09-28",
+          "end": "16:55",
+          "group": "123",
+          "location": "ШКОЛА, ауд. 4",
+          "sourceUrl": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_ld_b-26-27-_removed.pdf",
+          "start": "15:20",
+          "stream": "B",
+          "subject": "Анатомия человека",
+          "type": "practice",
+          "weekday": 0,
+          "weekNumber": 5,
+          "weekStart": "2026-09-28",
+          "parser": "verified-double-overlay-v2",
+          "provenance": "verified-double-overlay-v2",
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 2,
+          "doubleOf": "verified-123-5-anat",
+          "durationMinutes": 95
+        },
+        {
+          "date": "2026-10-05",
+          "end": "12:25",
+          "group": "123",
+          "location": "ЦДТИ, ауд. 4.2.10",
+          "sourceUrl": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_ld_b-26-27-_removed.pdf",
+          "start": "10:55",
+          "stream": "B",
+          "subject": "Химия",
+          "type": "practice",
+          "weekday": 0,
+          "weekNumber": 6,
+          "weekStart": "2026-10-05",
+          "parser": "verified-double-overlay-v2",
+          "provenance": "verified-double-overlay-v2",
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 2,
+          "doubleOf": "verified-123-6-chem",
+          "durationMinutes": 90
+        },
+        {
+          "date": "2026-10-05",
+          "end": "16:55",
+          "group": "123",
+          "location": "ШКОЛА, ауд. 4",
+          "sourceUrl": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_ld_b-26-27-_removed.pdf",
+          "start": "15:20",
+          "stream": "B",
+          "subject": "Анатомия человека",
+          "type": "practice",
+          "weekday": 0,
+          "weekNumber": 6,
+          "weekStart": "2026-10-05",
+          "parser": "verified-double-overlay-v2",
+          "provenance": "verified-double-overlay-v2",
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 2,
+          "doubleOf": "verified-123-6-anat",
+          "durationMinutes": 95
+        },
+        {
+          "date": "2026-10-12",
+          "end": "12:25",
+          "group": "123",
+          "location": "ЦДТИ, ауд. 4.2.10",
+          "sourceUrl": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_ld_b-26-27-_removed.pdf",
+          "start": "10:55",
+          "stream": "B",
+          "subject": "Химия",
+          "type": "practice",
+          "weekday": 0,
+          "weekNumber": 7,
+          "weekStart": "2026-10-12",
+          "parser": "verified-double-overlay-v2",
+          "provenance": "verified-double-overlay-v2",
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 2,
+          "doubleOf": "verified-123-7-chem",
+          "durationMinutes": 90
+        },
+        {
+          "date": "2026-10-12",
+          "end": "16:55",
+          "group": "123",
+          "location": "ШКОЛА, ауд. 4",
+          "sourceUrl": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_ld_b-26-27-_removed.pdf",
+          "start": "15:20",
+          "stream": "B",
+          "subject": "Анатомия человека",
+          "type": "practice",
+          "weekday": 0,
+          "weekNumber": 7,
+          "weekStart": "2026-10-12",
+          "parser": "verified-double-overlay-v2",
+          "provenance": "verified-double-overlay-v2",
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 2,
+          "doubleOf": "verified-123-7-anat",
+          "durationMinutes": 95
+        },
+        {
+          "date": "2026-10-19",
+          "end": "12:25",
+          "group": "123",
+          "location": "ЦДТИ, ауд. 4.2.10",
+          "sourceUrl": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_ld_b-26-27-_removed.pdf",
+          "start": "10:55",
+          "stream": "B",
+          "subject": "Химия",
+          "type": "practice",
+          "weekday": 0,
+          "weekNumber": 8,
+          "weekStart": "2026-10-19",
+          "parser": "verified-double-overlay-v2",
+          "provenance": "verified-double-overlay-v2",
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 2,
+          "doubleOf": "verified-123-8-chem",
+          "durationMinutes": 90
+        },
+        {
+          "date": "2026-10-19",
+          "end": "16:55",
+          "group": "123",
+          "location": "ШКОЛА, ауд. 4",
+          "sourceUrl": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_ld_b-26-27-_removed.pdf",
+          "start": "15:20",
+          "stream": "B",
+          "subject": "Анатомия человека",
+          "type": "practice",
+          "weekday": 0,
+          "weekNumber": 8,
+          "weekStart": "2026-10-19",
+          "parser": "verified-double-overlay-v2",
+          "provenance": "verified-double-overlay-v2",
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 2,
+          "doubleOf": "verified-123-8-anat",
+          "durationMinutes": 95
+        },
+        {
+          "date": "2026-10-26",
+          "end": "12:25",
+          "group": "123",
+          "location": "ЦДТИ, ауд. 4.2.10",
+          "sourceUrl": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_ld_b-26-27-_removed.pdf",
+          "start": "10:55",
+          "stream": "B",
+          "subject": "Химия",
+          "type": "practice",
+          "weekday": 0,
+          "weekNumber": 9,
+          "weekStart": "2026-10-26",
+          "parser": "verified-double-overlay-v2",
+          "provenance": "verified-double-overlay-v2",
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 2,
+          "doubleOf": "verified-123-9-chem",
+          "durationMinutes": 90
+        },
+        {
+          "date": "2026-10-26",
+          "end": "16:55",
+          "group": "123",
+          "location": "ШКОЛА, ауд. 4",
+          "sourceUrl": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_ld_b-26-27-_removed.pdf",
+          "start": "15:20",
+          "stream": "B",
+          "subject": "Анатомия человека",
+          "type": "practice",
+          "weekday": 0,
+          "weekNumber": 9,
+          "weekStart": "2026-10-26",
+          "parser": "verified-double-overlay-v2",
+          "provenance": "verified-double-overlay-v2",
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 2,
+          "doubleOf": "verified-123-9-anat",
+          "durationMinutes": 95
+        },
+        {
+          "date": "2026-11-02",
+          "end": "12:25",
+          "group": "123",
+          "location": "ЦДТИ, ауд. 4.2.10",
+          "sourceUrl": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_ld_b-26-27-_removed.pdf",
+          "start": "10:55",
+          "stream": "B",
+          "subject": "Химия",
+          "type": "practice",
+          "weekday": 0,
+          "weekNumber": 10,
+          "weekStart": "2026-11-02",
+          "parser": "verified-double-overlay-v2",
+          "provenance": "verified-double-overlay-v2",
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 2,
+          "doubleOf": "verified-123-10-chem",
+          "durationMinutes": 90
+        },
+        {
+          "date": "2026-11-02",
+          "end": "16:55",
+          "group": "123",
+          "location": "ШКОЛА, ауд. 4",
+          "sourceUrl": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_ld_b-26-27-_removed.pdf",
+          "start": "15:20",
+          "stream": "B",
+          "subject": "Анатомия человека",
+          "type": "practice",
+          "weekday": 0,
+          "weekNumber": 10,
+          "weekStart": "2026-11-02",
+          "parser": "verified-double-overlay-v2",
+          "provenance": "verified-double-overlay-v2",
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 2,
+          "doubleOf": "verified-123-10-anat",
+          "durationMinutes": 95
+        },
+        {
+          "date": "2026-11-09",
+          "end": "12:25",
+          "group": "123",
+          "location": "ЦДТИ, ауд. 4.2.10",
+          "sourceUrl": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_ld_b-26-27-_removed.pdf",
+          "start": "10:55",
+          "stream": "B",
+          "subject": "Химия",
+          "type": "practice",
+          "weekday": 0,
+          "weekNumber": 11,
+          "weekStart": "2026-11-09",
+          "parser": "verified-double-overlay-v2",
+          "provenance": "verified-double-overlay-v2",
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 2,
+          "doubleOf": "verified-123-11-chem",
+          "durationMinutes": 90
+        },
+        {
+          "date": "2026-11-09",
+          "end": "16:55",
+          "group": "123",
+          "location": "ШКОЛА, ауд. 4",
+          "sourceUrl": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_ld_b-26-27-_removed.pdf",
+          "start": "15:20",
+          "stream": "B",
+          "subject": "Анатомия человека",
+          "type": "practice",
+          "weekday": 0,
+          "weekNumber": 11,
+          "weekStart": "2026-11-09",
+          "parser": "verified-double-overlay-v2",
+          "provenance": "verified-double-overlay-v2",
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 2,
+          "doubleOf": "verified-123-11-anat",
+          "durationMinutes": 95
+        },
+        {
+          "date": "2026-11-16",
+          "end": "12:25",
+          "group": "123",
+          "location": "ЦДТИ, ауд. 4.2.10",
+          "sourceUrl": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_ld_b-26-27-_removed.pdf",
+          "start": "10:55",
+          "stream": "B",
+          "subject": "Химия",
+          "type": "practice",
+          "weekday": 0,
+          "weekNumber": 12,
+          "weekStart": "2026-11-16",
+          "parser": "verified-double-overlay-v2",
+          "provenance": "verified-double-overlay-v2",
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 2,
+          "doubleOf": "verified-123-12-chem",
+          "durationMinutes": 90
+        },
+        {
+          "date": "2026-11-16",
+          "end": "16:55",
+          "group": "123",
+          "location": "ШКОЛА, ауд. 4",
+          "sourceUrl": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_ld_b-26-27-_removed.pdf",
+          "start": "15:20",
+          "stream": "B",
+          "subject": "Анатомия человека",
+          "type": "practice",
+          "weekday": 0,
+          "weekNumber": 12,
+          "weekStart": "2026-11-16",
+          "parser": "verified-double-overlay-v2",
+          "provenance": "verified-double-overlay-v2",
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 2,
+          "doubleOf": "verified-123-12-anat",
+          "durationMinutes": 95
+        },
+        {
+          "date": "2026-11-23",
+          "end": "12:25",
+          "group": "123",
+          "location": "ЦДТИ, ауд. 4.2.10",
+          "sourceUrl": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_ld_b-26-27-_removed.pdf",
+          "start": "10:55",
+          "stream": "B",
+          "subject": "Химия",
+          "type": "practice",
+          "weekday": 0,
+          "weekNumber": 13,
+          "weekStart": "2026-11-23",
+          "parser": "verified-double-overlay-v2",
+          "provenance": "verified-double-overlay-v2",
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 2,
+          "doubleOf": "verified-123-13-chem",
+          "durationMinutes": 90
+        },
+        {
+          "date": "2026-11-23",
+          "end": "16:55",
+          "group": "123",
+          "location": "ШКОЛА, ауд. 4",
+          "sourceUrl": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_ld_b-26-27-_removed.pdf",
+          "start": "15:20",
+          "stream": "B",
+          "subject": "Анатомия человека",
+          "type": "practice",
+          "weekday": 0,
+          "weekNumber": 13,
+          "weekStart": "2026-11-23",
+          "parser": "verified-double-overlay-v2",
+          "provenance": "verified-double-overlay-v2",
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 2,
+          "doubleOf": "verified-123-13-anat",
+          "durationMinutes": 95
+        },
+        {
+          "date": "2026-11-30",
+          "end": "12:25",
+          "group": "123",
+          "location": "ЦДТИ, ауд. 4.2.10",
+          "sourceUrl": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_ld_b-26-27-_removed.pdf",
+          "start": "10:55",
+          "stream": "B",
+          "subject": "Химия",
+          "type": "practice",
+          "weekday": 0,
+          "weekNumber": 14,
+          "weekStart": "2026-11-30",
+          "parser": "verified-double-overlay-v2",
+          "provenance": "verified-double-overlay-v2",
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 2,
+          "doubleOf": "verified-123-14-chem",
+          "durationMinutes": 90
+        },
+        {
+          "date": "2026-11-30",
+          "end": "16:55",
+          "group": "123",
+          "location": "ШКОЛА, ауд. 4",
+          "sourceUrl": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_ld_b-26-27-_removed.pdf",
+          "start": "15:20",
+          "stream": "B",
+          "subject": "Анатомия человека",
+          "type": "practice",
+          "weekday": 0,
+          "weekNumber": 14,
+          "weekStart": "2026-11-30",
+          "parser": "verified-double-overlay-v2",
+          "provenance": "verified-double-overlay-v2",
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 2,
+          "doubleOf": "verified-123-14-anat",
+          "durationMinutes": 95
+        },
+        {
+          "date": "2026-12-07",
+          "end": "12:25",
+          "group": "123",
+          "location": "ЦДТИ, ауд. 4.2.10",
+          "sourceUrl": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_ld_b-26-27-_removed.pdf",
+          "start": "10:55",
+          "stream": "B",
+          "subject": "Химия",
+          "type": "practice",
+          "weekday": 0,
+          "weekNumber": 15,
+          "weekStart": "2026-12-07",
+          "parser": "verified-double-overlay-v2",
+          "provenance": "verified-double-overlay-v2",
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 2,
+          "doubleOf": "verified-123-15-chem",
+          "durationMinutes": 90
+        },
+        {
+          "date": "2026-12-07",
+          "end": "16:55",
+          "group": "123",
+          "location": "ШКОЛА, ауд. 4",
+          "sourceUrl": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_ld_b-26-27-_removed.pdf",
+          "start": "15:20",
+          "stream": "B",
+          "subject": "Анатомия человека",
+          "type": "practice",
+          "weekday": 0,
+          "weekNumber": 15,
+          "weekStart": "2026-12-07",
+          "parser": "verified-double-overlay-v2",
+          "provenance": "verified-double-overlay-v2",
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 2,
+          "doubleOf": "verified-123-15-anat",
+          "durationMinutes": 95
+        },
+        {
+          "date": "2026-12-14",
+          "end": "12:25",
+          "group": "123",
+          "location": "ЦДТИ, ауд. 4.2.10",
+          "sourceUrl": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_ld_b-26-27-_removed.pdf",
+          "start": "10:55",
+          "stream": "B",
+          "subject": "Химия",
+          "type": "practice",
+          "weekday": 0,
+          "weekNumber": 16,
+          "weekStart": "2026-12-14",
+          "parser": "verified-double-overlay-v2",
+          "provenance": "verified-double-overlay-v2",
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 2,
+          "doubleOf": "verified-123-16-chem",
+          "durationMinutes": 90
+        },
+        {
+          "date": "2026-12-14",
+          "end": "16:55",
+          "group": "123",
+          "location": "ШКОЛА, ауд. 4",
+          "sourceUrl": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_ld_b-26-27-_removed.pdf",
+          "start": "15:20",
+          "stream": "B",
+          "subject": "Анатомия человека",
+          "type": "practice",
+          "weekday": 0,
+          "weekNumber": 16,
+          "weekStart": "2026-12-14",
+          "parser": "verified-double-overlay-v2",
+          "provenance": "verified-double-overlay-v2",
+          "verifiedSource": "Пользовательская проверка Расписание.pdf",
+          "double": true,
+          "doubleIndex": 2,
+          "doubleOf": "verified-123-16-anat",
+          "durationMinutes": 95
         }
       ],
       "streamLabels": {
@@ -65279,5 +66509,5 @@
     }
   ],
   "dataState": "local-recovery-snapshot",
-  "recoveryNote": "Локальный резервный снимок. GitHub Actions заменяет его на свежие официальные данные только после полной валидации."
+  "recoveryNote": "Local recovery snapshot with verified Monday double-pair overlay for groups 123/124; corrupt 6th-course practice fixture is quarantined by the client and live CI replaces it from the official source."
 }

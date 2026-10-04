@@ -243,10 +243,24 @@ class UniversalScheduleParser:
             # source is 4B, 5A, 5B, a future course, etc. A partial result is
             # rejected so the next extractor gets a chance to recover it.
             try:
-                candidate=self.m.parse_week_matrix_coordinate(raw,course,url,stream)
-                if self._acceptable_practice_events(candidate,profile): events=candidate
+                merged=self.m.parse_week_matrix_pdfplumber_cells(raw,course,url,stream)
             except Exception:
-                events=[]
+                merged=[]
+            try:
+                coord=self.m.parse_week_matrix_coordinate(raw,course,url,stream)
+            except Exception:
+                coord=[]
+            def is_garbled(e):
+                text=str(e.get('subject',''))
+                return (not text) or '█' in text or '�' in text or bool(re.search(r'(^|\s)I{3,}(?=\s|$)',text))
+            if merged and coord:
+                key=lambda e:(str(e.get('group','')),int(e.get('weekNumber') or 0),str(e.get('subject','')),str(e.get('location','')),str(e.get('start','')),str(e.get('end','')))
+                seen={key(e) for e in merged}
+                candidate=merged+[e for e in coord if key(e) not in seen]
+            else:
+                candidate=merged or coord
+            if any(is_garbled(e) for e in candidate): candidate=[]
+            if self._acceptable_practice_events(candidate,profile): events=candidate
             if not events:
                 try:
                     candidate=self.m.parse_week_matrix_text_fallback(raw,course,url,stream)
@@ -284,6 +298,11 @@ class UniversalScheduleParser:
                             self.m._add_practice_events_from_words_fallback(events,page,course,url,stream)
                 except Exception:
                     events=[]
+
+        if profile.layout=='weekly-matrix':
+            bad_any=any((not str(e.get('subject','')).strip()) or '█' in str(e.get('subject','')) or '�' in str(e.get('subject','')) or bool(re.fullmatch(r'[I0-9, .-]+',str(e.get('subject','')).strip())) for e in events)
+            if bad_any:
+                events=[]
 
         # Attach a machine-readable provenance marker to every event. The UI can
         # ignore it; diagnostics and future parsers can use it.

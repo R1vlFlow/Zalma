@@ -1,6 +1,6 @@
 {
   "name": "almazov-student",
   "private": true,
-  "version": "4.6.2",
+  "version": "4.6.3",
   "description": "Almazov Student — schedule and student dashboard with official schedule synchronization"
 }

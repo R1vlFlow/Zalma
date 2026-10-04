@@ -1,4 +1,3 @@
-Schedule engine: 5.0-universal
-Data schema: 7
-Fallback: local recovery snapshot
-Live builder: scripts/build_official_schedule.py
+Almazov Student schedule engine: 4.6.3
+Universal matrix parser: v6
+Double-lessons: adjacent-time + explicit-verified overlays
