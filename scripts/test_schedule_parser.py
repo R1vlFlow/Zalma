@@ -6,7 +6,9 @@ no network access is required. The GitHub workflow runs them before publishing a
 new schedule index so obvious parser regressions stop the sync.
 """
 import re
-from build_official_schedule import parse_lecture, split_subjects, group_header, TIME_RE, split_matrix_cell, classify_pdf
+from build_official_schedule import (parse_lecture, split_subjects, split_practice_cell, group_header, TIME_RE, split_matrix_cell, classify_pdf,
+                                    normalize_clock, normalize_event_time, validate_course, event_sort_key,
+                                    expand_double_lesson_events, repair_pdf_subject)
 
 
 class Page:
@@ -50,6 +52,48 @@ def main():
     assert_eq([r[0] for r in records], ['Основы Российской государственности', 'Основы проектной деятельности'], 'multi-record subjects')
     assert_eq(records[0][2], 'Солнечное, лит. С, ауд. 3.20', 'first record location')
     assert_eq(records[1][2], 'Солнечное, лит. С, ауд. 3.53', 'second record location')
+
+    assert_eq(repair_pdf_subject('Безопасность жизнидеятельност и АСЦ'), 'Безопасность жизнедеятельности АСЦ', 'PDF wrapped subject alias repair')
+
+    # Full weekday names must map through the same canonical weekday contract as abbreviations.
+    lecture_doc=Doc(Page('''
+Понедельник
+01.09.2026
+09:00 – 10:35 Анатомия
+КПК, ауд. 4
+Вторник
+11:00 – 12:35 Биохимия (2-4) ЦДТИ, ауд. 7
+'''))
+    lecture_events=parse_lecture(lecture_doc, 1, 'fixture://lecture.pdf', 'A')
+    assert_eq(lecture_events[0]['weekday'], 0, 'full weekday names are accepted')
+    assert_eq(lecture_events[1]['weekday'], 1, 'next full weekday name is accepted')
+    assert_eq(lecture_events[1]['subject'], 'Биохимия', 'inline lecture subject is preserved')
+
+    malformed_location_prefix = split_practice_cell(
+        'ЛРК, ауд. 5.20 Общая хирургия (14) База практической подготовки'
+    )
+    assert_eq(malformed_location_prefix[0][0], 'Общая хирургия', 'leading room prefix must not become subject')
+    assert_eq(malformed_location_prefix[0][2], 'ЛРК, ауд. 5.20; База практической подготовки', 'leading room prefix must remain location metadata')
+
+    room_prefix = split_practice_cell('ауд. 3.11 Безопасность жизнедеятельности МЧС (9-11) Солнечное, лит. С, ауд. 3.1/3.2')
+    assert_eq(split_practice_cell('ул. Аккуратова, д. 2, лит. И, 2 эт., зал \"Павлов\" Физическая культура и спорт (9-11) ЦДТИ, ауд. 6.1.1')[0], ('Физическая культура и спорт',[9,10,11],'ул. Аккуратова, д. 2, лит. И, 2 эт., зал \"Павлов\"; ЦДТИ, ауд. 6.1.1'), 'location-with-period marker must be split')
+
+    assert_eq(room_prefix[0], ('Безопасность жизнедеятельности МЧС',[9,10,11],'ауд. 3.11; Солнечное, лит. С, ауд. 3.1/3.2'), 'bare room prefix must be moved to location')
+
+    address_prefix = parse_lecture(Doc(Page('''
+Пятница
+09:00 – 10:35 ул. Аккуратова, д. 2, лит. И, 2 эт., зал "Павлов" Физическая культура и спорт
+''')), 2, 'fixture://lecture.pdf', 'A')
+    assert_eq(address_prefix[0]['subject'], 'Физическая культура и спорт', 'address prefix must not become lecture subject')
+    assert_eq(address_prefix[0]['location'], 'ул. Аккуратова, д. 2, лит. И, 2 эт., зал "Павлов"', 'address prefix must remain lecture location')
+
+    quoted_room = split_practice_cell(
+        'Анатомия (2-4) КПК, «Коротков» Физиология (5-8) КПК, «Коротков»'
+    )
+    assert_eq(quoted_room, [
+        ('Анатомия',[2,3,4],'КПК, «Коротков»'),
+        ('Физиология',[5,6,7,8],'КПК, «Коротков»'),
+    ], 'quoted facility room must delimit compound records')
 
     first_week = Doc(Page('''
 СР
@@ -169,12 +213,21 @@ def main():
 
     # Canonical clock normalization fixes verified overlays such as `9:00` to
     # the same `09:00` representation produced by the PDF parser.
-    from build_official_schedule import normalize_clock, normalize_event_time, validate_course, event_sort_key
     assert_eq(normalize_clock('9:00'),'09:00','clock normalization')
     assert_eq(normalize_clock('09.20'),'09:20','dot clock normalization')
     ev={'start':'9:00','end':'10:35'}
     assert_eq(normalize_event_time(ev),True,'event clock normalization')
     assert_eq((ev['start'],ev['end']),('09:00','10:35'),'normalized event clocks')
+
+    assert_eq(len(expand_double_lesson_events([{'start':'09:00','end':'12:25','subject':'A'}])),2,'standard 205-minute double splits')
+    assert_eq(len(expand_double_lesson_events([{'start':'09:00','end':'12:26','subject':'A'}])),1,'non-standard 206-minute block is not split')
+
+    # Date hints in a first-week lecture PDF may be document-level headers.
+    # Event dates must remain consistent with weekStart + weekday instead of
+    # blindly copying one stale header date across every weekday.
+    date_doc=Doc(Page('''02.09.2026\nСР\n13:30 - 15:05\nАнатомия\nКПК, ауд. 1'''))
+    dated=parse_lecture(date_doc,2,'fixture://dated-lecture.pdf','A')
+    assert_eq(dated[0]['date'],'2026-09-02','lecture date normalized to weekStart + weekday')
 
     # Regression: weekly-block events use weekday=None. Sorting a mixed list
     # of daily and weekly-block events must never compare None with int.

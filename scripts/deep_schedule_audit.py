@@ -10,7 +10,22 @@ from pathlib import Path
 import json, re, datetime, sys
 
 ROOT=Path(__file__).resolve().parents[1]
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from schedule_validation_common import bootstrap_event_errors, calendar_consistency_errors, suspicious_location_tail_warnings
 DATA=json.loads((ROOT/"data/official-schedules.json").read_text(encoding="utf-8"))
+bootstrap_errors = bootstrap_event_errors(DATA) + calendar_consistency_errors(DATA)
+suspicious_warnings = suspicious_location_tail_warnings(DATA)
+if bootstrap_errors:
+    print('DEEP SCHEDULE AUDIT: FAILED — bootstrap/event invariants')
+    for x in bootstrap_errors[:100]: print(' -', x)
+    raise SystemExit(1)
+
+if suspicious_warnings:
+    print("DEEP SCHEDULE AUDIT SOURCE-LAYOUT WARNINGS:")
+    for w in suspicious_warnings[:50]: print(" -", w)
+    if len(suspicious_warnings) > 50: print(f" - ... and {len(suspicious_warnings)-50} more")
+
 if DATA.get("dataState") == "bootstrap-pending":
     print("DEEP SCHEDULE AUDIT: OK — bootstrap-pending; strict event audit is deferred to the first live GitHub synchronization.")
     raise SystemExit(0)

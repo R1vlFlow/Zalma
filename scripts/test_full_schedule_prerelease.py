@@ -41,7 +41,7 @@ check('app cache clear control','async function clearAppCache()' in HTML and 'ca
 check('profile data survives cache clear','localStorage.clear()' not in HTML)
 check('no pictographic emoji in UI','\ud83c' not in HTML and '📚' not in HTML and '💙' not in HTML and '🩺' not in HTML)
 check('portal above modal','z-index:2147483647!important' in HTML)
-check('touch native selection fallback',".as-select-native{position:static!important" in HTML and "appearance:auto!important" in HTML)
+check('touch premium selection', "trigger.addEventListener('pointerdown'" in HTML and ".as-select-native{position:absolute!important" in HTML and ".as-select-menu.as-select-portal.portal-open{display:block!important" in HTML)
 check('no direct schedule overwrite by incomplete index',"Текущее расписание сохранено" in HTML)
 check('schema 7 bootstrap',DATA.get('schemaVersion')==7 and set(DATA.get('courses',{}))==set('123456'))
 check('bootstrap locations contain no approval footer', all('Заведующий Отделом' not in str(e.get('location','')) and '_________________' not in str(e.get('location','')) for c in DATA.get('courses',{}).values() for e in c.get('events',[])))

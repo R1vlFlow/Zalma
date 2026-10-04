@@ -4,6 +4,9 @@ from pathlib import Path
 import json, sys, re
 
 ROOT=Path(__file__).resolve().parents[1]
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from schedule_validation_common import bootstrap_event_errors, calendar_consistency_errors
 DATA=json.loads((ROOT/'data/official-schedules.json').read_text(encoding='utf-8'))
 raw_schema=DATA.get('schemaVersion')
 try:
@@ -12,6 +15,12 @@ except (TypeError, ValueError):
     raise SystemExit(f'Invalid schemaVersion={raw_schema!r} (type={type(raw_schema).__name__}); expected 7')
 if schema != 7:
     raise SystemExit(f'Invalid schemaVersion={raw_schema!r} (type={type(raw_schema).__name__}); expected 7')
+# Bootstrap data may defer roster completeness, but its existing events must still
+# satisfy the same structural invariants as live-generated events.
+bootstrap_errors = bootstrap_event_errors(DATA) + calendar_consistency_errors(DATA)
+if bootstrap_errors:
+    raise SystemExit('SCHEDULE DATA VALIDATION FAILED — bootstrap/event invariants:\n' + '\n'.join(' - ' + x for x in bootstrap_errors[:100]))
+
 if DATA.get('dataState') == 'bootstrap-pending':
     print('SCHEDULE DATA VALIDATION: OK — bootstrap-pending; strict event validation is deferred to the first live GitHub synchronization.')
     raise SystemExit(0)

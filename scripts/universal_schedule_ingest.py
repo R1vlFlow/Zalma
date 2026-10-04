@@ -136,36 +136,128 @@ def _expand_merged_rows(rows, merges=None):
     return rows
 
 
+_LEADING_LOCATION_START_RE = re.compile(
+    r'^(?:ауд\.?\s+|каб\.?\s+|зал\s+|ул\.\s+|просп?\.?\s+'
+        r'|ЛРК\b|КПК\b|ЦДТИ\b|АСЦ\b|ШКОЛА\b|Солнечное\b|База\b|Пархоменко\b'
+        r'|ПЦ\b|МНТК\b|КВД\b|ИМО\b|ДЛРК\b|РНХИ\b|СПБ\b|НМИЦ\b|НИИ\b|ФГБНУ\b)',
+    re.I,
+)
+_LEADING_LOCATION_END_RE = re.compile(
+    r'(?:'
+    r'ауд\.?\s*[A-Za-zА-Яа-я0-9./№-]+'
+    r'|каб\.?\s*[A-Za-zА-Яа-я0-9./№-]+'
+    r'|зал\s+(?:[«"“][^»"”]+[»"”]|[А-Яа-яA-Za-z0-9._/-]+)'
+    r'|База\s+практической\s+подготовки\b'
+    r'|(?:ЦДТИ|АСЦ|ШКОЛА|Башня|КПК|Солнечное|Пархоменко|ПЦ|МНТК|КВД|ЛРК|ИМО|ДЛРК|РНХИ|СПБ|СПб|НМИЦ|НИИ|ФГБНУ)\s*,\s*'
+    r'(?:ауд\.?\s*[A-Za-zА-Яа-я0-9./№-]+|каб\.?\s*[A-Za-zА-Яа-я0-9./№-]+|[«"“][^»"”]+[»"”]|[А-Яа-яA-Za-z0-9._/-]+)'
+    r'|(?:ЦДТИ|АСЦ|ШКОЛА|Башня|КПК|Солнечное|Пархоменко|ПЦ|МНТК|КВД|ЛРК|ИМО|ДЛРК|РНХИ|СПБ|СПб|НМИЦ|НИИ|ФГБНУ)\b'
+    r')',
+    re.I,
+)
+
+def _split_leading_location(text):
+    text=_norm(text).strip(' ,/;')
+    if not text or not _LEADING_LOCATION_START_RE.match(text):
+        return text, ''
+    ends=list(_LEADING_LOCATION_END_RE.finditer(text))
+    if not ends:
+        return text, ''
+    cut=ends[-1].end()
+    suffix=text[cut:].strip(' ,/;')
+    if len(suffix)<2 or not re.match(r'[А-ЯЁA-Z]', suffix):
+        return text, ''
+    return suffix, text[:cut].strip(' ,/;')
+
 def _parse_cell_records(text):
-    """Parse `Subject (weeks) location` sequences without a subject catalogue."""
+    """Parse `Subject (weeks) location` records from one schedule cell.
+
+    A cell may contain several subjects, each with its own week spec and
+    location, or one subject repeated across several week ranges with changing
+    rooms. The splitter is structural and does not require a fixed catalogue.
+    """
     text=_norm(text)
-    if not text: return []
+    if not text:
+        return []
     matches=list(WEEK_SPEC_RE.finditer(text))
     if not matches:
         return [(text, [], "")]
-    records=[]
-    for i,m in enumerate(matches):
-        before=_norm(text[:m.start()])
-        # For later week specs, a subject appears only after a recognisable
-        # location marker. Otherwise it is another week range for the same
-        # subject.
-        subject=before
-        if i and not subject:
-            subject=records[-1][0]
-        elif i and records:
-            loc_markers=list(re.finditer(r"(?:ауд\.?|каб\.?|зал\b|ЦДТИ|АСЦ|ШКОЛА|Башня|Солнечное|Пархоменко)", before, re.I))
-            if loc_markers:
-                suffix=_norm(before[loc_markers[-1].end():])
-                if suffix: subject=suffix
-                else: subject=records[-1][0]
-            else:
-                subject=records[-1][0]
-        end=matches[i+1].start() if i+1<len(matches) else len(text)
-        tail=_norm(text[m.end():end])
-        location=tail
-        records.append((subject or "Занятие", _week_numbers(text[m.start():m.end()]), location))
-    return records
 
+    endpoint_re=re.compile(
+        r'(?:'
+        r'ауд\.?\s*[A-Za-zА-Яа-я0-9./№-]+'
+        r'|каб\.?\s*[A-Za-zА-Яа-я0-9./№-]+'
+        r'|зал\s+(?:[«"“][^»"”]+[»"”]|[А-Яа-яA-Za-z0-9._/-]+)'
+        r'|База\s+практической\s+подготовки\b'
+        r'|(?:ЦДТИ|АСЦ|ШКОЛА|Башня|КПК|Солнечное|Пархоменко|ПЦ|МНТК|КВД|ЛРК|ИМО|ДЛРК|РНХИ|СПБ|СПб|НМИЦ|НИИ|ФГБНУ|Родильный|Менделеевская|Ногина|Поленов|Вредена|Больница|Госпиталь|Город)\s*,\s*'
+        r'(?:ауд\.?\s*[A-Za-zА-Яа-я0-9./№-]+|каб\.?\s*[A-Za-zА-Яа-я0-9./№-]+|[«"“][^»"”]+[»"”]|[А-Яа-яA-Za-z0-9._/-]+)'
+        r'|(?:ЦДТИ|АСЦ|ШКОЛА|Башня|КПК|Солнечное|Пархоменко|ПЦ|МНТК|КВД|ЛРК|ИМО|ДЛРК|РНХИ|СПБ|СПб|НМИЦ|НИИ|ФГБНУ|База|Родильный|Менделеевская|Ногина|Поленов|Вредена|Больница|Госпиталь|Город)\b'
+        r')', re.I)
+    next_subject_re=re.compile(
+        r'\b(?!(?:Солнечное|ЦДТИ|ШКОЛА|АСЦ|КПК|Средняя|ул|ауд|каб)\b)'
+        r'[А-ЯЁA-Z][а-яёa-z]+(?:\s+[а-яёa-z0-9,./-]+){0,7}\s+\(',
+        re.I,
+    )
+
+    records=[]
+    last_subject=''
+    subject_cursor=0
+    for i,m in enumerate(matches):
+        raw_before=_norm(text[subject_cursor:m.start()]).strip(' ,/;')
+        subject=raw_before
+        if i and last_subject:
+            # A repeated week range normally follows the previous location. If
+            # the text since the cursor is only location material, retain the
+            # previous subject; otherwise use the suffix after the location
+            # endpoint as the next subject.
+            endpoints_before=list(endpoint_re.finditer(raw_before))
+            suffix=''
+            if endpoints_before:
+                suffix=raw_before[endpoints_before[-1].end():].strip(' /,;')
+            if not raw_before or (endpoints_before and not suffix):
+                subject=last_subject
+            elif endpoints_before and suffix:
+                subject=suffix
+        subject=subject.strip(' ,/;')
+        subject,leading_location=_split_leading_location(subject)
+
+        next_cursor=m.end()
+        location_tail=_norm(text[m.end():matches[i+1].start()] if i+1<len(matches) else text[m.end():])
+        location=location_tail
+
+        if i+1<len(matches):
+            endpoints=list(endpoint_re.finditer(location_tail))
+            split_at=None
+            if endpoints:
+                endpoint_end=endpoints[-1].end()
+                candidate=location_tail[endpoint_end:].strip(' /,;')
+                if candidate and re.search(r'[А-ЯЁA-Zа-яёa-z]',candidate):
+                    split_at=endpoint_end
+            if split_at is None:
+                nm=next_subject_re.search(location_tail)
+                if nm:
+                    split_at=nm.start()
+            if split_at is not None:
+                location=_norm(location_tail[:split_at]).strip(' ,/;')
+                # Skip separators after the location so the next subject does
+                # not inherit the final location digit/character.
+                while split_at<len(location_tail) and location_tail[split_at].isspace():
+                    split_at+=1
+                next_cursor=m.end()+split_at
+            else:
+                # No new subject was detected; the next week spec belongs to the
+                # same subject, so keep the cursor at the current week marker.
+                next_cursor=m.end()
+        else:
+            next_cursor=len(text)
+
+        if leading_location:
+            location=_norm('; '.join(x for x in (leading_location,location) if x)).strip(' ,/;')
+        if subject:
+            records.append((subject,weeks:=_week_numbers(m.group(0)),location))
+            last_subject=subject
+        subject_cursor=next_cursor
+
+    return records
 
 def parse_rows(rows, course, stream, kind, url, week_start_fn=None):
     """Parse arbitrary spreadsheet-like rows.

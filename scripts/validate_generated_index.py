@@ -9,6 +9,9 @@ from pathlib import Path
 import json, re, sys
 
 ROOT = Path(__file__).resolve().parents[1]
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from schedule_validation_common import bootstrap_event_errors, calendar_consistency_errors
 DATA_PATH = ROOT / 'data' / 'official-schedules.json'
 EXPECTED_SCHEMA = 7
 EXPECTED = {
@@ -43,6 +46,12 @@ if schema != EXPECTED_SCHEMA:
 if not data.get('generatedAt'):
     fail('generatedAt missing')
 
+
+# Bootstrap data may defer roster/event completeness, but every shipped event
+# must still satisfy the common structural/calendar invariants.
+bootstrap_errors = bootstrap_event_errors(data) + calendar_consistency_errors(data)
+if bootstrap_errors:
+    fail('bootstrap/event invariant errors:', *bootstrap_errors[:100])
 
 if data.get('dataState') == 'bootstrap-pending':
     print(f'GENERATED INDEX VALIDATION: OK — bootstrap-pending; strict event validation is deferred to the first live GitHub synchronization.')

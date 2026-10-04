@@ -11,7 +11,6 @@ from universal_schedule_ingest import sniff_format, decode_rows, parse_source_by
 PAGE='https://education.almazovcentre.ru/about_institute/programm/specialist_programme/student/'
 OUT=Path('data/official-schedules.json')
 SEMESTER_START=datetime.date(2026,8,31)
-DAYS={'пн':0,'вт':1,'ср':2,'чт':3,'пт':4,'сб':5,'вс':6}
 DAY_ALIASES={
     'пн':0,'понедельник':0,
     'вт':1,'вторник':1,
@@ -75,14 +74,13 @@ def expand_double_lesson_events(events):
             out.append(e); continue
         # Current Almazov exports use 09:00–12:25, 09:20–12:25 and
         # 13:30–16:55 as two equal slots with a 15-minute break.
-        if 180 <= duration <= 210 and (duration-15)%2==0:
+        if duration in {185,205}:
             slot=(duration-15)//2
-            if 75 <= slot <= 105:
-                first=dict(e); second=dict(e)
-                parent=f"{e.get('group','ALL')}|{e.get('weekNumber','')}|{e.get('weekday','')}|{e.get('subject','')}|{e.get('location','')}|{e.get('start')}|{e.get('end')}"
-                first.update({'end':_clock_from_minutes(a+slot),'double':True,'doubleIndex':1,'doubleOf':parent,'durationMinutes':slot})
-                second.update({'start':_clock_from_minutes(a+slot+15),'double':True,'doubleIndex':2,'doubleOf':parent,'durationMinutes':slot})
-                out.extend([first,second]); continue
+            first=dict(e); second=dict(e)
+            parent=f"{e.get('group','ALL')}|{e.get('weekNumber','')}|{e.get('weekday','')}|{e.get('subject','')}|{e.get('location','')}|{e.get('start')}|{e.get('end')}"
+            first.update({'end':_clock_from_minutes(a+slot),'double':True,'doubleIndex':1,'doubleOf':parent,'durationMinutes':slot})
+            second.update({'start':_clock_from_minutes(a+slot+15),'double':True,'doubleIndex':2,'doubleOf':parent,'durationMinutes':slot})
+            out.extend([first,second]); continue
         out.append(e)
     return out
 
@@ -141,63 +139,49 @@ def clean_subject(s):
     s=re.sub(r'^(?:День недели|Время|Дисциплина / Неделя|Место проведения)\s*','',s,flags=re.I)
     return s
 
-def split_subjects(text):
-    """Parse practice-table cells where each subject is followed by a week spec.
+LEADING_LOCATION_START_RE = re.compile(
+    r'^(?:ауд\.?\s+|каб\.?\s+|зал\s+|ул\.\s+|просп?\.?\s+'
+        r'|ЛРК\b|КПК\b|ЦДТИ\b|АСЦ\b|ШКОЛА\b|Солнечное\b|База\b|Пархоменко\b'
+        r'|ПЦ\b|МНТК\b|КВД\b|ИМО\b|ДЛРК\b|РНХИ\b|СПБ\b|НМИЦ\b|НИИ\b|ФГБНУ\b)',
+    re.I,
+)
+LEADING_LOCATION_END_RE = re.compile(
+    r'(?:'
+    r'ауд\.?\s*[A-Za-zА-Яа-я0-9./№-]+'
+    r'|каб\.?\s*[A-Za-zА-Яа-я0-9./№-]+'
+    r'|зал\s+(?:[«"“][^»"”]+[»"”]|[А-Яа-яA-Za-z0-9._/-]+)'
+    r'|База\s+практической\s+подготовки\b'
+    r'|(?:КПК|Башня|ШКОЛА|ЦДТИ|АСЦ|ПЦ|ЛРК|МНТК|КВД|ИМО|ДЛРК|РНХИ|НМИЦ|НИИ|ФГБНУ)\s*,\s*'
+    r'(?:ауд\.?\s*[A-Za-zА-Яа-я0-9./№-]+|каб\.?\s*[A-Za-zА-Яа-я0-9./№-]+|[«"“][^»"”]+[»"”]|[А-Яа-яA-Za-z0-9._/-]+)'
+    r'|(?:ЦДТИ|АСЦ|ШКОЛА|КПК|Башня|ПЦ|ЛРК|МНТК|КВД|ИМО|ДЛРК|РНХИ|НМИЦ|НИИ|ФГБНУ)\b'
+    r')', re.I
+)
+LOCATION_END_RE = LEADING_LOCATION_END_RE
 
-    A cell may contain several records, e.g.:
-      Иностранный язык (2-16) ... Латинский язык (2-16) ...
-    The old parser accidentally included the following subject in the previous
-    record's location. Here we explicitly detect the next subject before taking
-    the location tail.
-    """
-    text=norm(text)
-    matches=list(WEEK_RE.finditer(text))
-    if not matches:
-        return []
-    # Subject names in the official tables are followed immediately by a week
-    # specification. This intentionally looks for a capitalized first word and
-    # lowercase continuation, rather than trying to maintain a hard-coded
-    # subject catalogue.
-    next_subject_re=re.compile(r'\b(?!(?:Солнечное|ЦДТИ|ШКОЛА|АСЦ|КПК|Средняя|ул)\b)[А-ЯЁA-Z][а-яёa-z]+(?:\s+[а-яёa-z0-9,./-]+){0,7}\s+\(')
-    out=[]
-    subject_cursor=0
-    for i,m in enumerate(matches):
-        weeks=parse_weeks(m.group(1))
-        if not weeks:
-            continue
-        raw_subject=text[subject_cursor:m.start()]
-        subject=clean_subject(raw_subject)
-        subject=re.sub(r'^[/,;\s]+|[/,;\s]+$','',subject)
-        if i+1<len(matches):
-            tail=text[m.end():matches[i+1].start()]
-            # The next subject is the suffix after the last recognizable room
-            # marker in this tail. This handles additions such as
-            # 'С 11 недели - ауд. 3.1/3.2 Латинский язык'.
-            endpoint_re=re.compile(r'(?:ауд\.|зал\s+[«"“][^»"”]+[»"”]?|ЦДТИ|АСЦ)\s*[0-9A-Za-zА-Яа-я./-]+',re.I)
-            endpoints=list(endpoint_re.finditer(tail))
-            if endpoints:
-                split_at=endpoints[-1].end()
-                suffix=tail[split_at:].strip(' /,;')
-                if suffix and re.search(r'[А-ЯЁA-Zа-яёa-z]',suffix):
-                    location=clean_location(tail[:split_at])
-                    subject_cursor=m.end()+split_at
-                else:
-                    location=clean_location(tail)
-                    subject_cursor=m.end()
-            else:
-                nm=next_subject_re.search(tail)
-                if nm:
-                    location=clean_location(tail[:nm.start()])
-                    subject_cursor=m.end()+nm.start()
-                else:
-                    location=clean_location(tail)
-                    subject_cursor=m.end()
-        else:
-            location=clean_location(text[m.end():])
-            subject_cursor=len(text)
-        if subject and len(subject)>1:
-            out.append((subject,weeks,location))
-    return out
+NEXT_SUBJECT_RE = re.compile(
+    r'\b(?!(?:Солнечное|ЦДТИ|ШКОЛА|АСЦ|КПК|Средняя|ул|ауд|каб)\b)'
+    r'[А-ЯЁA-Z][а-яёa-z]+(?:\s+[а-яёa-z0-9,./-]+){0,7}\s+\(',
+    re.I,
+)
+
+def split_leading_location(text):
+    """Separate a location accidentally prepended to a subject name."""
+    text=norm(text).strip(' ,/;')
+    if not text or not LEADING_LOCATION_START_RE.match(text):
+        return text, ''
+    ends=list(LEADING_LOCATION_END_RE.finditer(text))
+    if not ends:
+        return text, ''
+    cut=ends[-1].end()
+    suffix=text[cut:].strip(' ,/;')
+    if len(suffix)<2 or not re.match(r'[А-ЯЁA-Z]', suffix):
+        return text, ''
+    prefix=clean_location(text[:cut])
+    if not prefix:
+        return text, ''
+    return clean_subject(suffix), prefix
+
+# The main split parser is defined alongside LOCATION_END_RE below, after the shared PDF helpers.
 
 def group_header(page_text):
     text=norm(page_text)
@@ -229,7 +213,7 @@ def parse_lecture(doc, course, url, stream):
             line=lines[i]
             dm=DAY_RE.match(line)
             if dm:
-                day=DAYS[dm.group(0).split()[0].lower().rstrip('.,:')]
+                day=DAY_ALIASES[dm.group(0).split()[0].lower().rstrip('.,:')]
                 i+=1
                 continue
             d=parse_date_hint(line)
@@ -272,17 +256,27 @@ def parse_lecture(doc, course, url, stream):
                     location=clean_location(' '.join(buf[1:]))
                 elif len(buf)==1:
                     inline_text=clean_subject(buf[0])
-                    # Some first-week rows put the room directly after the
-                    # subject on the same line, e.g. 'История России КПК, ...'.
-                    loc_marker=re.search(r'\b(?:КПК|АСЦ|ЦДТИ|ШКОЛА|Солнечное)\b|\bул\.',inline_text,re.I)
-                    if loc_marker:
-                        subject=clean_subject(inline_text[:loc_marker.start()])
-                        location=clean_location(inline_text[loc_marker.start():])
+                    # First try the canonical location-prefix splitter. This
+                    # covers rows where PDF extraction places the full address
+                    # before the subject (e.g. 'ул. Аккуратова ... зал "Павлов" Физическая культура...').
+                    split_subject, split_location = split_leading_location(inline_text)
+                    if split_location:
+                        subject=split_subject
+                        location=split_location
                     else:
-                        subject=inline_text
+                        # Some first-week rows put the room directly after the
+                        # subject on the same line, e.g. 'История России КПК, ...'.
+                        loc_marker=re.search(r'\b(?:КПК|АСЦ|ЦДТИ|ШКОЛА|Солнечное)\b|\bул\.',inline_text,re.I)
+                        if loc_marker:
+                            subject=clean_subject(inline_text[:loc_marker.start()])
+                            location=clean_location(inline_text[loc_marker.start():])
+                        else:
+                            subject=inline_text
                 if subject:
                     wk=week_number_for_date(date_hint) if date_hint else 1
-                    events.append({'weekday':day,'start':tm[0],'end':tm[1],'subject':subject,'location':location,'group':'ALL','stream':stream,'type':'lecture','weekNumber':wk,'weekStart':week_start(wk),'date':date_hint.isoformat() if date_hint else None,'sourceUrl':url})
+                    expected_date=(datetime.date.fromisoformat(week_start(wk))+datetime.timedelta(days=day)).isoformat()
+                    event_date=date_hint.isoformat() if date_hint and date_hint.isoformat()==expected_date else expected_date
+                    events.append({'weekday':day,'start':tm[0],'end':tm[1],'subject':subject,'location':location,'group':'ALL','stream':stream,'type':'lecture','weekNumber':wk,'weekStart':week_start(wk),'date':event_date,'sourceUrl':url})
             i=j
     return events
 
@@ -450,9 +444,13 @@ PRACTICE_TABLE_SETTINGS = {
 
 LOCATION_END_RE = re.compile(
     r'(?:'
-    r'ауд\.?\s*[A-Za-zА-Яа-я0-9./-]+'
+    r'ауд\.?\s*[A-Za-zА-Яа-я0-9./№-]+'
+    r'|каб\.?\s*[A-Za-zА-Яа-я0-9./№-]+'
     r'|зал\s+(?:[«"“][^»"”]+[»"”]|[А-Яа-яA-Za-z0-9._/-]+)'
-    r'|(?:КПК|Башня|ШКОЛА|ЦДТИ|АСЦ)\s*,?\s*(?:ауд\.?\s*)?[A-Za-zА-Яа-я0-9./-]+'
+    r'|База\s+практической\s+подготовки\b'
+    r'|(?:КПК|Башня|ШКОЛА|ЦДТИ|АСЦ|ПЦ|ЛРК|МНТК|КВД|ИМО|ДЛРК|РНХИ|НМИЦ|НИИ|ФГБНУ)\s*,\s*'
+    r'(?:ауд\.?\s*[A-Za-zА-Яа-я0-9./№-]+|каб\.?\s*[A-Za-zА-Яа-я0-9./№-]+|[«"“][^»"”]+[»"”]|[А-Яа-яA-Za-z0-9._/-]+)'
+    r'|(?:ЦДТИ|АСЦ|ШКОЛА|КПК|Башня|ПЦ|ЛРК|МНТК|КВД|ИМО|ДЛРК|РНХИ|НМИЦ|НИИ|ФГБНУ)\b'
     r')', re.I
 )
 
@@ -460,6 +458,7 @@ LOCATION_END_RE = re.compile(
 # Keep these corrections deliberately conservative: they repair observed
 # official subject names without trying to perform general spell correction.
 SUBJECT_PDF_ALIASES = {
+    'жизнидеятельност и': 'жизнедеятельности',
     'жизнедеятельност и': 'жизнедеятельности',
     'государственност и': 'государственности',
     'Эндокрино логия': 'Эндокринология',
@@ -477,61 +476,51 @@ def repair_pdf_subject(text):
 
 
 def split_practice_cell(text):
-    """Return (subject, weeks, location) records from one official grid cell.
+    """Return ``(subject, weeks, location)`` records from one practice cell.
 
-    Important special case:
-        Основы Российской государственности (2) КПК, ауд. 2172
-        (3-10) Башня, ауд. 20.19
-        Основы проектной деятельности (11-16) Башня, ауд. 20.19
-
-    The second ``(3-10)`` is not a new subject; it is a new week range for the
-    subject above with a changed room. The next ``(11-16)`` *does* introduce a
-    new subject. The parser therefore detects a new subject only when text
-    appears after the end of a recognisable location segment.
+    Handles compound cells with repeated week ranges and changed rooms, plus
+    PDF exports where a location prefix is accidentally prepended to a subject.
     """
-    text = norm(text)
-    matches = list(WEEK_RE.finditer(text))
-    if not matches:
-        return []
-
-    subjects = []
-    cursor = 0
-    current_subject = None
+    text=norm(text)
+    matches=list(WEEK_RE.finditer(text))
+    if not matches: return []
+    subjects=[]; leading_locations=[]; cursor=0; current_subject=None; current_leading_location=''
     for match in matches:
-        before = text[cursor:match.start()].strip(' /,;')
+        before=text[cursor:match.start()].strip(' /,;')
         if current_subject is None:
-            current_subject = repair_pdf_subject(before)
+            current_subject,current_leading_location=split_leading_location(before)
+            current_subject=repair_pdf_subject(current_subject)
         else:
-            location_ends = list(LOCATION_END_RE.finditer(before))
-            suffix = before[location_ends[-1].end():].strip(' /,;') if location_ends else ''
-            if suffix and re.search(r'[А-ЯЁA-Zа-яёa-z]{2,}', suffix):
-                current_subject = repair_pdf_subject(suffix)
-        subjects.append(current_subject)
-        cursor = match.end()
-
-    records = []
-    for i, match in enumerate(matches):
-        end = matches[i + 1].start() if i + 1 < len(matches) else len(text)
-        location = text[match.end():end].strip(' /,;')
-
-        # If the segment also contains the next subject, keep only the actual
-        # location before that subject. The next subject is identified by the
-        # same location-end rule used above.
-        if i + 1 < len(matches):
-            location_ends = list(LOCATION_END_RE.finditer(location))
-            if location_ends:
-                suffix = location[location_ends[-1].end():].strip(' /,;')
-                if suffix and re.search(r'[А-ЯЁA-Zа-яёa-z]{2,}', suffix):
-                    location = location[:location_ends[-1].end()]
-
-        location = clean_location(location)
-        location = re.sub(r'\s+([.,])', r'\1', location)
-        weeks = parse_weeks(match.group(1))
-        subject = repair_pdf_subject(subjects[i])
-        if subject and weeks:
-            records.append((subject, weeks, location))
+            ends=list(LOCATION_END_RE.finditer(before))
+            suffix=before[ends[-1].end():].strip(' /,;') if ends else ''
+            if not suffix:
+                nm=NEXT_SUBJECT_RE.search(before)
+                if nm: suffix=before[nm.start():].strip(' /,;')
+            if suffix and re.search(r'[А-ЯЁA-Zа-яёa-z]{2,}',suffix):
+                current_subject,current_leading_location=split_leading_location(suffix)
+                current_subject=repair_pdf_subject(current_subject)
+        subjects.append(current_subject); leading_locations.append(current_leading_location); cursor=match.end()
+    records=[]
+    for i,match in enumerate(matches):
+        end=matches[i+1].start() if i+1<len(matches) else len(text)
+        location=text[match.end():end].strip(' /,;')
+        if i+1<len(matches):
+            ends=list(LOCATION_END_RE.finditer(location))
+            if ends:
+                suffix=location[ends[-1].end():].strip(' /,;')
+                if suffix and re.search(r'[А-ЯЁA-Zа-яёa-z]{2,}',suffix):
+                    location=location[:ends[-1].end()]
+            else:
+                nm=NEXT_SUBJECT_RE.search(location)
+                if nm: location=location[:nm.start()]
+        location=clean_location(location)
+        if leading_locations[i]: location=clean_location('; '.join(x for x in (leading_locations[i],location) if x))
+        location=re.sub(r'\s+([.,])',r'\1',location)
+        weeks=parse_weeks(match.group(1)); subject=repair_pdf_subject(subjects[i])
+        if subject and weeks: records.append((subject,weeks,location))
     return records
 
+split_subjects=split_practice_cell
 
 def parse_dual_location_time(text, location):
     """Select the official clock for the location printed in a practice cell.
@@ -644,6 +633,9 @@ def split_matrix_cell(text):
     text = repair_pdf_subject(norm(text))
     if not text:
         return None, ''
+    leading_subject, leading_location = split_leading_location(text)
+    if leading_location:
+        return leading_subject, clean_location(leading_location)
     m = MATRIX_LOCATION_MARKERS.search(text)
     if m:
         subject = repair_pdf_subject(text[:m.start()]).strip(' ,.-')
@@ -1089,6 +1081,10 @@ def parse_practice(doc_bytes, course, url, stream):
     # may have seen the same merged cell.
     seen=set(); out=[]
     for e in events:
+        subject,leading_location=split_leading_location(e.get('subject',''))
+        if leading_location:
+            e['subject']=subject
+            e['location']=clean_location('; '.join(x for x in (leading_location,e.get('location','')) if x))
         k=(e.get('group'),e.get('weekNumber'),e.get('weekday'),e.get('start'),e.get('end'),e.get('subject'),e.get('location'))
         if k in seen: continue
         seen.add(k); out.append(e)
@@ -1549,6 +1545,11 @@ def main():
             seen.add(key); unique.append(e)
         c['events']=unique
         c['groups']=sorted({g for gs in c['streams'].values() for g in gs},key=int)
+        for e in c['events']:
+            subject,leading_location=split_leading_location(e.get('subject',''))
+            if leading_location:
+                e['subject']=subject
+                e['location']=clean_location('; '.join(x for x in (leading_location,e.get('location','')) if x))
         c['events'].sort(key=event_sort_key)
         for e in c['events']:
             if not normalize_event_time(e): raise RuntimeError(f'{cid}: invalid time {e.get("start")} - {e.get("end")}')
