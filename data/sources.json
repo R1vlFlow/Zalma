@@ -1,0 +1,401 @@
+{
+  "checkedAt": "2026-10-04",
+  "institution": "Институт медицинского образования НМИЦ им. В.А. Алмазова",
+  "sources": [
+    {
+      "title": "Кабинет студента",
+      "kind": "hub",
+      "url": "https://education.almazovcentre.ru/about_institute/programm/specialist_programme/student/"
+    },
+    {
+      "title": "Электронное расписание",
+      "kind": "live-ui",
+      "url": "https://education.almazovcentre.ru/elektronnoe-raspisanie/"
+    },
+    {
+      "title": "График учебных недель 2026/27",
+      "kind": "week-calendar",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/08/grafik-uchebnyh-nedel-2026-2027-uch.-god-1.pdf"
+    },
+    {
+      "title": "Образовательные программы",
+      "kind": "catalog",
+      "url": "https://education.almazovcentre.ru/sveden/education/eduop/"
+    },
+    {
+      "title": "Факультеты и кафедры",
+      "kind": "structure",
+      "url": "https://education.almazovcentre.ru/about_institute/kafedra/"
+    },
+    {
+      "title": "Портал",
+      "kind": "portal",
+      "url": "https://moodle-new.almazovcentre.ru/"
+    },
+    {
+      "title": "ЛД · официальный JSON",
+      "kind": "live-json",
+      "url": "https://raw.githubusercontent.com/R1vlFlow/Zalma/main/data/official-schedules.json",
+      "program": "31.05.01"
+    },
+    {
+      "title": "Педиатрия · КУГ 1 курс",
+      "kind": "kug",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/kug_pediatriya_1-kurs.pdf",
+      "program": "31.05.02",
+      "course": "1"
+    },
+    {
+      "title": "Педиатрия · Лекции 1 курс",
+      "kind": "lecture",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/raspisanielekczij_1k_pediatry-osen-2.pdf",
+      "program": "31.05.02",
+      "course": "1"
+    },
+    {
+      "title": "Педиатрия · ПЗ 1 курс",
+      "kind": "practice",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_pediatriya-26-27-na-sajt.pdf",
+      "program": "31.05.02",
+      "course": "1"
+    },
+    {
+      "title": "Педиатрия · КУГ 2 курс",
+      "kind": "kug",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/kug_pediatriya_2-kurs.pdf",
+      "program": "31.05.02",
+      "course": "2"
+    },
+    {
+      "title": "Педиатрия · Лекции 2 курс",
+      "kind": "lecture",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/raspisanielekczij_2k_pediatry-osen-1.pdf",
+      "program": "31.05.02",
+      "course": "2",
+      "warning": "Проверить заголовок PDF: на опубликованной версии указан Лечебный факультет / 31.05.01."
+    },
+    {
+      "title": "Педиатрия · ПЗ 2 курс",
+      "kind": "practice",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/2k_pediatriya-na-sajt.pdf",
+      "program": "31.05.02",
+      "course": "2"
+    },
+    {
+      "title": "КП · КУГ 1 курс",
+      "kind": "kug",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/kug_klinicheskaya-psihologiya_1-kurs.pdf",
+      "program": "37.05.01",
+      "course": "1"
+    },
+    {
+      "title": "КП · Лекции 1 курс",
+      "kind": "lecture",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/klinicheskaya-psihologiya_1-kurs_lekczii-1.pdf",
+      "program": "37.05.01",
+      "course": "1"
+    },
+    {
+      "title": "КП · Семинары 1 курс",
+      "kind": "practice",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/klinicheskaya-psihologiya_1-kurs_seminary-2.pdf",
+      "program": "37.05.01",
+      "course": "1"
+    },
+    {
+      "title": "КП · КУГ 2 курс",
+      "kind": "kug",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/kug_klinicheskaya-psihologiya_2-kurs.pdf",
+      "program": "37.05.01",
+      "course": "2"
+    },
+    {
+      "title": "КП · Лекции 2 курс",
+      "kind": "lecture",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/klinicheskaya-psihologiya_2-kurs_lekczii-2.pdf",
+      "program": "37.05.01",
+      "course": "2"
+    },
+    {
+      "title": "КП · Семинары 2 курс",
+      "kind": "practice",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/klinicheskaya-psihologiya_2-kurs_seminary-1.pdf",
+      "program": "37.05.01",
+      "course": "2"
+    },
+    {
+      "title": "ЛД · КУГ 1 курс",
+      "kind": "kug",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/kug_lechebnoe-delo_1-kurs.pdf",
+      "program": "31.05.01",
+      "course": "1"
+    },
+    {
+      "title": "ЛД · КУГ 2 курс",
+      "kind": "kug",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/kug_lechebnoe-delo_2-kurs.pdf",
+      "program": "31.05.01",
+      "course": "2"
+    },
+    {
+      "title": "ЛД · КУГ 3 курс",
+      "kind": "kug",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/kug_lechebnoe-delo_3-kurs.pdf",
+      "program": "31.05.01",
+      "course": "3"
+    },
+    {
+      "title": "ЛД · КУГ 4 курс",
+      "kind": "kug",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/kug_lechebnoe-delo_4-kurs.pdf",
+      "program": "31.05.01",
+      "course": "4"
+    },
+    {
+      "title": "ЛД · КУГ 5 курс",
+      "kind": "kug",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/kug_lechebnoe-delo_5-kurs.pdf",
+      "program": "31.05.01",
+      "course": "5"
+    },
+    {
+      "title": "ЛД · КУГ 6 курс",
+      "kind": "kug",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/kug_lechebnoe-delo_6-kurs.pdf",
+      "program": "31.05.01",
+      "course": "6"
+    },
+    {
+      "title": "ЛД · lecture A · 1 неделя · 1 курс",
+      "kind": "lecture",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/raspisanielekczij_1k_a_osen_1-nedelya.pdf",
+      "program": "31.05.01",
+      "course": "1"
+    },
+    {
+      "title": "ЛД · lecture B · 1 неделя · 1 курс",
+      "kind": "lecture",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/raspisanielekczij_1k_b_osen_1-nedelya.pdf",
+      "program": "31.05.01",
+      "course": "1"
+    },
+    {
+      "title": "ЛД · lecture A · осень · 1 курс",
+      "kind": "lecture",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/raspisanielekczij_1k_a_osen-2.pdf",
+      "program": "31.05.01",
+      "course": "1"
+    },
+    {
+      "title": "ЛД · lecture B · осень · 1 курс",
+      "kind": "lecture",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/raspisanielekczij_1k_b_osen-2.pdf",
+      "program": "31.05.01",
+      "course": "1"
+    },
+    {
+      "title": "ЛД · ПЗ A · 1 курс",
+      "kind": "practice",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_ld_a-26-27-na-sajt.pdf",
+      "program": "31.05.01",
+      "course": "1"
+    },
+    {
+      "title": "ЛД · ПЗ B · 1 курс",
+      "kind": "practice",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_ld_b-26-27-na-sajt.pdf",
+      "program": "31.05.01",
+      "course": "1"
+    },
+    {
+      "title": "ЛД · lecture A · 1 неделя · 2 курс",
+      "kind": "lecture",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/raspisanielekczij_2k_a_osen_1-nedelya.pdf",
+      "program": "31.05.01",
+      "course": "2"
+    },
+    {
+      "title": "ЛД · lecture B · 1 неделя · 2 курс",
+      "kind": "lecture",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/raspisanielekczij_2k_b_osen_1-nedelya.pdf",
+      "program": "31.05.01",
+      "course": "2"
+    },
+    {
+      "title": "ЛД · lecture A · осень · 2 курс",
+      "kind": "lecture",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/raspisanielekczij_2k_a_osen-3.pdf",
+      "program": "31.05.01",
+      "course": "2"
+    },
+    {
+      "title": "ЛД · lecture B · осень · 2 курс",
+      "kind": "lecture",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/raspisanielekczij_2k_b_osen-2.pdf",
+      "program": "31.05.01",
+      "course": "2"
+    },
+    {
+      "title": "ЛД · ПЗ A · 2 курс",
+      "kind": "practice",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/2k_ld_a-26-27-na-sajt.pdf",
+      "program": "31.05.01",
+      "course": "2"
+    },
+    {
+      "title": "ЛД · ПЗ B · 2 курс",
+      "kind": "practice",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/2k_ld_b-26-27-na-sajt.pdf",
+      "program": "31.05.01",
+      "course": "2"
+    },
+    {
+      "title": "ЛД · lecture A · 1 неделя · 3 курс",
+      "kind": "lecture",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/08/raspisanielekczij_3k_a_osen_1-nedelya-1.pdf",
+      "program": "31.05.01",
+      "course": "3"
+    },
+    {
+      "title": "ЛД · lecture B · 1 неделя · 3 курс",
+      "kind": "lecture",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/08/raspisanielekczij_3k_b_osen_1-nedelya-1.pdf",
+      "program": "31.05.01",
+      "course": "3"
+    },
+    {
+      "title": "ЛД · lecture A · осень · 3 курс",
+      "kind": "lecture",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/raspisanielekczij_3k_a_osen-1.pdf",
+      "program": "31.05.01",
+      "course": "3"
+    },
+    {
+      "title": "ЛД · lecture B · осень · 3 курс",
+      "kind": "lecture",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/raspisanielekczij_3k_b_osen-1.pdf",
+      "program": "31.05.01",
+      "course": "3"
+    },
+    {
+      "title": "ЛД · ПЗ A · 3 курс",
+      "kind": "practice",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/3k_ld_a-26-27-na-sajt.pdf",
+      "program": "31.05.01",
+      "course": "3"
+    },
+    {
+      "title": "ЛД · ПЗ B · 3 курс",
+      "kind": "practice",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/3k_ld_b-26-27-na-sajt.pdf",
+      "program": "31.05.01",
+      "course": "3"
+    },
+    {
+      "title": "ЛД · lecture A · 1 неделя · 4 курс",
+      "kind": "lecture",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/08/raspisanielekczij_4k_a_osen_1-nedelya.pdf",
+      "program": "31.05.01",
+      "course": "4"
+    },
+    {
+      "title": "ЛД · lecture B · 1 неделя · 4 курс",
+      "kind": "lecture",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/08/raspisanielekczij_4k_b_osen_1-nedelya.pdf",
+      "program": "31.05.01",
+      "course": "4"
+    },
+    {
+      "title": "ЛД · lecture A · осень · 4 курс",
+      "kind": "lecture",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/raspisanielekczij_4k_a_osen-1.pdf",
+      "program": "31.05.01",
+      "course": "4"
+    },
+    {
+      "title": "ЛД · lecture B · осень · 4 курс",
+      "kind": "lecture",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/raspisanielekczij_4k_b_osen-1.pdf",
+      "program": "31.05.01",
+      "course": "4"
+    },
+    {
+      "title": "ЛД · ПЗ A · 4 курс",
+      "kind": "practice",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/10/4k_ld_a-26-27-na-sajt.pdf",
+      "program": "31.05.01",
+      "course": "4"
+    },
+    {
+      "title": "ЛД · ПЗ B · 4 курс",
+      "kind": "practice",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/4k_ld_b-26-27-na-sajt.pdf",
+      "program": "31.05.01",
+      "course": "4"
+    },
+    {
+      "title": "ЛД · lecture A · 1 неделя · 5 курс",
+      "kind": "lecture",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/08/raspisanielekczij_5k_a_osen_1-nedelya.pdf",
+      "program": "31.05.01",
+      "course": "5"
+    },
+    {
+      "title": "ЛД · lecture B · 1 неделя · 5 курс",
+      "kind": "lecture",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/08/raspisanielekczij_5k_b_osen_1-nedelya.pdf",
+      "program": "31.05.01",
+      "course": "5"
+    },
+    {
+      "title": "ЛД · lecture A · осень · 5 курс",
+      "kind": "lecture",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/raspisanielekczij_5k_a_osen-1-1.pdf",
+      "program": "31.05.01",
+      "course": "5"
+    },
+    {
+      "title": "ЛД · lecture B · осень · 5 курс",
+      "kind": "lecture",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/raspisanielekczij_5k_b_osen-1.pdf",
+      "program": "31.05.01",
+      "course": "5"
+    },
+    {
+      "title": "ЛД · ПЗ A · 5 курс",
+      "kind": "practice",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/5k_ld_a-26-27-na-sajt.pdf",
+      "program": "31.05.01",
+      "course": "5"
+    },
+    {
+      "title": "ЛД · ПЗ B · 5 курс",
+      "kind": "practice",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/5k_ld_b-26-27-na-sajt.pdf",
+      "program": "31.05.01",
+      "course": "5"
+    },
+    {
+      "title": "ЛД · lecture · 1 неделя · 6 курс",
+      "kind": "lecture",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/raspisanielekczij_6k_osen_1-nedelya.pdf",
+      "program": "31.05.01",
+      "course": "6"
+    },
+    {
+      "title": "ЛД · lecture · осень · 6 курс",
+      "kind": "lecture",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/raspisanielekczij_6k_osen.pdf",
+      "program": "31.05.01",
+      "course": "6"
+    },
+    {
+      "title": "ЛД · ПЗ · 6 курс",
+      "kind": "practice",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/6k_ld-26-27-na-sajt-1.pdf",
+      "program": "31.05.01",
+      "course": "6"
+    }
+  ],
+  "note": "The student cabinet currently publishes schedule links for LD courses 1-6, Pediatrics courses 1-2, and Clinical Psychology courses 1-2. Unpublished course layers are intentionally not fabricated."
+}

@@ -1,0 +1,1470 @@
+{
+  "schemaVersion": 1,
+  "academicYear": "2026/2027",
+  "sourcePage": "https://education.almazovcentre.ru/about_institute/programm/specialist_programme/student/",
+  "programs": {
+    "31.05.02": {
+      "name": "Педиатрия",
+      "faculty": "Педиатрический факультет",
+      "courses": {
+        "1": {
+          "groups": [
+            "101П",
+            "102П",
+            "103П",
+            "104П",
+            "105П",
+            "106П",
+            "107П"
+          ],
+          "weeks": {
+            "start": 2,
+            "end": 16
+          },
+          "sources": {
+            "kug": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/kug_pediatriya_1-kurs.pdf",
+            "lecture": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/raspisanielekczij_1k_pediatry-osen-2.pdf",
+            "practice": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_pediatriya-26-27-na-sajt.pdf"
+          },
+          "lectureRules": [
+            {
+              "weekday": 2,
+              "start": "13:30",
+              "end": "14:55",
+              "subject": "История России",
+              "weeks": "2-16",
+              "lessonType": "lecture",
+              "audience": "ALL",
+              "location": "Солнечное, Средняя ул., д. 6, лит. П/С, ауд. 1.1"
+            },
+            {
+              "weekday": 2,
+              "start": "15:10",
+              "end": "16:35",
+              "subject": "Безопасность жизнедеятельности АСЦ",
+              "weeks": "2-4",
+              "lessonType": "lecture",
+              "audience": "ALL",
+              "location": "Солнечное, Средняя ул., д. 6, лит. П/С, ауд. 1.1"
+            },
+            {
+              "weekday": 2,
+              "start": "15:10",
+              "end": "16:35",
+              "subject": "Биология",
+              "weeks": "5,7,9,11-14",
+              "lessonType": "lecture",
+              "audience": "ALL",
+              "location": "Солнечное, Средняя ул., д. 6, лит. П/С, ауд. 1.1"
+            },
+            {
+              "weekday": 2,
+              "start": "15:10",
+              "end": "16:35",
+              "subject": "Сестринское дело",
+              "weeks": "6,8,10",
+              "lessonType": "lecture",
+              "audience": "ALL",
+              "location": "Солнечное, Средняя ул., д. 6, лит. П/С, ауд. 1.1"
+            },
+            {
+              "weekday": 4,
+              "start": "13:30",
+              "end": "14:55",
+              "subject": "Основы Российской государственности",
+              "weeks": "2,4,6,8,10,12,14-15",
+              "lessonType": "lecture",
+              "audience": "ALL",
+              "location": "Солнечное, Средняя ул., д. 6, лит. П/С, ауд. 1.1"
+            },
+            {
+              "weekday": 4,
+              "start": "13:30",
+              "end": "14:55",
+              "subject": "Основы проектной деятельности",
+              "weeks": "3,5,7,9,11,13",
+              "lessonType": "lecture",
+              "audience": "ALL",
+              "location": "Солнечное, Средняя ул., д. 6, лит. П/С, ауд. 1.1"
+            },
+            {
+              "weekday": 4,
+              "start": "15:10",
+              "end": "16:35",
+              "subject": "Философия",
+              "weeks": "2,4,6,8,9",
+              "lessonType": "lecture",
+              "audience": "ALL",
+              "location": "Солнечное, Средняя ул., д. 6, лит. П/С, ауд. 1.1"
+            },
+            {
+              "weekday": 4,
+              "start": "15:10",
+              "end": "16:35",
+              "subject": "Биофизика, математика",
+              "weeks": "3,5,7,10-15",
+              "lessonType": "lecture",
+              "audience": "ALL",
+              "location": "Солнечное, Средняя ул., д. 6, лит. П/С, ауд. 1.1"
+            },
+            {
+              "weekday": 6,
+              "start": "09:00",
+              "end": "10:35",
+              "subject": "Химия",
+              "weeks": "2-6",
+              "lessonType": "lecture",
+              "audience": "ALL",
+              "location": "ул. Аккуратова, д. 2, лит. И, 2 эт., зал \"Павлов\""
+            },
+            {
+              "weekday": 6,
+              "start": "09:00",
+              "end": "10:35",
+              "subject": "Безопасность жизнедеятельности МЧС",
+              "weeks": "7",
+              "lessonType": "lecture",
+              "audience": "ALL",
+              "location": "ул. Аккуратова, д. 2, лит. И, 2 эт., зал \"Павлов\""
+            },
+            {
+              "weekday": 6,
+              "start": "10:50",
+              "end": "12:25",
+              "subject": "Анатомия человека",
+              "weeks": "2-6",
+              "lessonType": "lecture",
+              "audience": "ALL",
+              "location": "ул. Аккуратова, д. 2, лит. И, 2 эт., зал \"Павлов\""
+            },
+            {
+              "weekday": 6,
+              "start": "10:50",
+              "end": "12:25",
+              "subject": "Химия",
+              "weeks": "7-15",
+              "lessonType": "lecture",
+              "audience": "ALL",
+              "location": "ул. Аккуратова, д. 2, лит. И, 2 эт., зал \"Павлов\""
+            }
+          ],
+          "practiceRules": [
+            {
+              "weekday": 1,
+              "start": "09:20",
+              "end": "10:45",
+              "subject": "Философия",
+              "weeks": "2-5",
+              "groups": [
+                "101П"
+              ],
+              "lessonType": "practice",
+              "location": "Солнечное, лит. С, ауд. 3.17/18"
+            },
+            {
+              "weekday": 1,
+              "start": "09:20",
+              "end": "10:45",
+              "subject": "Биофизика, математика",
+              "weeks": "2-4",
+              "groups": [
+                "102П",
+                "103П"
+              ],
+              "lessonType": "practice",
+              "location": "Солнечное, лит. С, ауд. 3.11 / 3.43"
+            },
+            {
+              "weekday": 1,
+              "start": "09:20",
+              "end": "10:45",
+              "subject": "Биология",
+              "weeks": "2-10",
+              "groups": [
+                "104П",
+                "105П"
+              ],
+              "lessonType": "practice",
+              "location": "Солнечное, лит. С, ауд. 3.32 / 3.43"
+            },
+            {
+              "weekday": 1,
+              "start": "09:20",
+              "end": "10:45",
+              "subject": "Безопасность жизнедеятельности АСЦ",
+              "weeks": "14-16",
+              "groups": [
+                "106П",
+                "107П"
+              ],
+              "lessonType": "practice",
+              "location": "Солнечное, лит. С, ауд. 3.24"
+            },
+            {
+              "weekday": 1,
+              "start": "13:30",
+              "end": "14:55",
+              "subject": "Сестринское дело",
+              "weeks": "2-3",
+              "groups": [
+                "101П"
+              ],
+              "lessonType": "practice",
+              "location": "Солнечное, лит. С, ауд. 3.23"
+            },
+            {
+              "weekday": 1,
+              "start": "13:30",
+              "end": "14:55",
+              "subject": "Иностранный язык",
+              "weeks": "2-16",
+              "groups": [
+                "102П",
+                "104П"
+              ],
+              "lessonType": "practice",
+              "location": "Солнечное, лит. С, ауд. 3.5 / 3.20"
+            },
+            {
+              "weekday": 1,
+              "start": "13:30",
+              "end": "14:55",
+              "subject": "Латинский язык",
+              "weeks": "2-16",
+              "groups": [
+                "103П",
+                "105П"
+              ],
+              "lessonType": "practice",
+              "location": "Солнечное, лит. С, ауд. 3.17/18 / 3.21"
+            },
+            {
+              "weekday": 1,
+              "start": "13:30",
+              "end": "14:55",
+              "subject": "Основы проектной деятельности",
+              "weeks": "2-7",
+              "groups": [
+                "106П",
+                "107П"
+              ],
+              "lessonType": "practice",
+              "location": "Солнечное, лит. С, ауд. 3.54/55"
+            },
+            {
+              "weekday": 1,
+              "start": "13:30",
+              "end": "14:55",
+              "subject": "Основы Российской государственности",
+              "weeks": "8-16",
+              "groups": [
+                "106П",
+                "107П"
+              ],
+              "lessonType": "practice",
+              "location": "Солнечное, лит. С, ауд. 3.6"
+            },
+            {
+              "weekday": 1,
+              "start": "15:10",
+              "end": "16:35",
+              "subject": "Сестринское дело",
+              "weeks": "2-3",
+              "groups": [
+                "101П"
+              ],
+              "lessonType": "practice",
+              "location": "Солнечное, лит. С, ауд. 3.23"
+            },
+            {
+              "weekday": 1,
+              "start": "15:10",
+              "end": "16:35",
+              "subject": "Латинский язык",
+              "weeks": "2-16",
+              "groups": [
+                "102П",
+                "105П"
+              ],
+              "lessonType": "practice",
+              "location": "Солнечное, лит. С, ауд. 3.5 / 3.20"
+            },
+            {
+              "weekday": 1,
+              "start": "15:10",
+              "end": "16:35",
+              "subject": "Иностранный язык",
+              "weeks": "2-16",
+              "groups": [
+                "103П",
+                "104П"
+              ],
+              "lessonType": "practice",
+              "location": "Солнечное, лит. С, ауд. 3.20 / 3.21"
+            },
+            {
+              "weekday": 2,
+              "start": "09:20",
+              "end": "10:45",
+              "subject": "Безопасность жизнедеятельности АСЦ",
+              "weeks": "2-6",
+              "groups": [
+                "101П"
+              ],
+              "lessonType": "practice",
+              "location": "Солнечное, лит. С, ауд. 3.24"
+            },
+            {
+              "weekday": 2,
+              "start": "09:20",
+              "end": "10:45",
+              "subject": "Безопасность жизнедеятельности АСЦ",
+              "weeks": "7-11",
+              "groups": [
+                "102П",
+                "103П"
+              ],
+              "lessonType": "practice",
+              "location": "Солнечное, лит. С, ауд. 3.24"
+            },
+            {
+              "weekday": 2,
+              "start": "09:20",
+              "end": "10:45",
+              "subject": "Безопасность жизнедеятельности АСЦ",
+              "weeks": "12-16",
+              "groups": [
+                "104П",
+                "105П"
+              ],
+              "lessonType": "practice",
+              "location": "Солнечное, лит. С, ауд. 3.24"
+            },
+            {
+              "weekday": 2,
+              "start": "09:20",
+              "end": "10:45",
+              "subject": "Сестринское дело",
+              "weeks": "2-3",
+              "groups": [
+                "106П",
+                "107П"
+              ],
+              "lessonType": "practice",
+              "location": "Солнечное, лит. С, ауд. 3.22 / 3.23"
+            },
+            {
+              "weekday": 3,
+              "start": "09:20",
+              "end": "10:45",
+              "subject": "Основы Российской государственности",
+              "weeks": "2-10",
+              "groups": [
+                "101П"
+              ],
+              "lessonType": "practice",
+              "location": "Солнечное, лит. С, ауд. 3.16"
+            },
+            {
+              "weekday": 3,
+              "start": "09:20",
+              "end": "10:45",
+              "subject": "Основы проектной деятельности",
+              "weeks": "11-16",
+              "groups": [
+                "101П"
+              ],
+              "lessonType": "practice",
+              "location": "Солнечное, лит. С, ауд. 3.56"
+            },
+            {
+              "weekday": 4,
+              "start": "09:20",
+              "end": "10:45",
+              "subject": "Биология",
+              "weeks": "2-10",
+              "groups": [
+                "101П",
+                "102П",
+                "103П"
+              ],
+              "lessonType": "practice",
+              "location": "Солнечное, лит. С, ауд. 3.32 / 3.43"
+            },
+            {
+              "weekday": 4,
+              "start": "09:20",
+              "end": "10:45",
+              "subject": "Химия",
+              "weeks": "2-16",
+              "groups": [
+                "101П",
+                "102П",
+                "103П",
+                "104П",
+                "105П"
+              ],
+              "lessonType": "practice",
+              "location": "ЦДТИ, ауд. 4.2.11 / 5.1.3 / 5.2.4 / 3.3.25 / 4.1.13"
+            },
+            {
+              "weekday": 4,
+              "start": "13:30",
+              "end": "14:55",
+              "subject": "Анатомия человека",
+              "weeks": "2-16",
+              "groups": [
+                "101П",
+                "102П",
+                "103П",
+                "104П",
+                "105П",
+                "106П",
+                "107П"
+              ],
+              "lessonType": "practice",
+              "location": "Школа, аудитории 10 / 6 / 6.1 / 4 / 8"
+            },
+            {
+              "weekday": 5,
+              "start": "13:30",
+              "end": "14:55",
+              "subject": "Основы Российской государственности",
+              "weeks": "2-3,10",
+              "groups": [
+                "102П",
+                "103П"
+              ],
+              "lessonType": "practice",
+              "location": "КПК, ауд. 2171 / ЦДТИ, ауд. 4.1.14"
+            },
+            {
+              "weekday": 5,
+              "start": "15:10",
+              "end": "16:35",
+              "subject": "Основы проектной деятельности",
+              "weeks": "11-16",
+              "groups": [
+                "102П",
+                "103П"
+              ],
+              "lessonType": "practice",
+              "location": "ЦДТИ, ауд. 4.1.14"
+            }
+          ],
+          "status": "published",
+          "lectureStatus": "published"
+        },
+        "2": {
+          "groups": [
+            "201П",
+            "202П",
+            "203П"
+          ],
+          "weeks": {
+            "start": 2,
+            "end": 17
+          },
+          "sources": {
+            "kug": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/kug_pediatriya_2-kurs.pdf",
+            "lecture": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/raspisanielekczij_2k_pediatry-osen-1.pdf",
+            "practice": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/2k_pediatriya-na-sajt.pdf"
+          },
+          "practiceRules": [
+            {
+              "weekday": 1,
+              "start": "13:30",
+              "end": "14:55",
+              "subject": "Микробиология",
+              "weeks": "2-16",
+              "groups": [
+                "201П"
+              ],
+              "lessonType": "practice",
+              "location": "ЦДТИ, ауд. 3.1.9"
+            },
+            {
+              "weekday": 1,
+              "start": "13:30",
+              "end": "14:55",
+              "subject": "Сестринское дело",
+              "weeks": "4-9",
+              "groups": [
+                "202П",
+                "203П"
+              ],
+              "lessonType": "practice",
+              "location": "Солнечное, ауд. 3.23"
+            },
+            {
+              "weekday": 2,
+              "start": "13:30",
+              "end": "14:55",
+              "subject": "Физическая культура и спорт",
+              "weeks": "2-13",
+              "groups": [
+                "201П"
+              ],
+              "lessonType": "practice",
+              "location": "Солнечное, ауд. 26"
+            },
+            {
+              "weekday": 2,
+              "start": "13:30",
+              "end": "14:55",
+              "subject": "Биохимия",
+              "weeks": "2-10,12,14,16",
+              "groups": [
+                "202П"
+              ],
+              "lessonType": "practice",
+              "location": "ЦДТИ, ауд. 3.3.25"
+            },
+            {
+              "weekday": 2,
+              "start": "13:30",
+              "end": "14:55",
+              "subject": "Химия",
+              "weeks": "2-10,12,14,16",
+              "groups": [
+                "203П"
+              ],
+              "lessonType": "practice",
+              "location": "ЦДТИ, ауд. 3.1.9"
+            },
+            {
+              "weekday": 3,
+              "start": "13:30",
+              "end": "14:55",
+              "subject": "Биохимия",
+              "weeks": "2-10,11,12,14,16",
+              "groups": [
+                "201П"
+              ],
+              "lessonType": "practice",
+              "location": "ЦДТИ, ауд. 4.1.13"
+            },
+            {
+              "weekday": 3,
+              "start": "13:30",
+              "end": "14:55",
+              "subject": "Микробиология",
+              "weeks": "2-9,11-17",
+              "groups": [
+                "202П"
+              ],
+              "lessonType": "practice",
+              "location": "ЦДТИ, ауд. 3.1.1"
+            },
+            {
+              "weekday": 3,
+              "start": "13:30",
+              "end": "14:55",
+              "subject": "Микробиология",
+              "weeks": "2-9,11-17",
+              "groups": [
+                "203П"
+              ],
+              "lessonType": "practice",
+              "location": "ЦДТИ, ауд. 3.1.9"
+            },
+            {
+              "weekday": 4,
+              "start": "09:20",
+              "end": "10:45",
+              "subject": "Сестринское дело",
+              "weeks": "7-12",
+              "groups": [
+                "201П"
+              ],
+              "lessonType": "practice",
+              "location": "Солнечное, ауд. 3.23"
+            },
+            {
+              "weekday": 4,
+              "start": "09:20",
+              "end": "10:45",
+              "subject": "ОСК",
+              "weeks": "2-7",
+              "groups": [
+                "202П",
+                "203П"
+              ],
+              "lessonType": "practice",
+              "location": "Солнечное, ауд. 3.10 / 1.9А"
+            },
+            {
+              "weekday": 4,
+              "start": "13:30",
+              "end": "15:05",
+              "subject": "ОСК",
+              "weeks": "2-7",
+              "groups": [
+                "201П"
+              ],
+              "lessonType": "practice",
+              "location": "Солнечное, ауд. 3.24"
+            },
+            {
+              "weekday": 4,
+              "start": "13:30",
+              "end": "15:05",
+              "subject": "Физическая культура и спорт",
+              "weeks": "2-13",
+              "groups": [
+                "202П",
+                "203П"
+              ],
+              "lessonType": "practice",
+              "location": "Солнечное, ауд. 25"
+            },
+            {
+              "weekday": 4,
+              "start": "09:20",
+              "end": "10:45",
+              "subject": "Гигиена и экология",
+              "weeks": "9-16",
+              "groups": [
+                "202П",
+                "203П"
+              ],
+              "lessonType": "practice",
+              "location": "Солнечное, ауд. 3.17/18"
+            },
+            {
+              "weekday": 5,
+              "start": "09:20",
+              "end": "10:45",
+              "subject": "Гистология, цитология, эмбриология",
+              "weeks": "2-9",
+              "groups": [
+                "201П"
+              ],
+              "lessonType": "practice",
+              "location": "Солнечное, ауд. 3.31"
+            },
+            {
+              "weekday": 5,
+              "start": "09:20",
+              "end": "10:45",
+              "subject": "Гистология, цитология, эмбриология",
+              "weeks": "2-9",
+              "groups": [
+                "202П",
+                "203П"
+              ],
+              "lessonType": "practice",
+              "location": "Солнечное, ауд. 3.34"
+            },
+            {
+              "weekday": 5,
+              "start": "11:00",
+              "end": "12:25",
+              "subject": "Психология",
+              "weeks": "10-15",
+              "groups": [
+                "201П"
+              ],
+              "lessonType": "practice",
+              "location": "Солнечное, ауд. 1.2"
+            },
+            {
+              "weekday": 5,
+              "start": "11:00",
+              "end": "12:25",
+              "subject": "Психология",
+              "weeks": "10,11-15",
+              "groups": [
+                "202П",
+                "203П"
+              ],
+              "lessonType": "practice",
+              "location": "Солнечное, ауд. 1.3 / 1.1"
+            },
+            {
+              "weekday": 5,
+              "start": "13:30",
+              "end": "14:55",
+              "subject": "Нормальная физиология",
+              "weeks": "2-16",
+              "groups": [
+                "201П"
+              ],
+              "lessonType": "practice",
+              "location": "Солнечное, ауд. 3.53"
+            },
+            {
+              "weekday": 5,
+              "start": "13:30",
+              "end": "14:55",
+              "subject": "Нормальная физиология",
+              "weeks": "2-16",
+              "groups": [
+                "202П",
+                "203П"
+              ],
+              "lessonType": "practice",
+              "location": "Солнечное, ауд. 3.56"
+            },
+            {
+              "weekday": 6,
+              "start": "13:30",
+              "end": "14:55",
+              "subject": "Анатомия человека",
+              "weeks": "7-16",
+              "groups": [
+                "201П",
+                "202П",
+                "203П"
+              ],
+              "lessonType": "practice",
+              "location": "Школа, ауд. 8 / 4"
+            },
+            {
+              "weekday": 6,
+              "start": "15:10",
+              "end": "16:35",
+              "subject": "Анатомия человека",
+              "weeks": "2-16",
+              "groups": [
+                "201П",
+                "202П",
+                "203П"
+              ],
+              "lessonType": "practice",
+              "location": "Школа, ауд. 8 / 4"
+            },
+            {
+              "weekday": 6,
+              "start": "16:50",
+              "end": "18:15",
+              "subject": "Анатомия человека",
+              "weeks": "2-6",
+              "groups": [
+                "201П",
+                "202П",
+                "203П"
+              ],
+              "lessonType": "practice",
+              "location": "Школа, ауд. 8 / 4"
+            }
+          ],
+          "sourceWarnings": [
+            "Официальная страница кабинета ссылается на PDF «Педиатрия Лекции», но сам PDF озаглавлен как 31.05.01 Лечебное дело, поток A, группы 201П–203П. Эти лекции исключены из показа до появления подтверждённого источника Педиатрии."
+          ],
+          "unverifiedLectureRules": [
+            {
+              "weekday": 1,
+              "start": "13:30",
+              "end": "14:55",
+              "subject": "Гистология, цитология, эмбриология",
+              "weeks": "2,3,5,7,9,11,13",
+              "lessonType": "lecture",
+              "audience": "ALL",
+              "location": "Солнечное, Средняя ул., д. 6, лит. П/С, ауд. 1.1"
+            },
+            {
+              "weekday": 1,
+              "start": "13:30",
+              "end": "14:55",
+              "subject": "Гигиена и экология",
+              "weeks": "4,6,8,10,12,14-15,16",
+              "lessonType": "lecture",
+              "audience": "ALL",
+              "location": "Солнечное, Средняя ул., д. 6, лит. П/С, ауд. 1.1"
+            },
+            {
+              "weekday": 1,
+              "start": "15:10",
+              "end": "16:35",
+              "subject": "Сестринское дело",
+              "weeks": "2",
+              "lessonType": "lecture",
+              "audience": "ALL",
+              "location": "Солнечное, Средняя ул., д. 6, лит. П/С, ауд. 1.1"
+            },
+            {
+              "weekday": 1,
+              "start": "15:10",
+              "end": "16:35",
+              "subject": "Нормальная физиология",
+              "weeks": "3-15",
+              "lessonType": "lecture",
+              "audience": "ALL",
+              "location": "Солнечное, Средняя ул., д. 6, лит. П/С, ауд. 1.1"
+            },
+            {
+              "weekday": 3,
+              "start": "13:30",
+              "end": "15:05",
+              "subject": "Биохимия",
+              "weeks": "2-9,11-16",
+              "lessonType": "lecture",
+              "audience": "ALL",
+              "location": "ЦДТИ, ауд. 6.1.1"
+            },
+            {
+              "weekday": 3,
+              "start": "15:20",
+              "end": "16:55",
+              "subject": "Микробиология",
+              "weeks": "2-9,11-16",
+              "lessonType": "lecture",
+              "audience": "ALL",
+              "location": "ЦДТИ, ауд. 6.1.1"
+            },
+            {
+              "weekday": 6,
+              "start": "13:30",
+              "end": "15:05",
+              "subject": "Анатомия человека",
+              "weeks": "2-6",
+              "lessonType": "lecture",
+              "audience": "ALL",
+              "location": "ул. Аккуратова, д. 2, лит. И, 2 эт., зал \"Павлов\""
+            },
+            {
+              "weekday": 6,
+              "start": "13:30",
+              "end": "15:05",
+              "subject": "Физическая культура и спорт",
+              "weeks": "7-12",
+              "lessonType": "lecture",
+              "audience": "ALL",
+              "location": "ЦДТИ, ауд. 6.1.1"
+            },
+            {
+              "weekday": 6,
+              "start": "13:30",
+              "end": "15:05",
+              "subject": "Микробиология",
+              "weeks": "13",
+              "lessonType": "lecture",
+              "audience": "ALL",
+              "location": "ЦДТИ, ауд. 6.1.1"
+            },
+            {
+              "weekday": 6,
+              "start": "15:20",
+              "end": "16:55",
+              "subject": "Психология",
+              "weeks": "2-6",
+              "lessonType": "lecture",
+              "audience": "ALL",
+              "location": "КПК, \"Коротков\""
+            }
+          ],
+          "lectureStatus": "source_mismatch",
+          "status": "published_practice_only"
+        }
+      }
+    },
+    "37.05.01": {
+      "name": "Клиническая психология",
+      "faculty": "Факультет психологии",
+      "courses": {
+        "1": {
+          "groups": [
+            "101КП",
+            "102КП"
+          ],
+          "weeks": {
+            "start": 1,
+            "end": 18
+          },
+          "sources": {
+            "kug": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/kug_klinicheskaya-psihologiya_1-kurs.pdf",
+            "lecture": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/klinicheskaya-psihologiya_1-kurs_lekczii-1.pdf",
+            "practice": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/klinicheskaya-psihologiya_1-kurs_seminary-2.pdf"
+          },
+          "lectureRules": [
+            {
+              "weekday": 2,
+              "start": "13:30",
+              "end": "14:55",
+              "subject": "История России",
+              "weeks": "2-16",
+              "lessonType": "lecture",
+              "audience": "ALL",
+              "location": "п. Солнечное, ул. Средняя, д. 6, ауд. 1.1"
+            },
+            {
+              "weekday": 2,
+              "start": "15:10",
+              "end": "16:35",
+              "subject": "Безопасность жизнедеятельности",
+              "weeks": "2-4",
+              "lessonType": "lecture",
+              "audience": "ALL",
+              "location": "п. Солнечное, ул. Средняя, д. 6, ауд. 1.1"
+            },
+            {
+              "weekday": 4,
+              "start": "13:30",
+              "end": "14:55",
+              "subject": "Основы Российской государственности",
+              "weeks": "2,4,6,8,10,12,14-15",
+              "lessonType": "lecture",
+              "audience": "ALL",
+              "location": "п. Солнечное, ул. Средняя, д. 6, ауд. 1.1"
+            },
+            {
+              "weekday": 4,
+              "start": "13:30",
+              "end": "14:55",
+              "subject": "Русский язык и культура речи",
+              "weeks": "3,5,7,9",
+              "lessonType": "lecture",
+              "audience": "ALL",
+              "location": "п. Солнечное, ул. Средняя, д. 6, лит. П, ауд. 3.20"
+            },
+            {
+              "weekday": 4,
+              "start": "15:10",
+              "end": "16:35",
+              "subject": "Философия",
+              "weeks": "2,4,6,8,9",
+              "lessonType": "lecture",
+              "audience": "ALL",
+              "location": "п. Солнечное, ул. Средняя, д. 6, ауд. 1.1"
+            },
+            {
+              "weekday": 4,
+              "start": "15:10",
+              "end": "16:35",
+              "subject": "Русский язык и культура речи",
+              "weeks": "12",
+              "lessonType": "lecture",
+              "audience": "ALL",
+              "location": "п. Солнечное, ул. Средняя, д. 6, ауд. 1.3"
+            },
+            {
+              "weekday": 5,
+              "start": "13:30",
+              "end": "15:05",
+              "subject": "Психология безопасности",
+              "weeks": "2,3,4,5,6,7,8,9",
+              "lessonType": "lecture",
+              "audience": "ALL",
+              "location": "ул. Аккуратова, д. 2, лит. А, КПК, ауд. 2154"
+            },
+            {
+              "weekday": 5,
+              "start": "13:30",
+              "end": "15:05",
+              "subject": "Введение в профессию «Клинический психолог»",
+              "weeks": "3,5,7,8,9,10,11,12,13",
+              "lessonType": "lecture",
+              "audience": "ALL",
+              "location": "ЦДТИ, ауд. 4.1.13"
+            },
+            {
+              "weekday": 5,
+              "start": "15:20",
+              "end": "16:55",
+              "subject": "Анатомия центральной нервной системы",
+              "weeks": "2-9",
+              "lessonType": "lecture",
+              "audience": "ALL",
+              "location": "ул. Аккуратова, д. 2, лит. А, КПК, ауд. 2154"
+            },
+            {
+              "weekday": 6,
+              "start": "09:00",
+              "end": "10:35",
+              "subject": "Безопасность жизнедеятельности",
+              "weeks": "7",
+              "lessonType": "lecture",
+              "audience": "ALL",
+              "location": "ул. Аккуратова, д. 2, лит. И, ЛЗ «Павлов»"
+            },
+            {
+              "weekday": 6,
+              "start": "10:50",
+              "end": "12:25",
+              "subject": "Общая психология",
+              "weeks": "2-15",
+              "lessonType": "lecture",
+              "audience": "ALL",
+              "location": "Коломяжский пр., д. 21, этаж 3, ауд. 3.2"
+            }
+          ],
+          "practiceRules": [
+            {
+              "weekday": 1,
+              "start": "09:20",
+              "end": "10:45",
+              "subject": "Иностранный язык",
+              "weeks": "2-17",
+              "groups": [
+                "101КП"
+              ],
+              "lessonType": "practice",
+              "location": "Солнечное, лит. П, ауд. 3.20"
+            },
+            {
+              "weekday": 1,
+              "start": "09:20",
+              "end": "10:45",
+              "subject": "Латинский язык",
+              "weeks": "2-17",
+              "groups": [
+                "102КП"
+              ],
+              "lessonType": "practice",
+              "location": "Солнечное, лит. П, ауд. 3.21"
+            },
+            {
+              "weekday": 1,
+              "start": "11:00",
+              "end": "12:25",
+              "subject": "Латинский язык",
+              "weeks": "2-17",
+              "groups": [
+                "101КП"
+              ],
+              "lessonType": "practice",
+              "location": "Солнечное, лит. П, ауд. 3.20"
+            },
+            {
+              "weekday": 1,
+              "start": "11:00",
+              "end": "12:25",
+              "subject": "Иностранный язык",
+              "weeks": "2-17",
+              "groups": [
+                "102КП"
+              ],
+              "lessonType": "practice",
+              "location": "Солнечное, лит. П, ауд. 3.21"
+            },
+            {
+              "weekday": 1,
+              "start": "13:30",
+              "end": "14:55",
+              "subject": "Безопасность жизнедеятельности МЧС",
+              "weeks": "3-5",
+              "groups": [
+                "101КП",
+                "102КП"
+              ],
+              "lessonType": "practice",
+              "location": "Солнечное, лит. П, ауд. 1.3 / 3.6"
+            },
+            {
+              "weekday": 1,
+              "start": "15:10",
+              "end": "16:35",
+              "subject": "Основы Российской государственности",
+              "weeks": "11-18",
+              "groups": [
+                "101КП",
+                "102КП"
+              ],
+              "lessonType": "practice",
+              "location": "Солнечное, лит. П, ауд. 3.54/55"
+            },
+            {
+              "weekday": 2,
+              "start": "09:20",
+              "end": "10:45",
+              "subject": "Русский язык и культура речи",
+              "weeks": "2-7",
+              "groups": [
+                "101КП",
+                "102КП"
+              ],
+              "lessonType": "practice",
+              "location": "Солнечное, лит. П, ауд. 3.21"
+            },
+            {
+              "weekday": 2,
+              "start": "11:00",
+              "end": "12:25",
+              "subject": "Введение в профессию «Клинический психолог»",
+              "weeks": "8-13",
+              "groups": [
+                "101КП",
+                "102КП"
+              ],
+              "lessonType": "practice",
+              "location": "Солнечное, лит. П, ауд. 3.53"
+            },
+            {
+              "weekday": 2,
+              "start": "11:00",
+              "end": "12:25",
+              "subject": "Философия",
+              "weeks": "14-17",
+              "groups": [
+                "101КП",
+                "102КП"
+              ],
+              "lessonType": "practice",
+              "location": "Солнечное, лит. С, ауд. 3.21"
+            },
+            {
+              "weekday": 3,
+              "start": "13:30",
+              "end": "15:05",
+              "subject": "Физическая культура и спорт",
+              "weeks": "1",
+              "groups": [
+                "101КП",
+                "102КП"
+              ],
+              "lessonType": "practice",
+              "location": "Солнечное, лит. С, ауд. 24"
+            },
+            {
+              "weekday": 3,
+              "start": "17:10",
+              "end": "18:45",
+              "subject": "Анатомия центральной нервной системы",
+              "weeks": "2-9,11-17",
+              "groups": [
+                "101КП",
+                "102КП"
+              ],
+              "lessonType": "practice",
+              "location": "ул. Аккуратова, д. 11, ауд. 4 / 8"
+            },
+            {
+              "weekday": 4,
+              "start": "09:20",
+              "end": "10:45",
+              "subject": "Психология безопасности",
+              "weeks": "2-3,5,6-7",
+              "groups": [
+                "101КП",
+                "102КП"
+              ],
+              "lessonType": "practice",
+              "location": "Солнечное, лит. П, ауд. 1.3"
+            },
+            {
+              "weekday": 4,
+              "start": "11:00",
+              "end": "12:25",
+              "subject": "Общая психология",
+              "weeks": "6-7,11",
+              "groups": [
+                "101КП",
+                "102КП"
+              ],
+              "lessonType": "practice",
+              "location": "Солнечное, лит. П, ауд. 1.3"
+            },
+            {
+              "weekday": 4,
+              "start": "13:30",
+              "end": "14:55",
+              "subject": "Безопасность жизнедеятельности АСЦ",
+              "weeks": "9-10",
+              "groups": [
+                "101КП",
+                "102КП"
+              ],
+              "lessonType": "practice",
+              "location": "Солнечное, лит. П, ауд. 1.9А"
+            },
+            {
+              "weekday": 5,
+              "start": "09:00",
+              "end": "10:35",
+              "subject": "Тренинг коммуникативной компетентности",
+              "weeks": "2-10",
+              "groups": [
+                "101КП",
+                "102КП"
+              ],
+              "lessonType": "practice",
+              "location": "ЦДТИ, ауд. 3.1.9"
+            },
+            {
+              "weekday": 6,
+              "start": "13:30",
+              "end": "15:05",
+              "subject": "Общая психология",
+              "weeks": "2-17",
+              "groups": [
+                "101КП",
+                "102КП"
+              ],
+              "lessonType": "practice",
+              "location": "Коломяжский пр., д. 21, этаж 3, ауд. 3.2"
+            }
+          ],
+          "status": "published",
+          "lectureStatus": "published"
+        },
+        "2": {
+          "groups": [
+            "201КП",
+            "202КП"
+          ],
+          "weeks": {
+            "start": 1,
+            "end": 16
+          },
+          "sources": {
+            "kug": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/kug_klinicheskaya-psihologiya_2-kurs.pdf",
+            "lecture": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/klinicheskaya-psihologiya_2-kurs_lekczii-2.pdf",
+            "practice": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/klinicheskaya-psihologiya_2-kurs_seminary-1.pdf"
+          },
+          "lectureRules": [
+            {
+              "weekday": 1,
+              "start": "09:20",
+              "end": "10:45",
+              "subject": "Эволюционная и сравнительная психология",
+              "weeks": "2-4,6-8",
+              "lessonType": "lecture",
+              "audience": "ALL",
+              "location": "Солнечное, лит. С, ауд. 1.3"
+            },
+            {
+              "weekday": 1,
+              "start": "09:20",
+              "end": "10:45",
+              "subject": "IT-технологии, биостатистика",
+              "weeks": "5,9-16",
+              "lessonType": "lecture",
+              "audience": "ALL",
+              "location": "Солнечное, лит. С, ауд. 3.57"
+            },
+            {
+              "weekday": 1,
+              "start": "11:00",
+              "end": "12:25",
+              "subject": "Общепсихологический практикум",
+              "weeks": "2,4,6,8,10,12",
+              "lessonType": "lecture",
+              "audience": "ALL",
+              "location": "Солнечное, лит. С, ауд. 1.3 / 3.57"
+            },
+            {
+              "weekday": 1,
+              "start": "11:00",
+              "end": "12:25",
+              "subject": "Психофизиология",
+              "weeks": "3,5,7,9,11,13,14,15,16",
+              "lessonType": "lecture",
+              "audience": "ALL",
+              "location": "Солнечное, лит. С, ауд. 1.3 / 3.57"
+            },
+            {
+              "weekday": 3,
+              "start": "11:00",
+              "end": "12:25",
+              "subject": "Социальная психология",
+              "weeks": "2-9,11-14",
+              "lessonType": "lecture",
+              "audience": "ALL",
+              "location": "Солнечное, лит. С, ауд. 1.3"
+            },
+            {
+              "weekday": 4,
+              "start": "09:20",
+              "end": "10:45",
+              "subject": "Психологическая травма и ее последствия",
+              "weeks": "1,8-10,12",
+              "lessonType": "lecture",
+              "audience": "ALL",
+              "location": "Солнечное, лит. С, ауд. 1.3 / 1.1"
+            },
+            {
+              "weekday": 4,
+              "start": "11:00",
+              "end": "12:25",
+              "subject": "IT-технологии, биостатистика",
+              "weeks": "1,9,16",
+              "lessonType": "lecture",
+              "audience": "ALL",
+              "location": "Солнечное, лит. С, ауд. 1.3"
+            },
+            {
+              "weekday": 4,
+              "start": "11:00",
+              "end": "12:25",
+              "subject": "Практики инклюзивного взаимодействия",
+              "weeks": "8,10,12-15",
+              "lessonType": "lecture",
+              "audience": "ALL",
+              "location": "Солнечное, лит. С, ауд. 1.3 / 1.1"
+            },
+            {
+              "weekday": 5,
+              "start": "11:00",
+              "end": "12:25",
+              "subject": "Общая психология",
+              "weeks": "1,2,3-8,9-14",
+              "lessonType": "lecture",
+              "audience": "ALL",
+              "location": "Солнечное, лит. С, ауд. 3.17/18 / 1.3 / 1.2"
+            },
+            {
+              "weekday": 6,
+              "start": "13:30",
+              "end": "15:05",
+              "subject": "Физическая культура и спорт",
+              "weeks": "7-12",
+              "lessonType": "lecture",
+              "audience": "ALL",
+              "location": "ЦДТИ, ауд. 6.1.1"
+            }
+          ],
+          "practiceRules": [
+            {
+              "weekday": 1,
+              "start": "13:30",
+              "end": "14:55",
+              "subject": "Общая психология",
+              "weeks": "2-15",
+              "groups": [
+                "201КП",
+                "202КП"
+              ],
+              "lessonType": "practice",
+              "location": "Солнечное, лит. С, ауд. 1.3"
+            },
+            {
+              "weekday": 2,
+              "start": "09:20",
+              "end": "10:45",
+              "subject": "Психологическая травма и ее последствия",
+              "weeks": "2-10",
+              "groups": [
+                "201КП",
+                "202КП"
+              ],
+              "lessonType": "practice",
+              "location": "Солнечное, лит. С, ауд. 3.56 / 3.15"
+            },
+            {
+              "weekday": 2,
+              "start": "11:00",
+              "end": "12:25",
+              "subject": "Общепсихологический практикум",
+              "weeks": "14-16",
+              "groups": [
+                "201КП",
+                "202КП"
+              ],
+              "lessonType": "practice",
+              "location": "Солнечное, лит. С, ауд. 3.20"
+            },
+            {
+              "weekday": 2,
+              "start": "13:30",
+              "end": "14:55",
+              "subject": "Эволюционная и сравнительная психология",
+              "weeks": "2-6,8",
+              "groups": [
+                "201КП",
+                "202КП"
+              ],
+              "lessonType": "practice",
+              "location": "Солнечное, лит. С, ауд. 3.21 / 3.4"
+            },
+            {
+              "weekday": 2,
+              "start": "15:10",
+              "end": "16:35",
+              "subject": "IT-технологии, биостатистика",
+              "weeks": "9,10,16",
+              "groups": [
+                "201КП",
+                "202КП"
+              ],
+              "lessonType": "practice",
+              "location": "Солнечное, лит. С, ауд. 3.5 / 3.4"
+            },
+            {
+              "weekday": 3,
+              "start": "09:20",
+              "end": "10:45",
+              "subject": "Физическая культура и спорт",
+              "weeks": "1-9,11-13",
+              "groups": [
+                "201КП",
+                "202КП"
+              ],
+              "lessonType": "practice",
+              "location": "Солнечное, лит. С, ауд. 25"
+            },
+            {
+              "weekday": 3,
+              "start": "13:30",
+              "end": "14:55",
+              "subject": "Психофизиология",
+              "weeks": "3-9,11-15",
+              "groups": [
+                "201КП",
+                "202КП"
+              ],
+              "lessonType": "practice",
+              "location": "Солнечное, лит. С, ауд. 1.3"
+            },
+            {
+              "weekday": 4,
+              "start": "13:30",
+              "end": "14:55",
+              "subject": "Общепсихологический практикум",
+              "weeks": "2-16",
+              "groups": [
+                "201КП",
+                "202КП"
+              ],
+              "lessonType": "practice",
+              "location": "Солнечное, лит. С, ауд. 3.19"
+            },
+            {
+              "weekday": 5,
+              "start": "13:30",
+              "end": "14:55",
+              "subject": "Физическая культура и спорт (ЭД)",
+              "weeks": "6-15",
+              "groups": [
+                "201КП",
+                "202КП"
+              ],
+              "lessonType": "practice",
+              "location": "Солнечное, лит. С, ауд. 25"
+            },
+            {
+              "weekday": 5,
+              "start": "15:10",
+              "end": "16:35",
+              "subject": "Общая психология",
+              "weeks": "1-5,6-14",
+              "groups": [
+                "201КП",
+                "202КП"
+              ],
+              "lessonType": "practice",
+              "location": "Солнечное, лит. С, ауд. 3.1/3.2"
+            },
+            {
+              "weekday": 6,
+              "start": "09:00",
+              "end": "10:35",
+              "subject": "Практики инклюзивного взаимодействия",
+              "weeks": "1-12",
+              "groups": [
+                "201КП",
+                "202КП"
+              ],
+              "lessonType": "practice",
+              "location": "ЦДТИ, ауд. 4.1.14"
+            }
+          ],
+          "status": "published",
+          "lectureStatus": "published"
+        }
+      }
+    }
+  },
+  "sourcesCheckedAt": "2026-10-04",
+  "note": "Official published PDF sources on the Almazov student cabinet; normalized manually into safe week/group rules. Missing higher-course schedule is shown as unpublished, never fabricated."
+}

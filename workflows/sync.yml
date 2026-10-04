@@ -1,0 +1,28 @@
+name: Sync official schedule
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 */6 * * *'
+permissions:
+  contents: write
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Sync official snapshot
+        run: python3 scripts/sync_official.py
+      - name: Validate live snapshot
+        run: python3 scripts/validate_live.py
+      - name: Validate local adapters
+        run: python3 scripts/validate_data.py
+      - name: Commit updated snapshot
+        run: |
+          git config user.name 'almazov-schedule-bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add data/live-index.json
+          git diff --cached --quiet || git commit -m 'chore: sync official schedule'
+          git push || true

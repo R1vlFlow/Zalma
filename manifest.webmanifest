@@ -1,18 +1,1 @@
-{
-  "name": "Almazov Student",
-  "short_name": "Almazov Student",
-  "lang": "ru",
-  "start_url": "./",
-  "scope": "./",
-  "display": "standalone",
-  "background_color": "#06132d",
-  "theme_color": "#071632",
-  "icons": [
-    {
-      "src": "logo-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
-    }
-  ]
-}
+{"name":"Almazov Universal Schedule Hub","short_name":"Almazov Schedule","lang":"ru","start_url":"./","scope":"./","display":"standalone","background_color":"#07101d","theme_color":"#08111f","icons":[{"src":"logo-512.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}],"id":"almazov-schedule-hub"}

@@ -1,6 +1,13 @@
 {
-  "name": "almazov-student",
+  "name": "almazov-universal-schedule",
+  "version": "1.1.1",
   "private": true,
-  "version": "4.6.3",
-  "description": "Almazov Student — schedule and student dashboard with official schedule synchronization"
+  "description": "Единый сервис расписания ИМО НМИЦ им. В.А. Алмазова",
+  "scripts": {
+    "validate": "python3 scripts/validate_data.py",
+    "sync": "python3 scripts/sync_official.py",
+    "validate-live": "python3 scripts/validate_live.py",
+    "test": "node scripts/test_logic.js",
+    "qa": "python3 scripts/qa_static.py"
+  }
 }
