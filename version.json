@@ -1,8 +1,1 @@
-{
-  "product": "Almazov Student",
-  "version": "4.3.0-pre7",
-  "title": "Almazov Student — PRE-RELEASE 2.0.1",
-  "message": "Закладки, ДЗ до следующей пары и исправление сдвоенных занятий",
-  "mandatory": false,
-  "releasedAt": "2026-10-03"
-}
+{"version":"4.6.0","title":"Almazov Student 2.0.5","message":"Доступна обновлённая версия расписания и интерфейса."}

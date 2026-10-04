@@ -1,11 +1,9 @@
-# Almazov Student — privacy notes (beta)
+# Приватность Almazov Student
 
-The beta is designed as a local-first application. Profile data, tasks, notes, schedule imports, subject colors and theme settings are stored on the user's device in browser storage unless the user explicitly exports or shares them.
+Almazov Student не требует регистрации и не отправляет личные данные пользователя на сервер приложения.
 
-Do not enter passwords, medical records, passport data, student IDs, or other sensitive information into the beta.
+Профиль, заметки, задачи, домашние задания, закладки и внеучебные события сохраняются локально в браузере.
 
-Imported schedule files are processed in the browser. External CDN resources used by the beta may receive normal network metadata required to fetch those resources.
+Приложение не использует cookies для хранения пользовательских данных и не содержит встроенной рекламной/аналитической cookie-системы.
 
-The project is independent from NMITs named after V.A. Almazov. The beta disclaimer should remain visible to new users.
-
-This document is a technical beta notice, not legal advice or a complete jurisdiction-specific privacy policy.
+Официальное расписание публикуется как статический JSON-файл GitHub Pages. Содержимое этого файла относится только к учебному расписанию и не содержит пользовательские локальные данные.

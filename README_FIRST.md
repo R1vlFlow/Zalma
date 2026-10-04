@@ -1,24 +1,53 @@
-# Almazov Student — PRE-RELEASE 2.0.1
+# Almazov Student — GitHub Pages release
 
-Пользовательская версия интерфейса: **PRE-RELEASE 2.0.1**.
-Движок официального расписания: **4.3.0-pre7**.
+Готовый статический релиз Almazov Student для GitHub Pages. Приложение работает из `index.html`, а актуальное расписание 1–6 курсов собирается GitHub Actions из официальной страницы кабинета студента НМИЦ им. В. А. Алмазова.
 
-## Установка
+## Публикация
 
-1. Распакуй ZIP локально.
-2. Загрузи содержимое в корень GitHub-репозитория.
-3. Обязательно сохрани `.github/workflows/sync-official-schedules.yml`.
-4. Открой **Actions → Sync official Almazov schedules → Run workflow**.
-5. GitHub Actions обнаружит документы на официальной странице независимо от расширения, определит реальный формат по содержимому (PDF/XLSX/XLS/ODS/CSV/DOCX/PPTX/HTML/TXT), распознает их универсальным parser и опубликует `data/official-schedules.json`.
+1. Загрузите **всё содержимое архива** в корень GitHub-репозитория.
+2. В `Settings → Pages` выберите **GitHub Actions**.
+3. Workflow `Sync official schedules and deploy` запускается при push в `main/master`, вручную и каждые 6 часов.
+4. После первого успешного запуска в `data/official-schedules.json` появятся актуальные события; workflow также публикует Pages artifact.
 
-## Важное
+### Что делает workflow
 
-- Локальный `data/official-schedules.json` является bootstrap-слоем и не блокирует отображение уже имеющихся официальных событий.
-- Полнота live-расписания 1–6 курсов проверяется отдельно CI и генератором перед публикацией.
-- На Android/iPhone/iPad используется настоящий нативный `<select>` для гарантированного системного выбора; на ПК сохраняется премиальное кастомное меню.
-- Личные данные, задачи, заметки, ДЗ и ручное расписание не заменяются автоматической синхронизацией.
-- GitHub Pages не распаковывает ZIP автоматически: в репозиторий загружается содержимое архива, а не сам ZIP.
+- получает актуальную страницу расписаний НМИЦ;
+- находит лекционные и практические PDF для 1–6 курсов;
+- разбирает потоки A/B и индивидуальные группы;
+- разбирает диапазоны недель `(2–16)`, списки `(2, 4, 6, 8)` и несколько предметов внутри одной PDF-ячейки;
+- сохраняет реальные одинаковые последовательные лекции как две части сдвоенной пары;
+- проверяет, что для каждого курса есть лекции и ПЗ;
+- проверяет группы, время, даты, недели и дубликаты;
+- только после успешной проверки публикует GitHub Pages.
 
-**Ручной импорт:** PDF, XLSX/XLS, ODS, CSV/TSV, DOCX, PPTX, HTML, TXT/RTF и изображения с OCR; формат определяется по содержимому, а не только по расширению.
+Если официальный PDF временно недоступен или parser не смог уверенно разобрать данные, workflow **останавливает публикацию**, а не создаёт выдуманное расписание.
 
-Официальный источник расписания: https://education.almazovcentre.ru/about_institute/programm/specialist_programme/student/
+## Архитектура
+
+Браузер не скачивает PDF. Он читает только `data/official-schedules.json`. Это устраняет CORS-зависимость и делает мобильную версию стабильнее.
+
+В браузере пользовательские данные хранятся локально через `localStorage`. Cookies для пользовательских данных не используются.
+
+## Локальная проверка
+
+```bash
+python scripts/validate_js.py
+python scripts/validate_release.py
+python tests/test_sync_parser.py
+```
+
+Для реальной синхронизации:
+
+```bash
+python -m pip install pymupdf pdfplumber beautifulsoup4 requests
+python scripts/sync_official.py
+```
+
+## Версии
+
+- UI: **2.0.5**
+- Runtime: **4.6.0**
+- Schedule schema: **10**
+
+Официальная страница расписания:
+https://education.almazovcentre.ru/about_institute/programm/specialist_programme/student/
