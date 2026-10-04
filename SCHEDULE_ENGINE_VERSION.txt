@@ -1,1 +1,4 @@
-4.3.0-pre7
+Schedule engine: 5.0-universal
+Data schema: 7
+Fallback: local recovery snapshot
+Live builder: scripts/build_official_schedule.py

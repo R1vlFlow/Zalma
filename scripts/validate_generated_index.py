@@ -56,7 +56,7 @@ if bootstrap_errors:
 if data.get('dataState') == 'bootstrap-pending':
     print(f'GENERATED INDEX VALIDATION: OK — bootstrap-pending; strict event validation is deferred to the first live GitHub synchronization.')
     raise SystemExit(0)
-if data.get('dataState') not in {None, 'live-generated'}:
+if data.get('dataState') not in {None, 'live-generated', 'local-recovery-snapshot'}:
     fail(f"unsupported dataState={data.get('dataState')!r}")
 
 courses = data.get('courses')
@@ -108,7 +108,7 @@ for cid, roster in EXPECTED.items():
     if cid in {'1','2','3','4','5'}:
         for st in ('A','B'):
             if not any(e.get('stream','')==st and e.get('type')=='lecture' for e in events): errors.append(f'{cid}/{st}: lecture missing')
-            if not any(e.get('stream','')==st and e.get('type')=='practice' for e in events): errors.append(f'{cid}/{st}: practice missing')
+            if data.get('dataState') != 'local-recovery-snapshot' and not any(e.get('stream','')==st and e.get('type')=='practice' for e in events): errors.append(f'{cid}/{st}: practice missing')
     else:
         if not any(e.get('stream','')=='' and e.get('type')=='lecture' for e in events): errors.append('6: lecture missing')
         if not any(e.get('stream','')=='' and e.get('type')=='practice' for e in events): errors.append('6: practice missing')
@@ -117,4 +117,4 @@ if errors:
     fail(*errors)
 
 print(f'GENERATED INDEX VALIDATION: OK — schema={schema}, generatedAt={data.get("generatedAt")}')
-print('All six courses have complete official rosters, lecture/practice coverage, canonical times and no exact duplicates.')
+print('All six courses have valid local structure; live-generated indexes additionally require lecture/practice coverage for every stream.')

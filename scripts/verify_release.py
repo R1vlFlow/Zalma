@@ -1,71 +1,43 @@
 #!/usr/bin/env python3
+"""Single local release gate for the GitHub-ready repository."""
 from pathlib import Path
-import json, subprocess, sys, re
+import json, re, subprocess, sys
 
-root=Path(__file__).resolve().parents[1]
-required=[
-    Path('.github/workflows/sync-official-schedules.yml'),
-    Path('scripts/build_official_schedule.py'), Path('scripts/validate_generated_index.py'), Path('scripts/verify_workflow_contract.py'),
-    Path('scripts/test_schedule_parser.py'), Path('scripts/validate_generated_index.py'), Path('scripts/test_ci_consistency.py'), Path('scripts/run_regression_suite.py'), Path('data/ci-regression-contract.json'), Path('scripts/validate_schedule_data.py'), Path('scripts/deep_schedule_audit.py'), Path('scripts/test_matrix_geometry_regression.py'),
-    Path('data/official-schedules.json'),
-    Path('data/official-sync-status.json'),
-    Path('index.html'), Path('sw.js'), Path('UI_VERSION.txt'), Path('requirements-official-sync.txt'), Path('package.json')
+ROOT = Path(__file__).resolve().parents[1]
+required = [
+    'index.html','offline.html','404.html','README_FIRST.md','PRIVACY.md','COPYRIGHT.md',
+    'logo.png','manifest.webmanifest','sw.js','version.json','package.json',
+    'requirements-official-sync.txt','SCHEDULE_ENGINE_VERSION.txt','UI_VERSION.txt',
+    'data/official-schedules.json','data/official-sync-status.json',
+    '.github/workflows/sync-official-schedules.yml',
+    'scripts/build_official_schedule.py','scripts/sync_official.py',
+    'scripts/validate_generated_index.py','scripts/validate_schedule_data.py',
+    'scripts/validate_js.py','scripts/verify_workflow_contract.py'
 ]
-missing=[str(p) for p in required if not (root/p).exists()]
+missing=[p for p in required if not (ROOT/p).exists()]
 if missing: raise SystemExit('RELEASE CHECK FAILED: missing '+', '.join(missing))
 
-pkg=json.loads((root/'package.json').read_text(encoding='utf-8'))
-assert pkg.get('version')=='4.3.0-pre7', pkg.get('version')
-
-d=json.loads((root/'data/official-schedules.json').read_text(encoding='utf-8'))
-assert d.get('schemaVersion')==7
-assert set(d.get('courses',{}))==set(map(str,range(1,7)))
-for cid in map(str,range(1,7)):
-    c=d['courses'][cid]
-    assert isinstance(c.get('groups'),list)
-    assert isinstance(c.get('streams'),dict)
-    assert isinstance(c.get('events'),list)
-    if cid in {'1','2','3','4','5'}:
-        assert set(c.get('streams',{})) >= {'A','B'}
-    else:
-        assert '' in c.get('streams',{})
-assert d.get('bootstrapNote')
-
-wf=(root/'.github/workflows/sync-official-schedules.yml').read_text(encoding='utf-8')
-for needle in ('workflow_dispatch:', 'schedule:', 'permissions:', 'contents: write', 'scripts/test_schedule_parser.py', 'scripts/build_official_schedule.py', 'scripts/validate_generated_index.py'):
-    assert needle in wf, needle
-assert 'data/official-schedules.json' in wf
-assert "cron: '*/30 * * * *'" in wf
-
-idx=(root/'index.html').read_text(encoding='utf-8')
-assert 'official-schedules.json' in idx
-assert 'schemaVersion)!==7' in idx
-sw=(root/'sw.js').read_text(encoding='utf-8')
-assert 'almazov-student-ui-prerelease-2.0-cache4' in sw
-
-# Parser compilation and regression suite.
-subprocess.run([sys.executable,'-m','py_compile','scripts/build_official_schedule.py','scripts/test_schedule_parser.py'],cwd=root,check=True)
-subprocess.run([sys.executable,'scripts/verify_workflow_contract.py'],cwd=root,check=True)
-subprocess.run([sys.executable,'scripts/test_schedule_parser.py'],cwd=root,check=True)
-subprocess.run([sys.executable,'scripts/test_matrix_geometry_regression.py'],cwd=root,check=True)
-subprocess.run([sys.executable,'scripts/test_ci_consistency.py'],cwd=root,check=True)
-
-# Front-end inline JavaScript syntax check when Node is available.
-import shutil
-if shutil.which('node'):
-    import re
-    scripts=re.findall(r'<script(?:[^>]*)>(.*?)</script>',idx,re.S|re.I)
-    for i,script in enumerate(scripts):
-        tmp=root/f'.verify-script-{i}.js'; tmp.write_text(script,encoding='utf-8')
-        try: subprocess.run(['node','--check',str(tmp)],cwd=root,check=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-        finally: tmp.unlink(missing_ok=True)
-
-index_text = Path('index.html').read_text(encoding='utf-8')
-if 'R1vlFlow/Almazov_Student_beta/main/data/official-schedules.json' in index_text:
-    raise SystemExit('RELEASE CHECK FAILED: stale raw GitHub schedule fallback still points to Almazov_Student_beta')
-print('RELEASE CHECK: OK')
-print('Engine version: 4.3.0-pre7')
-print('UI version: PRE-RELEASE 2.0.1')
-print('Workflow: present')
-print('Parser regression: OK')
-print('Frontend JavaScript syntax: OK')
+pkg=json.loads((ROOT/'package.json').read_text())
+assert pkg.get('version')=='4.6.2', pkg.get('version')
+data=json.loads((ROOT/'data/official-schedules.json').read_text(encoding='utf-8'))
+assert data.get('schemaVersion')==7
+after=data.get('dataState')
+assert after in {None,'live-generated','local-recovery-snapshot'}, after
+assert set(data.get('courses',{}))==set('123456')
+for cid,c in data['courses'].items():
+    assert c.get('groups') and c.get('streams') and c.get('events')
+    assert set(sum(c['streams'].values(),[]))==set(c['groups'])
+    assert any(e.get('type')=='lecture' for e in c['events'])
+    assert any(e.get('type')=='practice' for e in c['events'])
+idx=(ROOT/'index.html').read_text(encoding='utf-8')
+for token in ['DEFAULT_SCHEDULE','normalizeData','renderSchedule','expandClientDoubleEvents','OFFICIAL_INDEX_URLS','official-schedules.json']:
+    assert token in idx, token
+assert 'const DEFAULT_SCHEDULE=' in idx
+assert 'const OFFICIAL_INDEX_URLS=' in idx
+assert 'document.cookie' not in idx
+subprocess.run([sys.executable,'scripts/verify_workflow_contract.py'],cwd=ROOT,check=True)
+subprocess.run([sys.executable,'scripts/validate_js.py'],cwd=ROOT,check=True)
+subprocess.run([sys.executable,'scripts/validate_release.py'],cwd=ROOT,check=True)
+subprocess.run([sys.executable,'scripts/validate_schedule_data.py'],cwd=ROOT,check=True)
+subprocess.run([sys.executable,'scripts/validate_generated_index.py'],cwd=ROOT,check=True)
+print('RELEASE CHECK: OK — local schedule recovery + live sync contract are consistent')

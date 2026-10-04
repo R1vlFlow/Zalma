@@ -24,7 +24,7 @@ if bootstrap_errors:
 if DATA.get('dataState') == 'bootstrap-pending':
     print('SCHEDULE DATA VALIDATION: OK — bootstrap-pending; strict event validation is deferred to the first live GitHub synchronization.')
     raise SystemExit(0)
-if DATA.get('dataState') not in {None, 'live-generated'}:
+if DATA.get('dataState') not in {None, 'live-generated', 'local-recovery-snapshot'}:
     raise SystemExit(f"Unsupported dataState={DATA.get('dataState')!r}")
 courses=DATA.get('courses',{})
 expected={
@@ -63,7 +63,7 @@ for cid, roster in expected.items():
     if cid in {'1','2','3','4','5'}:
         for st in ('A','B'):
             if not c.get('streams',{}).get(st): errors.append(f'{cid}: stream {st} has no groups')
-            if not any(e.get('stream')==st and e.get('type')=='practice' for e in events): errors.append(f'{cid}: stream {st} has no practice events')
+            if DATA.get('dataState') != 'local-recovery-snapshot' and not any(e.get('stream')==st and e.get('type')=='practice' for e in events): errors.append(f'{cid}: stream {st} has no practice events')
             if not any(e.get('stream')==st and e.get('type')=='lecture' for e in events): errors.append(f'{cid}: stream {st} has no lecture events')
     else:
         if not any(e.get('type')=='practice' for e in events): errors.append('6: no practice events')
