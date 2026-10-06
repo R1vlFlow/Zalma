@@ -8,7 +8,11 @@ export const cleanSubject = (value) => cleanText(value)
     .replace(/[–—−]/g, '-')
     .replace(/\s*\*+\s*$/g, '')
     .replace(/^дисциплина\s*[:.-]?\s*/i, '')
-    .replace(/\s+([,.;:])/g, '$1');
+    .replace(/\b(?:лекция|практическое занятие|практика|пз|лабораторная работа|лабораторная|семинар(?:ское занятие)?)\b/ig, ' ')
+    .replace(/\s+([,.;:])/g, '$1')
+    .replace(/\s{2,}/g, ' ')
+    .replace(/^[\s,.;:|/\-–—]+|[\s,.;:|/\-–—]+$/g, '')
+    .trim();
 export const cleanTeacher = (value) => cleanText(value)
     .replace(/^(преподаватель|преп\.|доцент|профессор|ассистент|старший преподаватель)\s*:?[ ]*/i, '')
     .replace(/\s*[,;|]+\s*/g, ', ')
@@ -35,7 +39,14 @@ export function normalizeGroupList(value) {
     for (const chunk of chunks) {
         const range = chunk.match(/^(\d{3,4}[А-ЯA-Z]{0,3})\s*-\s*(\d{3,4}[А-ЯA-Z]{0,3})$/i);
         if (!range) {
-            out.push(normalizeGroup(chunk));
+            const tokens = [...chunk.matchAll(/(?:^|[^0-9А-ЯA-Zа-яa-z])([0-9]{3,4}[А-ЯA-ZА-Я]{0,3})(?=$|[^0-9А-ЯA-Zа-яa-z])/gi)].map(m => normalizeGroup(m[1]));
+            if (tokens.length) {
+                out.push(...tokens);
+                continue;
+            }
+            const normalized = normalizeGroup(chunk);
+            if (/^\d{3,4}[А-ЯA-Z]{0,3}$/i.test(normalized))
+                out.push(normalized);
             continue;
         }
         const a = range[1].match(/\d+/)[0];
@@ -56,7 +67,7 @@ export function normalizeGroupList(value) {
 export function normalizeStream(value) {
     const s = cleanText(value).toUpperCase()
         .replace(/Ё/g, 'Е')
-        .replace(/[АА]/g, 'A')
+        .replace(/А/g, 'A')
         .replace(/Б/g, 'B');
     if (/^(?:ПОТОК\s*)?A$/.test(s) || /ПОТОК\s*A/.test(s))
         return 'A';
@@ -132,7 +143,7 @@ export function normalizeDateRange(value) {
     return ds.length >= 2 && ds[0] && ds[1] ? { from: ds[0], to: ds[1] } : null;
 }
 export function parseWeekSpec(value) {
-    const s = cleanText(value).replace(/[–—−]/g, '-');
+    const s = cleanText(value).replace(/[–—−]/g, '-').replace(/\b[12]\s*\/\s*2\b/g, ' ');
     const out = [];
     for (const range of [...s.matchAll(/\b(\d{1,2})\s*-\s*(\d{1,2})\b/g)]) {
         const a = Number(range[1]), b = Number(range[2]);

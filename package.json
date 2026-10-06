@@ -1,14 +1,14 @@
 {
   "name": "almazov-schedule-hub",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "rm -rf dist && tsc -p tsconfig.json && node scripts/copy-public.mjs",
+    "build": "rm -rf dist && tsc -p tsconfig.json && node scripts/copy-public.mjs && node scripts/validate-dist.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "npm run build && node --test tests/*.test.mjs",
     "validate": "npm run build && node scripts/validate-dist.mjs",
-    "qa": "npm test && npm run validate && node --check server/server.mjs && node --check server/pipeline.mjs && node --check server/pdf-adapter.mjs && node --check server/xlsx-adapter.mjs && node --check server/html-adapter.mjs",
+    "qa": "npm run typecheck && npm test && npm run validate && node --check server/server.mjs && node --check server/pipeline.mjs && node --check server/source-parser.mjs && node --check server/academic-config.mjs && node --check server/pdf-adapter.mjs && node --check server/xlsx-adapter.mjs && node --check server/html-adapter.mjs && node --check server/sync-schedules.mjs && node scripts/validate-project.mjs && node scripts/smoke-server.mjs",
     "start": "npm run build && node server/server.mjs",
     "sync": "node server/sync-schedules.mjs",
     "validate-live": "node server/sync-official.mjs --validate-only"

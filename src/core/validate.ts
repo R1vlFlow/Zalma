@@ -28,10 +28,16 @@ export function normalizeLiveEvents(payload:unknown):ScheduleEvent[]{
       const date=isoDate(raw?.date??raw?.dateHint??raw?.weekDate);
       const time=normalizeTimeRange(`${raw?.start??''} ${raw?.end??''}`) ?? normalizeTimeRange(raw?.time);
       const subject=cleanSubject(raw?.subject??raw?.discipline??raw?.name);
-      const group=normalizeGroup(raw?.group??raw?.groups??'');
+      const stream=normalizeStream(raw?.stream);
+      const groupValues=Array.isArray(raw?.groups)?raw.groups:(raw?.group!=null?[raw.group]:[]);
+      const groups=groupValues.map(normalizeGroup).filter(Boolean);
+      const safeGroups=groups.length?groups:[(stream?'ALL':'')];
       const program=raw?.program??courseData?.specialty??p?.specialty;
       if(!date||!time||!subject||!VALID_PROGRAMS.has(program))continue;
-      result.push({id:String(raw?.id??`${program}-${course}-${date}-${time.start}-${time.end}-${subject}-${index}`),program,course:course as Course,group,stream:normalizeStream(raw?.stream),date,start:time.start,end:time.end,subject,location:cleanLocation(raw?.location),teacher:cleanTeacher(raw?.teacher),type:normalizeType(raw?.type,subject),half:normalizeHalf(raw?.half),weeks:raw?.weekNumber?`нед. ${raw.weekNumber}`:undefined,sourceUrl:raw?.sourceUrl,sourceTitle:raw?.sourceTitle,sourceKind:'live-json',confidence:1});
+      for(const group of safeGroups){
+        if(!group)continue;
+        result.push({id:String(raw?.id??`${program}-${course}-${group}-${date}-${time.start}-${time.end}-${subject}-${index}`),program,course:course as Course,group,stream,date,start:time.start,end:time.end,subject,location:cleanLocation(raw?.location),teacher:cleanTeacher(raw?.teacher),type:normalizeType(raw?.type,subject),half:normalizeHalf(raw?.half),weeks:raw?.weekNumber?`нед. ${raw.weekNumber}`:undefined,sourceUrl:raw?.sourceUrl,sourceTitle:raw?.sourceTitle,sourceKind:'live-json',confidence:1});
+      }
     }
   }
   return dedupe(result);

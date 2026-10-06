@@ -11,7 +11,11 @@ export const cleanSubject = (value: unknown): string => cleanText(value)
   .replace(/[–—−]/g, '-')
   .replace(/\s*\*+\s*$/g, '')
   .replace(/^дисциплина\s*[:.-]?\s*/i, '')
-  .replace(/\s+([,.;:])/g, '$1');
+  .replace(/\b(?:лекция|практическое занятие|практика|пз|лабораторная работа|лабораторная|семинар(?:ское занятие)?)\b/ig, ' ')
+  .replace(/\s+([,.;:])/g, '$1')
+  .replace(/\s{2,}/g, ' ')
+  .replace(/^[\s,.;:|/\-–—]+|[\s,.;:|/\-–—]+$/g, '')
+  .trim();
 
 export const cleanTeacher = (value: unknown): string => cleanText(value)
   .replace(/^(преподаватель|преп\.|доцент|профессор|ассистент|старший преподаватель)\s*:?[ ]*/i, '')
@@ -40,7 +44,13 @@ export function normalizeGroupList(value: unknown): string[] {
   const out: string[] = [];
   for (const chunk of chunks) {
     const range = chunk.match(/^(\d{3,4}[А-ЯA-Z]{0,3})\s*-\s*(\d{3,4}[А-ЯA-Z]{0,3})$/i);
-    if (!range) { out.push(normalizeGroup(chunk)); continue; }
+    if (!range) {
+      const tokens = [...chunk.matchAll(/(?:^|[^0-9А-ЯA-Zа-яa-z])([0-9]{3,4}[А-ЯA-ZА-Я]{0,3})(?=$|[^0-9А-ЯA-Zа-яa-z])/gi)].map(m => normalizeGroup(m[1]));
+      if (tokens.length) { out.push(...tokens); continue; }
+      const normalized = normalizeGroup(chunk);
+      if (/^\d{3,4}[А-ЯA-Z]{0,3}$/i.test(normalized)) out.push(normalized);
+      continue;
+    }
     const a = range[1]!.match(/\d+/)![0];
     const b = range[2]!.match(/\d+/)![0];
     const suffixA = range[1]!.replace(a, '').toUpperCase();
@@ -56,7 +66,7 @@ export function normalizeGroupList(value: unknown): string[] {
 export function normalizeStream(value: unknown): Stream {
   const s = cleanText(value).toUpperCase()
     .replace(/Ё/g, 'Е')
-    .replace(/[АА]/g, 'A')
+    .replace(/А/g, 'A')
     .replace(/Б/g, 'B');
   if (/^(?:ПОТОК\s*)?A$/.test(s) || /ПОТОК\s*A/.test(s)) return 'A';
   if (/^(?:ПОТОК\s*)?B$/.test(s) || /ПОТОК\s*B/.test(s)) return 'B';
@@ -125,7 +135,7 @@ export function normalizeDateRange(value: unknown): {from:string;to:string}|null
 }
 
 export function parseWeekSpec(value: unknown): number[] {
-  const s = cleanText(value).replace(/[–—−]/g, '-');
+  const s = cleanText(value).replace(/[–—−]/g, '-').replace(/\b[12]\s*\/\s*2\b/g, ' ');
   const out: number[] = [];
   for (const range of [...s.matchAll(/\b(\d{1,2})\s*-\s*(\d{1,2})\b/g)]) {
     const a=Number(range[1]),b=Number(range[2]); if(a>0&&b>=a&&b-a<=30) for(let n=a;n<=b;n++) out.push(n);

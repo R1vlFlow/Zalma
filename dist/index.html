@@ -2,9 +2,10 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#091422"><meta name="description" content="Almazov Schedule Hub — единое расписание Института медицинского образования НМИЦ им. В.А. Алмазова">
+<meta name="theme-color" content="#091422"><meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self' data:; connect-src 'self' https://raw.githubusercontent.com; worker-src 'self'; manifest-src 'self'">
+<meta name="description" content="Almazov Schedule Hub — единое расписание Института медицинского образования НМИЦ им. В.А. Алмазова">
 <link rel="manifest" href="./manifest.webmanifest"><link rel="icon" href="./assets/logo.png"><link rel="apple-touch-icon" href="./assets/logo-512.png">
-<script>(()=>{try{const s=localStorage.getItem('almazov.theme')||'system',light=s==='light'||(s==='system'&&matchMedia('(prefers-color-scheme:light)').matches);document.documentElement.dataset.theme=light?'light':'dark';document.documentElement.dataset.themePreference=s;document.documentElement.style.colorScheme=light?'light':'dark';}catch{document.documentElement.dataset.theme='dark';document.documentElement.dataset.themePreference='system';}})();</script>
+<script src="./boot.js"></script>
 <link rel="stylesheet" href="./styles.css"><title>Almazov Schedule Hub</title>
 </head>
 <body>
@@ -39,5 +40,5 @@
 
 <div class="modal-backdrop" id="profileModal" aria-hidden="true"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="profileModalTitle"><header><div><p class="eyebrow">Контекст</p><h2 id="profileModalTitle">Профиль студента</h2></div><button class="icon" data-action="close-modal" aria-label="Закрыть">×</button></header><div class="modal-body"><label for="modalProgram">Программа<select id="modalProgram"></select></label><label for="modalCourse">Курс<select id="modalCourse"></select></label><label for="modalGroup">Группа<select id="modalGroup"></select></label><p class="note">Если курс официально не опубликован, группа остаётся пустой и сервис не подставляет чужие данные.</p></div><footer><button class="btn" data-action="close-modal">Отмена</button><button class="btn primary" data-action="save-profile">Сохранить</button></footer></div></div>
 <div class="modal-backdrop" id="taskModal" aria-hidden="true"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="taskModalTitle"><header><div><p class="eyebrow">Учебная задача</p><h2 id="taskModalTitle">Новое задание</h2></div><button class="icon" data-action="close-task" aria-label="Закрыть">×</button></header><div class="modal-body"><label for="taskSubject">Предмет<input id="taskSubject" autocomplete="off"></label><label for="taskDate">Дедлайн<input id="taskDate" type="date"></label><label for="taskText">Задание<textarea id="taskText" rows="6"></textarea></label><p id="taskNotice" class="form-note"></p></div><footer><button class="btn" data-action="close-task">Отмена</button><button class="btn primary" data-action="save-task">Сохранить</button></footer></div></div>
-<script type="module" src="./main.js"></script><script>if('serviceWorker'in navigator){navigator.serviceWorker.register('./sw.js').catch(()=>{});}</script>
+<script type="module" src="./main.js"></script>
 </body></html>

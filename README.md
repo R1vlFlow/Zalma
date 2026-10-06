@@ -1,4 +1,4 @@
-# Almazov Schedule Hub 2.2.0
+# Almazov Schedule Hub 2.3.0
 
 Production-oriented full-stack schedule service for the Institute of Medical Education of the Almazov National Medical Research Centre.
 
@@ -131,7 +131,7 @@ Stream-specific `ALL` events are only visible to groups in the same stream. Exac
 
 The university's electronic schedule page explicitly warns that its schedule is published in test mode and may not reflect completed rescheduling. The Hub therefore shows source status rather than pretending its data is authoritative when the source is stale or unavailable.
 
-The official student cabinet currently publishes specialist schedule links for 31.05.01, 31.05.02 and 37.05.01. The public page currently exposes Peds/Psych schedule links for courses 1–2, while LD is exposed through course 6.
+The official student cabinet currently publishes specialist schedule links for 31.05.01, 31.05.02 and 37.05.01. The public page currently exposes Peds/Psych schedule links for courses 1–2, while LD is exposed through course 6. The UI keeps 1–6 selectable for future publication, but unpublished courses remain explicit unavailable states and are never populated with guessed events.
 
 ## Repository structure
 
@@ -159,9 +159,9 @@ scripts/
 
 ## Production release checks
 
-`npm run qa` runs build, TypeScript checks through the test build, parser unit tests, distribution validation and Node syntax checks. The suite includes merged-cell HTML/XLSX fixtures, PDF coordinate fixtures, week/date normalization, stream isolation, deduplication, split 1/2 and 2/2, malformed-record validation and a 10,000-event filter stress case.
+`npm run qa` runs TypeScript checks, build/distribution validation, parser unit tests, project checks, Node syntax checks and HTTP runtime smoke. The suite includes merged-cell HTML/XLSX fixtures, PDF coordinate fixtures, week/date normalization, stream isolation, deduplication, split 1/2 and 2/2, malformed-record validation, all 18 program/course selectors and a 10,000-event filter stress case.
 
-Before deployment, also run `npm run sync` against the current official sources and review the generated snapshot validation report. The browser QA harness is separate from the deterministic parser test suite because some sandboxed CI environments cannot launch Chromium reliably.
+Before deployment, also run `npm run sync` against the current official sources and review the generated snapshot validation report. `npm run sync` never replaces a valid snapshot with empty/malformed data. The browser QA harness is separate from the deterministic parser test suite because some sandboxed CI environments cannot launch Chromium reliably.
 
 ## Quality checks
 
@@ -182,8 +182,20 @@ The service never fabricates official schedule data for unpublished courses. Whe
 
 ## QA 2.2.0 hardening
 
-The 2.2.0 release adds a parser regression guard for the second common table orientation: **group-per-row + day-per-column**. HTML tables are now classified before semantic extraction so a data-row group cannot be mistaken for a group header column. Day dates are taken from the day header instead of room numbers such as `2.11`, preventing the exact date-shift bug that can move a lesson into another week. Leading separators left behind after time/type removal are also normalized.
+The 2.3.0 release adds a parser regression guard for the second common table orientation: **group-per-row + day-per-column**. HTML tables are now classified before semantic extraction so a data-row group cannot be mistaken for a group header column. Day dates are taken from the day header instead of room numbers such as `2.11`, preventing the exact date-shift bug that can move a lesson into another week. Leading separators left behind after time/type removal are also normalized.
 
 The release test suite currently contains 17 deterministic tests covering merged cells, both HTML orientations, stream isolation, group isolation, date/week normalization, semantic dedupe, split weeks, malformed data, PDF coordinates, XLSX merge alignment and a large filter stress case. `npm run qa` passes in the provided environment.
 
 A browser-origin E2E run remains environment-dependent when Chromium is sandboxed; deterministic parser and UI-source validation are therefore kept separate from the browser smoke layer.
+
+## GitHub Pages deployment
+
+The included `.github/workflows/pages.yml` rebuilds the static snapshot from official sources on every push to `main` and every 6 hours. It runs `npm run sync`, the full deterministic QA suite and deploys `dist/` to GitHub Pages. For a server deployment, use `npm start` or Docker; Redis is optional.
+
+## 2.3.0 production hardening
+
+The release adds a CSP-compatible external boot script, service-worker API network-first handling, static schedule snapshot fallback for GitHub Pages, force-refresh source synchronisation, atomic static snapshot writes, stream/group-safe live JSON expansion, stronger group-token normalization, half-term/week ambiguity protection, and project-level QA checks. The included Pages workflow runs source sync + QA before deployment.
+
+## Dependency lockfile
+
+The repository intentionally uses `npm install` rather than `npm ci` because this delivery environment cannot reach the public npm registry to generate a complete `package-lock.json` with exact integrity metadata. Do not commit a hand-written or incomplete lockfile. On GitHub, `npm install` resolves the declared package ranges normally.

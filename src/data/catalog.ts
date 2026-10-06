@@ -34,7 +34,7 @@ export const SOURCES:SourceDescriptor[]=[
  pdf('peds1-lecture','31.05.02',1,'Педиатрия · 1 курс · лекции','https://education.almazovcentre.ru/wp-content/uploads/2026/09/raspisanielekczij_1k_pediatry_osen.pdf','published'),
  pdf('peds1-practice','31.05.02',1,'Педиатрия · 1 курс · практика','https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_pediatriya-26-27-na-sajt.pdf','published'),
  pdf('peds2-lecture','31.05.02',2,'Педиатрия · 2 курс · лекции','https://education.almazovcentre.ru/wp-content/uploads/2026/09/raspisanielekczij_2k_pediatry-osen-1.pdf','quarantined',undefined,'Источник должен проходить проверку специальности перед публикацией.'),
- pdf('peds2-practice','31.05.02',2,'Педиатрия · 2 курс · практика','https://education.almazovcentre.ru/wp-content/uploads/2026/09/2k_pediatriya-26-27-na-sajt.pdf','published'),
+ pdf('peds2-practice','31.05.02',2,'Педиатрия · 2 курс · практика','https://education.almazovcentre.ru/wp-content/uploads/2026/09/2k_pediatriya-na-sajt.pdf','published'),
  pdf('psych1-lecture','37.05.01',1,'Клиническая психология · 1 курс · лекции','https://education.almazovcentre.ru/wp-content/uploads/2026/09/raspisanielekczij_1k_klin_psih_osen.pdf','published'),
  pdf('psych1-seminars','37.05.01',1,'Клиническая психология · 1 курс · семинары','https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_klin_psih_26-27-na-sajt.pdf','published'),
  pdf('psych2-lecture','37.05.01',2,'Клиническая психология · 2 курс · лекции','https://education.almazovcentre.ru/wp-content/uploads/2026/09/raspisanielekczij_2k_klin_psih_osen.pdf','published'),

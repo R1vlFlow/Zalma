@@ -29,10 +29,10 @@
 5. Safety limits and path traversal protection on HTTP server.
 6. Local file import endpoint for PDF/XLSX/HTML candidate parsing.
 
-## Phase 4 — operational hardening (recommended)
+## Phase 4 — operational hardening
 
-1. Add CI runner with Playwright on a real Linux image.
-2. Add production browser E2E against seeded fixtures.
+1. GitHub Pages scheduled deployment with source sync and QA.
+2. Browser E2E remains a separate real-Chromium job because sandboxed environments can be unstable.
 3. Add source change notifications and parser confidence thresholds.
 4. Add signed snapshot metadata and optional database persistence.
 5. Add multi-device authenticated task sync if required.

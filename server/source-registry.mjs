@@ -21,10 +21,28 @@ export const SOURCES=[
   {id:'peds1-lecture',program:'31.05.02',course:1,kind:'official-pdf',url:'https://education.almazovcentre.ru/wp-content/uploads/2026/09/raspisanielekczij_1k_pediatry_osen.pdf',title:'Педиатрия 1 курс лекции',status:'published'},
   {id:'peds1-practice',program:'31.05.02',course:1,kind:'official-pdf',url:'https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_pediatriya-26-27-na-sajt.pdf',title:'Педиатрия 1 курс ПЗ',status:'published'},
   {id:'peds2-lecture',program:'31.05.02',course:2,kind:'official-pdf',url:'https://education.almazovcentre.ru/wp-content/uploads/2026/09/raspisanielekczij_2k_pediatry-osen-1.pdf',title:'Педиатрия 2 курс лекции',status:'quarantined'},
-  {id:'peds2-practice',program:'31.05.02',course:2,kind:'official-pdf',url:'https://education.almazovcentre.ru/wp-content/uploads/2026/09/2k_pediatriya-26-27-na-sajt.pdf',title:'Педиатрия 2 курс ПЗ',status:'published'},
+  {id:'peds2-practice',program:'31.05.02',course:2,kind:'official-pdf',url:'https://education.almazovcentre.ru/wp-content/uploads/2026/09/2k_pediatriya-na-sajt.pdf',title:'Педиатрия 2 курс ПЗ',status:'published'},
   {id:'psych1-lecture',program:'37.05.01',course:1,kind:'official-pdf',url:'https://education.almazovcentre.ru/wp-content/uploads/2026/09/raspisanielekczij_1k_klin_psih_osen.pdf',title:'Клиническая психология 1 курс лекции',status:'published'},
   {id:'psych1-seminars',program:'37.05.01',course:1,kind:'official-pdf',url:'https://education.almazovcentre.ru/wp-content/uploads/2026/09/1k_klin_psih_26-27-na-sajt.pdf',title:'Клиническая психология 1 курс семинары',status:'published'},
   {id:'psych2-lecture',program:'37.05.01',course:2,kind:'official-pdf',url:'https://education.almazovcentre.ru/wp-content/uploads/2026/09/raspisanielekczij_2k_klin_psih_osen.pdf',title:'Клиническая психология 2 курс лекции',status:'published'},
   {id:'psych2-seminars',program:'37.05.01',course:2,kind:'official-pdf',url:'https://education.almazovcentre.ru/wp-content/uploads/2026/09/2k_klin_psih_26-27-na-sajt.pdf',title:'Клиническая психология 2 курс семинары',status:'published'}
 ];
 export const programNames={'31.05.01':'Лечебное дело','31.05.02':'Педиатрия','37.05.01':'Клиническая психология'};
+
+// Explicitly registered unpublished course placeholders keep the course matrix
+// complete without fabricating schedule events. They are never fetched by the
+// parser and are surfaced to the UI as `unpublished` states.
+for(const program of ['31.05.02','37.05.01']){
+  for(let course=3;course<=6;course++){
+    SOURCES.push({
+      id:`${program}-c${course}-unpublished`,
+      program,
+      course,
+      kind:'unpublished',
+      url:STUDENT_PAGE,
+      title:`${programNames[program]}: ${course} курс — источник не опубликован`,
+      status:'unpublished',
+      notes:'Официальная страница не содержит опубликованного расписания для этого курса; события не создаются искусственно.'
+    });
+  }
+}

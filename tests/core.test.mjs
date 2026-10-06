@@ -13,7 +13,7 @@ test('HTML parser resolves nested rowspan/colspan and keeps columns aligned',()=
  const grid=parseHtmlTable(html);assert.equal(grid[0][0],'День');assert.equal(grid[1][3],'101');assert.equal(grid[2][3],'Химия');assert.equal(grid[2][4],'Физика');assert.equal(grid[3][0],'ВТ');assert.equal(grid[3][3],'Химия');assert.equal(grid[3][4],'Практика');assert.ok(detectHeaders(grid).length>=3);
 });
 
-test('normalization handles Russian variants and split groups',()=>{assert.equal(cleanSubject('  Химия  * '),'Химия');assert.equal(cleanTeacher('доцент:  Иванов И.И.'),'Иванов И.И.');assert.equal(cleanLocation('ауд 3.17/3.18'),'ауд. 3.17 / 3.18');assert.equal(normalizeStream('Поток Б'),'B');assert.deepEqual(normalizeGroupList('101-103'),'101 102 103'.split(' '));assert.deepEqual(normalizeGroupList('101П;102П'),'101П 102П'.split(' '));assert.deepEqual(normalizeHalf('числитель'),'1/2');assert.deepEqual(normalizeHalf('знаменатель'),'2/2');assert.deepEqual(normalizeTimeRange('9.20 - 10.45'),{start:'09:20',end:'10:45'});assert.deepEqual(parseWeekSpec('(2-4, 7)'),[2,3,4,7]);});
+test('normalization handles Russian variants and split groups',()=>{assert.equal(cleanSubject('  Химия  * '),'Химия');assert.equal(cleanTeacher('доцент:  Иванов И.И.'),'Иванов И.И.');assert.equal(cleanLocation('ауд 3.17/3.18'),'ауд. 3.17 / 3.18');assert.equal(normalizeStream('Поток Б'),'B');assert.deepEqual(normalizeGroupList('101-103'),'101 102 103'.split(' '));assert.deepEqual(normalizeGroupList('101П;102П'),'101П 102П'.split(' '));assert.deepEqual(normalizeGroupList('Группы: 101 102 103'),['101','102','103']);assert.deepEqual(normalizeHalf('числитель'),'1/2');assert.deepEqual(normalizeHalf('знаменатель'),'2/2');assert.deepEqual(normalizeTimeRange('9.20 - 10.45'),{start:'09:20',end:'10:45'});assert.deepEqual(parseWeekSpec('(2-4, 7)'),[2,3,4,7]);});
 
 test('calendar week helpers do not drift weekdays',()=>{assert.equal(mondayOf('2026-10-06'),'2026-10-05');assert.equal(addDays('2026-10-05',6),'2026-10-11');assert.equal(weekNumberFromAnchor('2026-10-06','2026-08-31'),6);assert.equal(mondayFromWeek('2026-08-31',6),'2026-10-05');});
 
@@ -38,6 +38,8 @@ test('server HTML adapter expands rowspan/colspan before semantic parsing',async
   const html='<table><tr><th rowspan="2">ПН</th><th colspan="2">Время</th><th>101</th><th>102</th></tr><tr><th>09:00</th><th>10:35</th><td rowspan="2">Химия<br>ауд. 4.2.11</td><td>Физика</td></tr><tr><td>ВТ</td><td colspan="2">10:50-12:25</td><td>Практика</td></tr></table>';
   const grid=serverParse(html);assert.equal(grid[1][3],'Химия ауд. 4.2.11');assert.equal(grid[2][3],'Химия ауд. 4.2.11');assert.equal(grid[2][0],'ВТ');
 });
+
+test('normalization never turns half-term labels into week numbers',()=>{assert.deepEqual(parseWeekSpec('1/2'),[]);assert.deepEqual(parseWeekSpec('2/2'),[]);assert.deepEqual(parseWeekSpec('нед. 2-4, 7'),[2,3,4,7]);});
 
 test('server HTML semantic parser supports group rows with day columns',async()=>{
   const {parseHtmlSchedule}=await import('../server/html-adapter.mjs');
@@ -88,4 +90,44 @@ test('large schedule remains filterable without accidental cross-group leakage',
   const events=Array.from({length:10000},(_,i)=>({...base,id:String(i),group:String(101+(i%35)),stream:(i%2?'B':'A'),date:'2026-10-06'}));
   const r=filterEvents(events,{program:'31.05.01',course:1,group:'123',stream:'B'},'2026-10-05','','all');
   assert.ok(r.length>0);assert.ok(r.every(e=>e.group==='123'||e.group==='ALL'));
+});
+
+test('static snapshot fallback works on GitHub Pages style relative paths',async()=>{
+  const {loadSchedule,clearScheduleMemory}=await import('../dist/services/scheduleService.js');
+  clearScheduleMemory();
+  const originalFetch=globalThis.fetch;
+  let calls=0;
+  globalThis.fetch=async (input)=>{
+    calls++;
+    const url=String(input);
+    if(url.includes('/api/schedule'))return new Response('not found',{status:404});
+    if(url.includes('/data/schedules/31.05.02/1.json'))return new Response(JSON.stringify({status:'live',events:[{id:'p1',program:'31.05.02',course:1,group:'101П',stream:null,date:'2026-10-06',start:'09:00',end:'10:35',subject:'Химия',location:'ауд. 2.11',teacher:'',type:'lecture'}],generatedAt:'2026-10-06T00:00:00Z',message:'static'}),{status:200,headers:{'content-type':'application/json'}});
+    throw new Error(`unexpected fetch ${url}`);
+  };
+  try{
+    const result=await loadSchedule('31.05.02',1);
+    assert.equal(result.status,'live');
+    assert.equal(result.events.length,1);
+    assert.equal(result.events[0].group,'101П');
+    assert.ok(calls>=2);
+  }finally{globalThis.fetch=originalFetch;clearScheduleMemory();}
+});
+
+test('source parser detects actual format and can fallback by content',async()=>{
+  const {detectSourceFormats}=await import('../server/source-parser.mjs');
+  assert.equal(detectSourceFormats(Buffer.from('%PDF-1.7'))[0],'pdf');
+});
+
+test('catalog exposes all 18 program/course selectors without inventing unpublished data',async()=>{
+  const {PROGRAMS,SOURCES}=await import('../dist/data/catalog.js');
+  assert.equal(PROGRAMS.length,3);
+  for(const program of PROGRAMS){
+    assert.deepEqual(program.scheduleCourses,[1,2,3,4,5,6]);
+    for(const course of [1,2,3,4,5,6]){
+      const rows=SOURCES.filter(s=>s.program===program.code&&s.course===course);
+      assert.ok(rows.length>0,`${program.code}/${course} missing source descriptor`);
+      if(program.publishedCourses.includes(course)) assert.ok(rows.some(s=>s.status==='published'||s.status==='verified'));
+      else assert.ok(rows.every(s=>s.status==='unpublished'));
+    }
+  }
 });

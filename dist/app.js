@@ -36,7 +36,7 @@ function groupsFor(program, course) {
         if (course === 1)
             return Array.from({ length: 7 }, (_, i) => `${101 + i}П`);
         if (course === 2)
-            return Array.from({ length: 7 }, (_, i) => `${201 + i}П`);
+            return ['201П', '202П', '203П'];
         return [];
     }
     if (program === '37.05.01') {
@@ -128,7 +128,7 @@ function renderTasks() { const tasks = state.tasks.filter(t => t.program === sta
 function renderFaculties() { $('facultyGrid').innerHTML = PROGRAMS.map(p => { const published = p.publishedCourses.length; return `<article class="faculty-card card"><span class="eyebrow">${p.code}</span><h3>${p.title}</h3><p>${p.faculty}</p><div class="faculty-tags"><span>1–6 курсы</span><span>${published}/6 опубликовано</span></div><button class="btn small primary" data-pick-program="${p.code}">Открыть расписание</button></article>`; }).join(''); }
 function renderFaq(filter = '') { const q = filter.trim().toLowerCase(); $('faqList').innerHTML = FAQ.filter(([a, b]) => `${a} ${b}`.toLowerCase().includes(q)).map(([a, b]) => `<details><summary>${esc(a)}<span>+</span></summary><p>${esc(b)}</p></details>`).join('') || `<div class="empty-state compact card"><h3>Ничего не найдено</h3></div>`; }
 function renderProfileOptions() { const ps = $('programSelect'), cs = $('courseSelect'), gs = $('groupSelect'); ps.innerHTML = PROGRAMS.map(p => `<option value="${p.code}">${p.title} · ${p.code}</option>`).join(''); cs.innerHTML = [1, 2, 3, 4, 5, 6].map(c => `<option value="${c}">${c} курс</option>`).join(''); const groups = groupOptions(state.profile.program, state.profile.course); gs.innerHTML = groups.map(g => g ? `<option value="${g}">${g}</option>` : `<option value="">— группы не опубликованы —</option>`).join(''); syncProfileSelects(); fillModalOptions(state.profile.program, state.profile.course, state.profile.group); }
-function applySelectProfile() { const p = $('programSelect'), c = $('courseSelect'), g = $('groupSelect'); state.profile = { program: p.value, course: Number(c.value), group: g.value || '' }; ensureProfile(); localStorage.setItem('almazov.profile', JSON.stringify(state.profile)); state.week = mondayOf(todayISO()); clearScheduleMemory(); render(); return loadCurrent().then(render); }
+function applySelectProfile() { const p = $('programSelect'), c = $('courseSelect'), g = $('groupSelect'); state.profile = { program: p.value, course: Number(c.value), group: g.value || '' }; ensureProfile(); localStorage.setItem('almazov.profile', JSON.stringify(state.profile)); state.week = mondayOf(todayISO()); state.events = []; state.status = 'loading'; state.message = 'Подготавливаем новое расписание…'; clearScheduleMemory(); render(); return loadCurrent().then(render); }
 function bind() {
     $('themeMeta')?.addEventListener('click', () => { });
     document.addEventListener('click', async (e) => {
@@ -212,6 +212,9 @@ function bind() {
             state.profile.group = groupsFor(state.profile.program, 1)[0] ?? '';
             localStorage.setItem('almazov.profile', JSON.stringify(state.profile));
             state.week = mondayOf(todayISO());
+            state.events = [];
+            state.status = 'loading';
+            state.message = 'Подготавливаем новое расписание…';
             clearScheduleMemory();
             nav('schedule');
             await loadCurrent();
@@ -251,7 +254,7 @@ function bind() {
 }
 function openModal(id) { $(id).classList.add('open'); $(id).setAttribute('aria-hidden', 'false'); document.body.classList.add('modal-open'); const focus = $(id).querySelector('button,select,input,textarea'); focus?.focus(); }
 function closeModal(id) { $(id).classList.remove('open'); $(id).setAttribute('aria-hidden', 'true'); document.body.classList.remove('modal-open'); }
-async function saveProfile() { const p = $('modalProgram').value, c = Number($('modalCourse').value), g = $('modalGroup').value; state.profile = { program: p, course: c, group: g }; ensureProfile(); localStorage.setItem('almazov.profile', JSON.stringify(state.profile)); closeModal('profileModal'); state.week = mondayOf(todayISO()); clearScheduleMemory(); render(); await loadCurrent(); render(); }
+async function saveProfile() { const p = $('modalProgram').value, c = Number($('modalCourse').value), g = $('modalGroup').value; state.profile = { program: p, course: c, group: g }; ensureProfile(); localStorage.setItem('almazov.profile', JSON.stringify(state.profile)); closeModal('profileModal'); state.week = mondayOf(todayISO()); state.events = []; state.status = 'loading'; state.message = 'Подготавливаем новое расписание…'; clearScheduleMemory(); render(); await loadCurrent(); render(); }
 function openTask() { $('taskSubject').value = ''; $('taskText').value = ''; $('taskDate').value = ''; $('taskNotice').textContent = ''; openModal('taskModal'); }
 function saveTask() { const subject = $('taskSubject').value.trim(), text = $('taskText').value.trim(); if (!subject || !text) {
     $('taskNotice').textContent = 'Заполните предмет и задание.';

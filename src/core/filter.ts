@@ -5,7 +5,7 @@ import { addDays } from './date.js';
 export function eventAppliesToGroup(event:ScheduleEvent,group:GroupRef):boolean{
   if(event.program!==group.program||event.course!==group.course)return false;
   const eg=normalizeGroup(event.group),gg=normalizeGroup(group.group);
-  const common=eg===''||eg==='ALL'||eg==='*'||eg==='ОБЩИЕ'||eg==='ОБЩАЯ'||eg==='ВСЕ';
+  const common=eg==='ALL'||eg==='*'||eg==='ОБЩИЕ'||eg==='ОБЩАЯ'||eg==='ВСЕ';
   if(!common && eg!==gg)return false;
   const es:Stream=event.stream??normalizeStream(event.stream),gs:Stream=group.stream??null;
   if(es&&gs&&es!==gs)return false;
