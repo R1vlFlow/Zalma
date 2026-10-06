@@ -19,6 +19,10 @@ jobs:
         run: python3 scripts/validate_live.py
       - name: Validate local adapters
         run: python3 scripts/validate_data.py
+      - name: Run client QA gates
+        run: |
+          node scripts/test_logic.js
+          python3 scripts/qa_static.py
       - name: Commit updated snapshot
         run: |
           git config user.name 'almazov-schedule-bot'

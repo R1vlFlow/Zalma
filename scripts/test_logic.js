@@ -59,12 +59,30 @@ A.live={schemaVersion:7,generatedAt:'2026-10-01T00:00:00Z',courses:{'1':{groups:
 const g123=A.liveEvents();assert(g123.length===2,'live group filter failed');assert(g123[0].weekday===0&&g123[1].weekday===1,'live date weekday normalization failed');
 A.state.group='124';assert(A.liveEvents().length===1&&A.liveEvents()[0].subject==='Чужая пара','live isolation failed');
 
+// Stream isolation: ALL-group lectures must follow the selected stream, not leak across A/B.
+A.state.program='31.05.01';A.state.course='1';A.live={schemaVersion:7,generatedAt:'2026-10-01T00:00:00Z',courses:{'1':{
+  groups:['122','123','124'],streams:{A:['122'],B:['123','124']},events:[
+    {id:'a-lecture',groups:['ALL'],stream:'A',course:1,date:'2026-10-05',start:'09:20',end:'10:45',subject:'Сестринское дело',type:'lecture'},
+    {id:'b-lecture',groups:['ALL'],stream:'B',course:1,date:'2026-10-05',start:'11:00',end:'12:25',subject:'Безопасность',type:'lecture'},
+    {id:'b-practice',group:'124',stream:'B',course:1,date:'2026-10-05',start:'09:00',end:'10:35',subject:'Химия',type:'practice',doubleIndex:'1/2'},
+    {id:'a-practice',group:'122',stream:'A',course:1,date:'2026-10-05',start:'13:30',end:'15:05',subject:'Анатомия',type:'practice'}
+  ]
+}}};
+A.buildLiveIndex();assert(A.liveIndex?.['1']?.byStream?.get('B')?.length===1,'stream B index missing ALL-stream event');A.state.group='124';let b=A.liveEvents();assert(b.some(e=>e.subject==='Безопасность')&&!b.some(e=>e.subject==='Сестринское дело'),'stream B leaked A lecture or hid B lecture');
+A.state.group='122';let a=A.liveEvents();assert(a.some(e=>e.subject==='Сестринское дело')&&!a.some(e=>e.subject==='Безопасность'),'stream A leaked B lecture or hid A lecture');
+A.state.group='124';assert(A.selectedStream(A.getCourseData(),'124')==='B','selected stream B resolution failed');
+assert(A.dedupeEvents([{...base,subject:'  Химия  '},{...base,subject:'ХИМИЯ'}]).length===1,'unicode/case semantic dedupe failed');
 
 // Task and utility invariants.
 assert(A.safeColor('#abcdef','#000000')==='#abcdef','safe color accepted hex failed');
 assert(A.safeColor('red','#000000')==='#000000','safe color rejected malformed value failed');
-assert(A.eventIsValid({...base,end:'08:00'})===false,'invalid reversed event accepted');
+assert(A.eventIsValid({...base,end:'08:00'})===false,'invalid reversed event accepted');assert(A.eventIsValid({...base,lessonType:'exam'})===false,'raw unknown type accepted');
+assert(A.normalizeType('зачёт')==='assessment','assessment normalization failed');
+assert(A.dedupeEvents([{...base,lessonType:'assessment'}]).length===1,'assessment event rejected');
 assert(A.groupMatches('101','101КП')===true && A.groupMatches('101КП','101')===true,'psychology group alias failed');
 assert(A.groupMatches('201П','202П')===false,'cross-group match leaked');
 
 console.log('PASS schedule logic tests · manual groups, source quarantine, dedupe, splits, live isolation, utilities');
+
+// Unscoped events are not global unless the source explicitly declares audience.
+A.state.group='124';A.state.program='31.05.01';A.state.course='1';A.live={schemaVersion:7,generatedAt:'2026-10-01T00:00:00Z',courses:{'1':{groups:['124'],streams:{B:['124']},events:[{id:'g1',course:1,date:'2026-10-05',start:'09:00',end:'10:00',subject:'Скрытое',type:'practice'},{id:'g2',course:1,date:'2026-10-05',start:'10:00',end:'11:00',subject:'Общее',type:'lecture',audience:'ALL'}]}}};A.buildLiveIndex();const gs=A.liveEvents();assert(!gs.some(e=>e.subject==='Скрытое')&&gs.some(e=>e.subject==='Общее'),'unscoped global event isolation failed');

@@ -87,3 +87,40 @@ PWA shell кешируется отдельно. Live snapshot не кеширу
 - временный browser QA-файл исключён из релизного архива.
 
 Официальная страница кабинета студента на 2026/27 содержит отдельные расписательные контуры для Лечебного дела, Педиатрии и Клинической психологии; для Педиатрии и Клинической психологии опубликованы 1-2 курсы, для ЛД — 1-6. Отдельный официальный PDF, связанный с лекциями Педиатрии 2 курса, внутри помечен как 31.05.01 Лечебное дело, поэтому он остаётся карантинированным и не отображается как расписание Педиатрии.
+
+
+## QA3.2 / 2026-10-06
+
+### Root cause fixed
+
+For first-year LD groups, some lecture events are published with `group=ALL` and a stream marker. The previous client filtered by group only, so a group from stream B could receive stream A lectures. The 1.2.0 release resolves the selected stream from `course.streams` and requires stream compatibility for every event.
+
+### UX changes
+
+The square time-grid is no longer used by the schedule page. It is replaced with a semantic weekly agenda: each day is a column containing ordered lesson cards. Breakpoints switch from 7 columns on desktop to 4/2/1 columns on smaller screens. Search, share-link, source status, and explicit empty states were added.
+
+### Automated assertions
+
+Added stream A/B isolation tests, `ALL` lecture tests, Unicode/case dedupe, stricter live-schema validation, and responsive contract checks.
+
+
+## QA3.3 — 2026-10-06 · AGENDA-UX-HARDENED
+
+### Исправления
+- Исправлена потенциальная утечка потоков A/B через `group=ALL`: поток теперь считается частью ключа принадлежности группы.
+- Ненормализованные обозначения потока (`Поток А`, `Поток Б`, `A`, `B`, кириллическое `Б`) приводятся к единому токену.
+- Несвязанные с группой глобальные события показываются только при явном флаге общности.
+- В недельном представлении убраны крупные пустые клеточные области; отображение построено как семантическая дневная лента.
+- Добавлена навигационная полоса дней и переход с карточки факультета к расписанию программы.
+- Улучшен экспорт ICS: добавлен VTIMEZONE Europe/Moscow.
+
+### Проверки
+- `node --check app.js` — PASS
+- `node --check sw.js` — PASS
+- `node scripts/test_logic.js` — PASS
+- `python3 scripts/qa_static.py` — PASS
+- `python3 scripts/validate_data.py` — PASS с 1 намеренным warning о карантине лекций Педиатрии 2 курса
+- CSS parser — 0 syntax errors
+- HTML IDs — уникальны
+
+Полный Chromium E2E в sandbox не засчитывается: headless runtime зависает на запуске графического процесса. Это ограничение среды, а не результатом теста приложения.

@@ -31,7 +31,7 @@ for tag in re.findall(r'<a\b[^>]*target=["\']_blank["\'][^>]*>',html,re.I):
     rel=re.search(r'\brel=["\']([^"\']+)["\']',tag,re.I)
     if not rel or not {'noopener','noreferrer'}.issubset(set(rel.group(1).lower().split())): errs.append('target=_blank link without noopener+noreferrer')
 # CSS responsive contract.
-for needle in ['@media(max-width:960px)','@media(min-width:961px){.schedule-mobile{display:none!important}}','@media(max-width:380px)']:
+for needle in ['.agenda-board','@media(max-width:960px)','@media(max-width:720px)','@media(min-width:961px){.schedule-mobile{display:none!important}}','@media(max-width:380px)']:
     if needle not in css: errs.append(f'missing responsive rule: {needle}')
 # Manifest / service worker JSON and local shell references.
 try: json.loads(manifest)

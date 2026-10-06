@@ -10,6 +10,7 @@ const APP = {
     course: '1',
     group: '',
     type: 'all',
+    scheduleSearch: '',
     weekOffset: 0,
     tasks: [],
     taskFilter: 'all',
@@ -36,15 +37,25 @@ const APP = {
       this.sources = sources;
       this.state.tasks = this.loadTasks();
       this.loadProfile();
-      await this.loadLive();
       this.applyAppearance();
       this.hydrateSelectors();
       this.bind();
       this.goto(this.state.page || 'dashboard', true);
+      this.setScheduleLoading(true);
+      await this.loadLive(false);
+      this.refreshCourseSelectors();
+      this.setScheduleLoading(false);
+      this.renderAll();
     } catch (err) {
       document.body.innerHTML = `<main class="fatal"><h1>Не удалось запустить Schedule Hub</h1><p>Проверьте, что файлы <code>data/*.json</code> доступны.</p><code>${this.esc(String(err))}</code></main>`;
       console.error(err);
     }
+  },
+
+  setScheduleLoading(active){
+    const target=document.getElementById('desktopSchedule');
+    const mobile=document.getElementById('mobileSchedule');
+    [target,mobile].forEach(el=>{if(!el)return;el.setAttribute('aria-busy',String(!!active));if(active)el.innerHTML='<div class="schedule-loading"><span class="loading-spinner"></span><div><b>Проверяем расписание…</b><small>Подтягиваем свежий источник и сверяем группу, поток и дату.</small></div></div>';});
   },
 
   async fetchJson(url, timeout = 9000) {
@@ -59,69 +70,92 @@ const APP = {
     }
   },
 
-  async loadLive() {
+  async loadLive(forceRemote=false) {
     this.live = null;
+    this.liveIndex = null;
     this.liveMode = '';
-    const local = ['data/live-index.json'];
-    for (const url of local) {
-      try {
-        const j = await this.fetchJson(url, 5500);
-        if (this.isValidLive(j)) { this.live = j; this.liveMode = 'local'; return j; }
-      } catch (_) {}
+    const localUrl='data/live-index.json';
+    const remoteUrl='https://raw.githubusercontent.com/R1vlFlow/Zalma/main/data/official-schedules.json';
+    let localCandidate=null;
+
+    const accept=(j,mode)=>{
+      if(!this.isValidLive(j)) return false;
+      this.live=j;this.liveMode=mode;this.buildLiveIndex();return true;
+    };
+
+    // Manual refresh: use the network first, but never lose a known-good snapshot.
+    if(forceRemote){
+      try{
+        const remote=await this.fetchJson(remoteUrl,8500);
+        if(accept(remote,'remote')){await this.saveLiveCache(remote);return remote;}
+      }catch(_){ }
     }
-    const remote = ['https://raw.githubusercontent.com/R1vlFlow/Zalma/main/data/official-schedules.json'];
-    for (const url of remote) {
-      try {
-        const j = await this.fetchJson(url, 7000);
-        if (this.isValidLive(j)) {
-          this.live = j;
-          this.liveMode = 'remote';
-          await this.saveLiveCache(j);
-          return j;
-        }
-      } catch (_) {}
-    }
-    const cached = await this.readLiveCache();
-    if (this.isValidLive(cached)) { this.live = cached; this.liveMode = 'idb-cache'; return cached; }
+
+    // CI/deployed local snapshot. Fresh snapshots are preferred for fast startup.
+    try{
+      const local=await this.fetchJson(localUrl,5000);
+      if(this.isValidLive(local)){
+        const generated=local.generatedAt?Date.parse(local.generatedAt):NaN;
+        const fresh=Number.isFinite(generated)&&(Date.now()-generated)<8*3600000;
+        if(fresh && accept(local,'local')) return local;
+        localCandidate=local;
+      }
+    }catch(_){ }
+
+    // Persistent cache is the next-best offline source.
+    try{
+      const cached=await this.readLiveCache();
+      const payload=cached?.payload||cached;
+      if(this.isValidLive(payload)){
+        if(accept(payload,'idb-cache')) return payload;
+      }
+    }catch(_){ }
+
+    // Stale local snapshot is safer than showing no schedule at all.
+    if(localCandidate && accept(localCandidate,'local-stale')) return localCandidate;
+
+    // Last network fallback for first install when no snapshot exists.
+    try{
+      const remote=await this.fetchJson(remoteUrl,7000);
+      if(accept(remote,'remote')){await this.saveLiveCache(remote);return remote;}
+    }catch(_){ }
     return null;
   },
 
   async saveLiveCache(j) {
     try {
-      if (!('indexedDB' in window)) return;
-      await new Promise((resolve, reject) => {
-        const req = indexedDB.open('almazov-schedule-cache', 1);
-        req.onupgradeneeded = () => req.result.createObjectStore('kv');
-        req.onsuccess = () => {
-          const db = req.result; const tx = db.transaction('kv', 'readwrite');
-          tx.objectStore('kv').put(j, 'live');
-          tx.oncomplete = () => { db.close(); resolve(); };
-          tx.onerror = () => { db.close(); reject(tx.error); };
+      if(!('indexedDB' in window)) return;
+      await new Promise((resolve,reject)=>{
+        const req=indexedDB.open('almazov-schedule-cache-v2',1);
+        req.onupgradeneeded=()=>req.result.createObjectStore('kv');
+        req.onsuccess=()=>{
+          const db=req.result,tx=db.transaction('kv','readwrite');
+          tx.objectStore('kv').put({payload:j,savedAt:Date.now()},'live');
+          tx.oncomplete=()=>{db.close();resolve();};tx.onerror=()=>{db.close();reject(tx.error);};
         };
-        req.onerror = () => reject(req.error);
+        req.onerror=()=>reject(req.error);
       });
-    } catch (_) {}
+    }catch(_){ }
   },
 
   async readLiveCache() {
     try {
-      if (!('indexedDB' in window)) return null;
-      return await new Promise((resolve, reject) => {
-        const req = indexedDB.open('almazov-schedule-cache', 1);
-        req.onupgradeneeded = () => req.result.createObjectStore('kv');
-        req.onsuccess = () => {
-          const db = req.result; const tx = db.transaction('kv', 'readonly');
-          const get = tx.objectStore('kv').get('live');
-          get.onsuccess = () => { db.close(); resolve(get.result || null); };
-          get.onerror = () => { db.close(); reject(get.error); };
+      if(!('indexedDB' in window)) return null;
+      return await new Promise((resolve,reject)=>{
+        const req=indexedDB.open('almazov-schedule-cache-v2',1);
+        req.onupgradeneeded=()=>req.result.createObjectStore('kv');
+        req.onsuccess=()=>{
+          const db=req.result,tx=db.transaction('kv','readonly'),get=tx.objectStore('kv').get('live');
+          get.onsuccess=()=>{db.close();resolve(get.result||null);};get.onerror=()=>{db.close();reject(get.error);};
         };
-        req.onerror = () => reject(req.error);
+        req.onerror=()=>reject(req.error);
       });
-    } catch (_) { return null; }
+    }catch(_){return null;}
   },
 
   isValidLive(j) {
-    return !!(j && Number(j.schemaVersion) === 7 && j.courses && typeof j.courses === 'object');
+    if(!j || Number(j.schemaVersion)!==7 || !j.courses || typeof j.courses!=='object') return false;
+    return Object.values(j.courses).every(c=>c && Array.isArray(c.groups) && Array.isArray(c.events));
   },
 
   esc(v) {
@@ -168,12 +202,51 @@ const APP = {
   },
   getGroups() { return this.getCourseData()?.groups || []; },
   groupMatches(candidate, selected) {
-    const a = String(candidate || '').trim();
-    const b = String(selected || '').trim();
-    if (!a || !b) return false;
-    if (a === b || a === 'ALL' || a === '*') return true;
-    // Official psychology PDFs use 101/102 while the student-facing groups use 101КП/102КП.
-    return a.replace(/КП$/i,'') === b.replace(/КП$/i,'');
+    const a=this.groupToken(candidate),b=this.groupToken(selected);
+    if(!a||!b)return false;
+    return a===b||a==='ALL'||a==='*';
+  },
+
+  normalizeStream(v){
+    let s=String(v??'').trim().toUpperCase().replace(/\s+/g,'');
+    s=s.replace(/^ПОТОК|^STREAM|^FLOW/,'').replace(/Б/g,'B').replace(/А/g,'A');
+    return s.replace(/[^A-Z0-9А-ЯЁ]/g,'');
+  },
+  groupToken(v){
+    return String(v??'').trim().toUpperCase().replace(/^ГРУППА/,'').replace(/\s+/g,'').replace(/КП$/,'');
+  },
+  selectedStream(c, group=this.state.group){
+    const target=String(group||'').trim();
+    if(!target || !c?.streams || typeof c.streams!=='object') return '';
+    const matches=[];
+    for(const [stream, rawGroups] of Object.entries(c.streams)){
+      const groups=Array.isArray(rawGroups)?rawGroups:(rawGroups?.groups||[]);
+      if(groups.some(g=>this.groupMatches(g,target))) matches.push(this.normalizeStream(stream));
+    }
+    return matches.length===1?matches[0]:'';
+  },
+  eventBelongsToGroup(e,c){
+    const selected=this.state.group;
+    if(!selected) return false;
+    const candidates=this.eventCandidates(e);
+    const unscoped=candidates.length===0;
+    const globalEvent=unscoped && (e.audience==='ALL'||e.scope==='all'||e.forAll===true);
+    const groupOk=globalEvent || candidates.some(g=>this.groupMatches(g,selected));
+    if(!groupOk) return false;
+    const stream=this.selectedStream(c,selected);
+    const eventStream=this.normalizeStream(e.stream??e.streamCode??e.flow??'');
+    const streamRegistry=!!(c?.streams && typeof c.streams==='object' && Object.keys(c.streams).length);
+    if(eventStream && streamRegistry && !stream) return false;
+    if(eventStream && stream && eventStream!==stream) return false;
+    if(eventStream && candidates.length && candidates.every(g=>['ALL','*',''].includes(String(g).trim().toUpperCase())) && stream && eventStream!==stream) return false;
+    return true;
+  },
+  normalizeType(v){
+    const raw=String(v??'').trim().toLowerCase();
+    if(['lecture','lect','лекция','лекционный','лекции'].includes(raw) || raw.includes('лекц')) return 'lecture';
+    if(['practice','пз','практика','практическое','семинар','seminar','practiceclass'].includes(raw) || raw.includes('практик') || raw.includes('семинар')) return 'practice';
+    if(['exam','зачет','зачёт','экзамен','контроль','аттестация','test','credit'].includes(raw) || raw.includes('экзам') || raw.includes('зачет') || raw.includes('зачёт') || raw.includes('контрол') || raw.includes('аттест')) return 'assessment';
+    return '';
   },
 
   hydrateSelectors() {
@@ -216,9 +289,9 @@ const APP = {
     const dot=document.querySelector('.status-dot');
     if (!el) return;
     if (p?.id==='31.05.01' && this.live) {
-      const mode = this.liveMode==='idb-cache' ? 'кэш' : 'live';
-      el.textContent=`ЛД · ${mode} ${this.live.generatedAt?.slice(0,10) || 'проверено'}`;
-      if (dot) dot.classList.toggle('warning', this.liveMode==='idb-cache');
+      const labels={remote:'live',local:'snapshot', 'local-stale':'старый snapshot','idb-cache':'кэш'};
+      el.textContent=`ЛД · ${labels[this.liveMode]||'проверено'} ${this.live.generatedAt?.slice(0,10) || 'проверено'}`;
+      if (dot) dot.classList.toggle('warning', this.liveMode==='idb-cache'||this.liveMode==='local-stale');
     } else if (p?.id==='31.05.02' && this.state.course==='2') {
       el.textContent='Педиатрия · ПЗ опубликованы · лекции на проверке';
       dot?.classList.add('warning');
@@ -244,6 +317,8 @@ const APP = {
     document.getElementById('double1').oninput=e=>{this.state.double1=this.safeColor(e.target.value,'#4b81da');this.applyAppearance();};
     document.getElementById('double2').oninput=e=>{this.state.double2=this.safeColor(e.target.value,'#73e0c4');this.applyAppearance();};
     document.getElementById('typeFilter').addEventListener('click',e=>{const b=e.target.closest('button[data-type]');if(!b)return;this.state.type=b.dataset.type;document.querySelectorAll('#typeFilter button').forEach(x=>x.classList.toggle('active',x===b));this.renderSchedule();});
+    document.getElementById('scheduleSearch')?.addEventListener('input',e=>{this.state.scheduleSearch=e.target.value;this.renderSchedule();});
+    document.getElementById('weekStrip')?.addEventListener('click',e=>{const b=e.target.closest('[data-scroll-day]');if(!b)return;document.getElementById(`agenda-${b.dataset.scrollDay}`)?.scrollIntoView({behavior:'smooth',block:'start'});});
     document.getElementById('taskFilter').addEventListener('click',e=>{const b=e.target.closest('button[data-task-filter]');if(!b)return;this.state.taskFilter=b.dataset.taskFilter;document.querySelectorAll('#taskFilter button').forEach(x=>x.classList.toggle('active',x===b));this.renderTasks();});
     window.addEventListener('keydown',e=>{if(e.key==='Escape'){this.closeModal('profileModal');this.closeModal('taskModal');}});
     for (const id of ['profileModal','taskModal']) document.getElementById(id).addEventListener('click',e=>{if(e.target.id===id)this.closeModal(id);});
@@ -264,7 +339,7 @@ const APP = {
     if(k==='program'){this.state.course='1';this.state.group='';this.refreshCourseSelectors();}
     if(k==='course'){this.state.group='';this.refreshGroups();}
     if(k==='group') this.refreshGroups();
-    this.state.weekOffset=0; this.saveProfile(); this.renderAll();
+    this.state.weekOffset=0; this.state.scheduleSearch=''; const q=document.getElementById('scheduleSearch');if(q)q.value=''; this.saveProfile(); this.renderAll();
   },
 
   goto(page,initial=false){
@@ -294,19 +369,21 @@ const APP = {
       case 'save-task':this.saveTask();break;
       case 'print-schedule':window.print();break;
       case 'export-ics':this.exportIcs();break;
+      case 'share-week':this.shareWeek();break;
       case 'refresh-data':this.refreshData();break;
       case 'export-tasks':this.exportTasks();break;
       case 'import-tasks':document.getElementById('taskImport')?.click();break;
       case 'edit-task':this.openTask(el?.dataset.taskId || '');break;
       case 'delete-task':this.deleteTask(el?.dataset.taskId || '');break;
       case 'toggle-task':this.toggleTask(el?.dataset.taskId || '');break;
+      case 'pick-program':this.state.program=el?.dataset.program||this.state.program;this.state.course='1';this.state.group='';this.refreshCourseSelectors();this.saveProfile();this.goto('schedule');break;
     }
   },
 
   async refreshData(){
     const btn=document.querySelector('[data-action="refresh-data"]');
     if(btn){btn.disabled=true;btn.classList.add('loading');}
-    await this.loadLive(); this.updateSyncLabel(); this.renderAll();
+    await this.loadLive(true); this.updateSyncLabel(); this.renderAll();
     if(btn){btn.disabled=false;btn.classList.remove('loading');}
   },
 
@@ -376,7 +453,8 @@ const APP = {
     const wn=Number(weekNumber);if(!Number.isInteger(wn)||wn<1||wn>52)return '';
     const d=new Date(2026,7,31,12);d.setDate(d.getDate()+(wn-1)*7+Number(weekday0||0));return this.dateKey(d);
   },
-  timeToMin(v){const m=/^(\d{2}):(\d{2})$/.exec(String(v||''));return m?Number(m[1])*60+Number(m[2]):-1;},
+  normalizeTime(v){const m=/^(\d{1,2})[:.](\d{2})$/.exec(String(v??'').trim());if(!m)return '';const h=Number(m[1]),min=Number(m[2]);return h>=0&&h<=23&&min>=0&&min<=59?`${String(h).padStart(2,'0')}:${String(min).padStart(2,'0')}`:'';},
+  timeToMin(v){const n=this.normalizeTime(v);if(!n)return -1;const [h,m]=n.split(':').map(Number);return h*60+m;},
 
   manualRuleEvents(){
     const c=this.getCourseData();if(!c||!this.state.group)return [];
@@ -384,38 +462,79 @@ const APP = {
     for(const r of rules){
       const groups=r.groups||c.groups||[];
       if(!groups.some(g=>this.groupMatches(g,this.state.group)))continue;
-      const weekday0=Math.max(0,Math.min(6,Number(r.weekday)-1));
+      const weekdayRaw=Number(r.weekday);
+      if(!Number.isInteger(weekdayRaw)||weekdayRaw<1||weekdayRaw>7)continue;
+      const weekday0=weekdayRaw-1;
       for(const week of this.expandWeeks(r.weeks)){
         const date=this.dateForWeek('',week,weekday0);if(!date)continue;
-        out.push({id:`manual:${this.state.program}:${this.state.course}:${this.state.group}:${weekday0}:${r.start}:${r.end}:${week}:${r.subject}`,date,weekday:weekday0,start:r.start,end:r.end,subject:r.subject,location:r.location||'',lessonType:r.lessonType==='lecture'?'lecture':'practice',weekNumber:week,doubleIndex:r.doubleIndex||'',doubleOf:r.doubleOf||'',sourceUrl:c.sources?.[r.lessonType==='lecture'?'lecture':'practice']||''});
+        out.push({id:`manual:${this.state.program}:${this.state.course}:${this.state.group}:${weekday0}:${r.start}:${r.end}:${week}:${r.subject}`,date,weekday:weekday0,start:this.normalizeTime(r.start),end:this.normalizeTime(r.end),subject:r.subject,location:r.location||'',lessonType:r.lessonType==='lecture'?'lecture':'practice',weekNumber:week,doubleIndex:r.doubleIndex||'',doubleOf:r.doubleOf||'',sourceUrl:c.sources?.[r.lessonType==='lecture'?'lecture':'practice']||''});
       }
     }
     return this.dedupeEvents(out);
   },
 
+  eventCandidates(e){
+    if(Array.isArray(e.groups)&&e.groups.length)return [...new Set(e.groups.flatMap(v=>String(v).split(/[,;]+/).map(x=>x.trim()).filter(Boolean)))];
+    const raw=String(e.group??e.groupName??'');
+    return raw? [...new Set(raw.split(/[,;]+/).map(x=>x.trim()).filter(Boolean))]:[];
+  },
+  buildLiveIndex(){
+    this.liveIndex={};
+    for(const [courseId,c] of Object.entries(this.live?.courses||{})){
+      const byGroup=new Map(),byStream=new Map(),generic=[];
+      const add=(map,key,e)=>{if(!key)return;const arr=map.get(key)||[];arr.push(e);map.set(key,arr);};
+      for(const e of (c.events||[])){
+        const candidates=this.eventCandidates(e);
+        const wild=candidates.length===0||candidates.every(g=>['ALL','*',''].includes(String(g).trim().toUpperCase()));
+        const stream=this.normalizeStream(e.stream??e.streamCode??e.flow??'');
+        if(!wild){for(const g of candidates){const token=this.groupToken(g);if(token&&!['ALL','*'].includes(token))add(byGroup,token,e);}}
+        else if(stream)add(byStream,stream,e);
+        else generic.push(e);
+      }
+      this.liveIndex[courseId]={byGroup,byStream,generic};
+    }
+  },
+  rawLiveCandidates(c){
+    const idx=this.liveIndex?.[String(this.state.course)];
+    if(!idx)return c?.events||[];
+    const out=[];const seen=new Set();const push=(arr)=>{for(const e of (arr||[])){const key=e.id||e.eventId||JSON.stringify([e.date,e.start,e.end,e.subject,e.group,e.stream]);if(seen.has(key))continue;seen.add(key);out.push(e);}};
+    push(idx.byGroup.get(this.groupToken(this.state.group)));
+    const stream=this.selectedStream(c,this.state.group);if(stream)push(idx.byStream.get(stream));
+    push(idx.generic.filter(e=>e?.audience==='ALL'||e?.scope==='all'||e?.forAll===true));
+    return out;
+  },
+
   liveEvents(){
     const p=this.getProgram(),c=this.getCourseData();if(!p||!c||!this.state.group)return [];
-    const raw=(c.events||[]).filter(e=>{
-      const candidates=Array.isArray(e.groups)?e.groups.map(String):[String(e.group??e.groupName??'')];
-      const groupOk=candidates.some(g=>this.groupMatches(g,this.state.group));
-      const courseOk=String(e.course??this.state.course)===String(this.state.course);
-      return groupOk&&courseOk;
-    });
+    const raw=this.rawLiveCandidates(c).filter(e=>this.eventBelongsToGroup(e,c) && String(e.course??this.state.course)===String(this.state.course));
     return this.dedupeEvents(raw.map(e=>{
-      const rawType=String(e.type??e.lessonType??'').toLowerCase();
-      const lessonType=['lecture','lect','лекция','лекционный'].includes(rawType)?'lecture':'practice';
       const date=this.normalizeDate(e.date)||this.dateForWeek(e.weekStart,e.weekNumber,Number(e.weekday)||0);
       const weekday=this.dateToWeekday(date,Number(e.weekday)||0);
-      return {id:e.id||e.eventId||'',date,weekday,start:e.start||e.timeStart||'',end:e.end||e.timeEnd||'',subject:e.subject||e.name||'Без названия',location:e.location||e.room||'',lessonType,weekNumber:Number(e.weekNumber)||this.weekNumberForDate(new Date(`${date}T12:00:00`)),doubleIndex:e.doubleIndex||e.split||e.part||'',doubleOf:e.doubleOf||'',sourceUrl:e.sourceUrl||p?.liveIndex||''};
+      const lessonType=this.normalizeType(e.type??e.lessonType);
+      const computedWeek=date?this.weekNumberForDate(new Date(`${date}T12:00:00`)):0;
+      return {id:e.id||e.eventId||'',date,weekday,start:this.normalizeTime(e.start||e.timeStart||''),end:this.normalizeTime(e.end||e.timeEnd||''),subject:String(e.subject||e.name||'Без названия').trim(),location:String(e.location||e.room||'').trim(),lessonType,weekNumber:computedWeek>0?computedWeek:(Number(e.weekNumber)||0),doubleIndex:e.doubleIndex||e.split||e.part||'',doubleOf:e.doubleOf||'',stream:this.normalizeStream(e.stream??e.streamCode??e.flow??''),sourceUrl:e.sourceUrl||p?.liveIndex||''};
     }));
   },
 
   dateToWeekday(date,fallback=0){if(!this.normalizeDate(date))return Math.max(0,Math.min(6,Number(fallback)||0));const d=new Date(`${date}T12:00:00`);return (d.getDay()+6)%7;},
-  eventIsValid(e){return this.normalizeDate(e.date)&&Number.isInteger(e.weekday)&&e.weekday>=0&&e.weekday<=6&&this.timeToMin(e.start)>=0&&this.timeToMin(e.end)>this.timeToMin(e.start)&&String(e.subject||'').trim();},
+  eventIsValid(e){return this.normalizeDate(e.date)&&Number.isInteger(e.weekday)&&e.weekday>=0&&e.weekday<=6&&['lecture','practice','assessment'].includes(e.lessonType)&&this.timeToMin(e.start)>=0&&this.timeToMin(e.end)>this.timeToMin(e.start)&&String(e.subject||'').trim();},
+  semanticText(v){return String(v??'').toLocaleLowerCase('ru-RU').replace(/ё/g,'е').replace(/[^\p{L}\p{N}]+/gu,' ').trim().replace(/\s+/g,' ');},
   dedupeEvents(events){
-    const seen=new Set();return events.filter(e=>{if(!this.eventIsValid(e))return false;const semantic=[e.date,e.start,e.end,String(e.subject).trim().toLocaleLowerCase('ru-RU'),String(e.location).trim().toLocaleLowerCase('ru-RU'),e.lessonType,e.doubleIndex||'',e.doubleOf||''].join('|');if(seen.has(semantic))return false;seen.add(semantic);return true;}).sort((a,b)=>a.date.localeCompare(b.date)||a.start.localeCompare(b.start)||a.lessonType.localeCompare(b.lessonType)||a.subject.localeCompare(b.subject,'ru'));},
+    const seen=new Set();
+    return events.filter(e=>{
+      if(!this.eventIsValid(e))return false;
+      const semantic=[e.date,e.start,e.end,this.semanticText(e.subject),this.semanticText(e.location),e.lessonType,e.doubleIndex||'',e.doubleOf||''].join('|');
+      if(seen.has(semantic))return false;seen.add(semantic);return true;
+    }).sort((a,b)=>a.date.localeCompare(b.date)||a.start.localeCompare(b.start)||a.lessonType.localeCompare(b.lessonType)||a.subject.localeCompare(b.subject,'ru'));
+  },
   eventsForCurrentGroup(){const p=this.getProgram();return !p||!this.state.group?[]:this.dedupeEvents(p.id==='31.05.01'?this.liveEvents():this.manualRuleEvents());},
-  filterWeek(events){const monday=this.monday(new Date()),end=new Date(monday.getTime()+6*86400000);return events.filter(e=>{const d=new Date(`${e.date}T12:00:00`);return d>=monday&&d<=end&&(this.state.type==='all'||e.lessonType===this.state.type);});},
+  filterWeek(events){
+    const monday=this.monday(new Date());
+    const startKey=this.dateKey(monday),endDate=new Date(monday);endDate.setDate(endDate.getDate()+6);
+    const endKey=this.dateKey(endDate);
+    const q=String(this.state.scheduleSearch||'').trim().toLocaleLowerCase('ru-RU');
+    return events.filter(e=>e.date>=startKey&&e.date<=endKey&&(this.state.type==='all'||e.lessonType===this.state.type)&&(!q||[e.subject,e.location,e.stream].some(v=>String(v||'').toLocaleLowerCase('ru-RU').includes(q))));
+  },
 
   syncSelectorValues(){for(const id of ['programSelect','courseSelect','groupSelect','modalProgram','modalCourse','modalGroup']){const el=document.getElementById(id);if(el)el.value=this.state[id==='programSelect'||id==='modalProgram'?'program':id==='courseSelect'||id==='modalCourse'?'course':'group'];}} ,
   renderAll(){this.syncSelectorValues();this.renderContext();this.renderCoverage();this.renderDashboard();this.renderSchedule();this.renderTasks();this.renderKug();this.renderResources();this.renderFaculties();this.updateSyncLabel();},
@@ -424,7 +543,7 @@ const APP = {
     document.getElementById('ctxProgram').textContent=p?.name||'—';document.getElementById('ctxCourse').textContent=this.state.course?`${this.state.course} курс`:'—';document.getElementById('ctxGroup').textContent=this.state.group||'—';document.getElementById('ctxFaculty').textContent=f?.name||'—';
     document.getElementById('selectionTitle').textContent=this.state.group?`${p.name} · ${this.state.group}`:'Группа не выбрана';
     document.getElementById('selectionSource').textContent=p?.id==='31.05.01'&&this.live?'LIVE':'OFFICIAL SNAPSHOT';
-    document.getElementById('profileAvatar').textContent=(this.state.group||'И')[0];document.getElementById('profileName').textContent=this.state.group?`Группа ${this.state.group}`:'Студент';document.getElementById('profileMeta').textContent=p?`${p.short} · ${this.state.course} курс`:'Настройте группу';
+    document.getElementById('profileAvatar').textContent=(this.state.group||'И')[0];document.getElementById('profileName').textContent=this.state.group?`Группа ${this.state.group}`:'Студент';document.getElementById('profileMeta').textContent=p?`${p.short} · ${this.state.course} курс${this.selectedStream(this.getCourseData(),this.state.group)?` · поток ${this.selectedStream(this.getCourseData(),this.state.group)}`:''}`:'Настройте группу';
   },
   renderCoverage(){
     const programs=this.catalog.programs.filter(p=>['31.05.01','31.05.02','37.05.01'].includes(p.id));
@@ -437,37 +556,73 @@ const APP = {
     document.getElementById('dashWeekTitle').textContent=`${this.monthFmt.format(monday)} — ${this.monthFmt.format(new Date(monday.getTime()+6*86400000))}`;
     const mini=[];for(let i=0;i<7;i++){const d=new Date(monday);d.setDate(d.getDate()+i);const key=this.dateKey(d),n=current.filter(e=>e.date===key).length;mini.push(`<button class="mini-day ${key===this.dateKey(today)?'current':''}" data-page-link="schedule" aria-label="${this.days[i]}, ${key}"><b>${this.days[i]}</b><span>${n?`${n} пар`:'—'}</span></button>`);}document.getElementById('miniWeek').innerHTML=mini.join('');
   },
-  lessonHtml(e){const split=e.doubleIndex?`<span class="split-badge split-${this.esc(String(e.doubleIndex).replace('/','-'))}">${this.esc(e.doubleIndex)}</span>`:'';return `<div class="lesson"><div class="lesson-time">${this.esc(e.start)}<small>${this.esc(e.end)}</small></div><div class="lesson-main"><b>${this.esc(e.subject)}</b><small>${this.esc(e.location||'Аудитория уточняется')}</small></div><div class="lesson-meta">${split}<span class="lesson-type">${e.lessonType==='lecture'?'Лекция':'ПЗ'}</span></div></div>`;},
+  lessonHtml(e){const split=e.doubleIndex?`<span class="split-badge split-${this.esc(String(e.doubleIndex).replace('/','-'))}">${this.esc(e.doubleIndex)}</span>`:'';const type=e.lessonType==='lecture'?'Лекция':e.lessonType==='assessment'?'Контроль':'ПЗ';return `<div class="lesson"><div class="lesson-time">${this.esc(e.start)}<small>${this.esc(e.end)}</small></div><div class="lesson-main"><b>${this.esc(e.subject)}</b><small>${this.esc(e.location||'Аудитория уточняется')}</small></div><div class="lesson-meta">${split}<span class="lesson-type">${type}</span></div></div>`;},
 
   renderSchedule(){
-    const p=this.getProgram(),c=this.getCourseData(),events=this.filterWeek(this.eventsForCurrentGroup()),monday=this.monday(new Date()),weekN=this.weekNumberForDate(monday),todayKey=this.dateKey(new Date());
+    const p=this.getProgram(),c=this.getCourseData(),allEvents=this.eventsForCurrentGroup(),events=this.filterWeek(allEvents),monday=this.monday(new Date()),weekN=this.weekNumberForDate(monday),todayKey=this.dateKey(new Date());
     document.getElementById('weekLabel').textContent=`${this.monthFmt.format(monday)} — ${this.monthFmt.format(new Date(monday.getTime()+6*86400000))}`;
-    document.getElementById('weekSubLabel').textContent=`Учебная неделя №${weekN} · ${p?.name||''} · ${this.state.group||'группа не выбрана'}`;
+    const stream=this.selectedStream(c,this.state.group);
+    document.getElementById('weekSubLabel').textContent=`Учебная неделя №${weekN} · ${p?.name||''} · ${this.state.group||'группа не выбрана'}${stream?` · поток ${stream}`:''}`;
     const desktop=document.getElementById('desktopSchedule'),mobile=document.getElementById('mobileSchedule');
-    const empty=this.state.group&&!c?'no-course':(!this.state.group?'no-group':(!events.length?'no-events':''));
-    if(empty){const data=empty==='no-group'?['⌕','Выберите группу','Сервис никогда не подставляет чужую группу автоматически.']:empty==='no-course'?['○','Для этого курса нет проверенного расписания','Курс остаётся в каталоге, но сервис не создаёт выдуманные пары.']:['✓','В этой неделе занятий нет','Попробуйте соседнюю неделю или фильтр «Все».'];const source=this.safeUrl(p?.source,'#');const html=`<div class="schedule-empty"><div class="empty-icon">${data[0]}</div><h3>${data[1]}</h3><p>${data[2]}</p>${empty==='no-group'?'<button class="btn primary" data-action="profile">Выбрать группу</button>':`<a class="btn ghost" href="${this.esc(source)}" target="_blank" rel="noopener noreferrer">Проверить официальный кабинет ↗</a>`}</div>`;desktop.innerHTML=html;mobile.innerHTML=html;
-    } else {desktop.innerHTML=this.desktopScheduleHtml(events,monday,todayKey);mobile.innerHTML=this.mobileScheduleHtml(events,monday,todayKey);}
+    const countEl=document.getElementById('scheduleCount');if(countEl)countEl.textContent=`${events.length} ${events.length===1?'пара':'пар'}`;
+    const empty=!this.state.group?'no-group':(!c||!allEvents.length?'no-events':(!events.length?'no-filter':''));
+    if(empty){
+      const data=empty==='no-group'?['⌕','Выберите группу','Сначала укажите программу, курс и группу. Чужое расписание никогда не подставляется автоматически.']:empty==='no-filter'?['⌕','Ничего не найдено','Снимите фильтр типа или измените поисковый запрос.']:empty==='no-events'?['✓','Занятий не найдено','Для этой группы в проверенном источнике нет занятий на выбранной неделе. Проверьте соседние недели или официальный источник.']:['○','Для этого курса нет проверенного расписания','Курс остаётся в каталоге, но сервис не создаёт выдуманные пары.'];
+      const source=this.safeUrl(c?.sources?.practice||c?.sources?.lecture||p?.source||'#');
+      const html=`<div class="schedule-empty"><div class="empty-icon">${data[0]}</div><h3>${data[1]}</h3><p>${data[2]}</p>${empty==='no-group'?'<button class="btn primary" data-action="profile">Выбрать группу</button>':`<a class="btn ghost" href="${this.esc(source)}" target="_blank" rel="noopener noreferrer">Проверить источник ↗</a>`}</div>`;
+      desktop.innerHTML=html;mobile.innerHTML=html;
+      this.renderWeekStrip(events,monday);
+    }else{
+      const html=this.agendaBoardHtml(events,monday,todayKey);
+      desktop.innerHTML=html;mobile.innerHTML=html;
+      this.renderWeekStrip(events,monday);
+    }
     const source=c?.sources?.practice||c?.sources?.lecture||p?.liveIndex||p?.source||'#';document.getElementById('sourceLink').href=this.safeUrl(source,'#');
-    const warning=c?.sourceWarnings?.length?c.sourceWarnings.join(' '):'';const notice=document.querySelector('.schedule-notice');if(notice)notice.classList.toggle('warning',!!warning || this.liveMode==='idb-cache');
-    if(p?.id==='31.05.01'&&this.live){const cacheMode=this.liveMode==='idb-cache';document.getElementById('dataHealthTitle').textContent=`${cacheMode?'Офлайн-кэш':'Официальный live-index'} · ${this.live.generatedAt?.slice(0,10)||'—'}`;document.getElementById('dataHealthText').textContent=`Загружены ${Object.keys(this.live.courses||{}).length} курсов. Группа фильтруется строго; дата, день и дубликаты проверяются перед показом${cacheMode?' · показан последний проверенный снимок из кэша':''}.`;}
-    else if(c){document.getElementById('dataHealthTitle').textContent=warning?'Источник требует внимания':'Официальный snapshot';document.getElementById('dataHealthText').textContent=warning||'Лекции и ПЗ хранятся раздельно. Неподтверждённые события не показываются как достоверные.';}
+    const warning=c?.sourceWarnings?.length?c.sourceWarnings.join(' '):'';const notice=document.querySelector('.schedule-notice');if(notice)notice.classList.toggle('warning',!!warning || this.liveMode==='idb-cache' || this.liveMode==='local-stale');
+    if(p?.id==='31.05.01'&&this.live){
+      const mode=this.liveMode==='idb-cache'?'Офлайн-кэш':this.liveMode==='local-stale'?'Локальный снимок (обновите)':'Проверенный live-index';
+      document.getElementById('dataHealthTitle').textContent=`${mode} · ${this.live.generatedAt?.slice(0,10)||'—'}`;
+      const courseCount=Object.keys(this.live.courses||{}).length;
+      document.getElementById('dataHealthText').textContent=`${courseCount} курсов · ${allEvents.length} событий для группы после фильтра программы/курса/группы/потока · дата и дубликаты проверены${this.liveMode==='idb-cache'?' · интернет недоступен, показан последний кэш':''}.`;
+    }else if(c){document.getElementById('dataHealthTitle').textContent=warning?'Источник требует внимания':'Официальный snapshot';document.getElementById('dataHealthText').textContent=warning||'Лекции и ПЗ хранятся раздельно. Неподтверждённые события не смешиваются с проверенными.';}
     else {document.getElementById('dataHealthTitle').textContent='Курс без проверенного набора событий';document.getElementById('dataHealthText').textContent='Чужие или непроверенные пары не подставляются автоматически.';}
   },
-  desktopScheduleHtml(events,monday,todayKey){
-    let html='<div class="sg-cell sg-head sg-time-head">Время</div>';for(let i=0;i<7;i++){const d=new Date(monday);d.setDate(d.getDate()+i);const k=this.dateKey(d);html+=`<div class="sg-cell sg-head ${k===todayKey?'today-head':''}"><div class="sg-day">${this.days[i]}</div><div class="sg-date">${String(d.getDate()).padStart(2,'0')}</div></div>`;}
-    const times=[...new Set(events.map(e=>e.start))].sort((a,b)=>a.localeCompare(b));
-    for(const t of times){html+=`<div class="sg-cell sg-time"><b>${this.esc(t)}</b></div>`;for(let day=0;day<7;day++){const list=events.filter(e=>e.weekday===day&&e.start===t);html+=`<div class="sg-cell">${list.length?list.map(e=>this.eventCardHtml(e)).join(''):'<span class="empty-slot">—</span>'}</div>`;}}
-    return `<div class="schedule-grid">${html}</div>`;
-  },
-  mobileScheduleHtml(events,monday,todayKey){
+  renderWeekStrip(events,monday){
+    const strip=document.getElementById('weekStrip');if(!strip)return;
+    const today=this.dateKey(new Date());
     let html='';
-    for(let i=0;i<7;i++){const d=new Date(monday);d.setDate(d.getDate()+i);const key=this.dateKey(d);const list=events.filter(e=>e.weekday===i).sort((a,b)=>a.start.localeCompare(b.start));if(!list.length)continue;html+=`<section class="mobile-day ${key===todayKey?'today-day':''}"><header><div><span>${this.days[i]}</span><b>${String(d.getDate()).padStart(2,'0')} ${new Intl.DateTimeFormat('ru-RU',{month:'long'}).format(d)}</b></div><em>${list.length} ${list.length===1?'пара':'пар'}</em></header><div class="mobile-day-events">${list.map(e=>this.eventCardHtml(e,true)).join('')}</div></section>`;}
-    return html||'<div class="schedule-empty"><div class="empty-icon">✓</div><h3>В этой неделе занятий нет</h3><p>Попробуйте соседнюю неделю или фильтр «Все».</p></div>';
+    for(let i=0;i<7;i++){
+      const d=new Date(monday);d.setDate(d.getDate()+i);const key=this.dateKey(d);
+      const n=events.filter(e=>e.date===key).length;
+      html+=`<button class=\"week-day-chip ${key===today?'current':''}\" data-scroll-day=\"${key}\" aria-label=\"Перейти к ${this.days[i]} ${d.getDate()}\"><span>${this.days[i]}</span><b>${String(d.getDate()).padStart(2,'0')}</b><em>${n}</em></button>`;
+    }
+    strip.innerHTML=html;
   },
-  eventCardHtml(e,mobile=false){
+
+  agendaBoardHtml(events,monday,todayKey){
+    let html='<div class="agenda-board" role="list">';
+    for(let i=0;i<7;i++){
+      const d=new Date(monday);d.setDate(d.getDate()+i);const key=this.dateKey(d),list=events.filter(e=>e.date===key).sort((a,b)=>a.start.localeCompare(b.start)||a.end.localeCompare(b.end)||a.subject.localeCompare(b.subject,'ru'));
+      const month=new Intl.DateTimeFormat('ru-RU',{month:'short'}).format(d).replace('.','');
+      html+=`<section id="agenda-${key}" class="agenda-day ${key===todayKey?'today-day':''}" data-day="${key}" aria-label="${this.days[i]} ${d.getDate()}"><header class="agenda-day-head"><div><span>${this.days[i]}</span><b>${String(d.getDate()).padStart(2,'0')} <em>${this.esc(month)}</em></b></div><strong>${list.length}</strong></header><div class="agenda-day-events">`;
+      if(!list.length) html+='<div class="agenda-empty"><span>—</span><small>Нет занятий</small></div>';
+      else html+=list.map(e=>this.eventCardHtml(e)).join('');
+      html+='</div></section>';
+    }
+    return html+'</div>';
+  },
+  eventCardHtml(e){
     const split=e.doubleIndex?`<span class="split-badge split-${this.esc(String(e.doubleIndex).replace('/','-'))}">${this.esc(e.doubleIndex)}</span>`:'';
     const src=e.sourceUrl?`<a class="event-source" href="${this.esc(this.safeUrl(e.sourceUrl))}" target="_blank" rel="noopener noreferrer" title="Открыть источник">↗</a>`:'';
-    return `<article class="event-card ${e.lessonType}"><div class="event-top"><span class="event-time">${this.esc(e.start)}–${this.esc(e.end)}</span><span class="event-flags">${split}<span class="lesson-type">${e.lessonType==='lecture'?'ЛЕКЦИЯ':'ПЗ'}</span>${src}</span></div><b>${this.esc(e.subject)}</b><small>${this.esc(e.location||'Аудитория уточняется')}</small><small class="event-week">нед. ${this.esc(e.weekNumber||'—')}</small></article>`;
+    const stream=e.stream?`<span class="stream-badge">поток ${this.esc(e.stream)}</span>`:'';
+    const type=e.lessonType==='lecture'?'ЛЕКЦИЯ':e.lessonType==='assessment'?'КОНТРОЛЬ':'ПЗ';
+    return `<article class="agenda-event ${e.lessonType}" role="listitem"><div class="agenda-time"><b>${this.esc(e.start)}</b><span>${this.esc(e.end)}</span></div><div class="agenda-body"><div class="agenda-topline"><span class="lesson-type">${type}</span>${split}${stream}${src}</div><h3>${this.esc(e.subject)}</h3><p class="agenda-location">${this.esc(e.location||'Аудитория уточняется')}</p><div class="agenda-meta"><span>нед. ${this.esc(e.weekNumber||'—')}</span>${e.doubleOf?`<span>серия ${this.esc(e.doubleOf)}</span>`:''}</div></div></article>`;
+  },
+  shareWeek(){
+    const url=new URL(location.href);url.searchParams.set('page','schedule');url.searchParams.set('program',this.state.program);url.searchParams.set('course',this.state.course);if(this.state.group)url.searchParams.set('group',this.state.group);else url.searchParams.delete('group');
+    const value=url.toString();
+    const done=()=>{const b=document.querySelector('[data-action="share-week"]');if(!b)return;const old=b.textContent;b.textContent='Ссылка скопирована';setTimeout(()=>b.textContent=old,1400);};
+    if(navigator.clipboard?.writeText)navigator.clipboard.writeText(value).then(done).catch(()=>window.prompt('Скопируйте ссылку',value));else window.prompt('Скопируйте ссылку',value);
   },
 
   renderTasks(){
@@ -485,17 +640,23 @@ const APP = {
 
   renderKug(){const p=this.getProgram(),items=this.kug?.[p?.id]?.[String(this.state.course)]||[];document.getElementById('kugTitle').textContent=`${p?.name||'—'} · ${this.state.course} курс`;document.getElementById('kugTimeline').innerHTML=items.length?items.map(x=>`<div class="kug-item ${this.esc(x.kind)}"><i class="kug-line"></i><div><b>${this.prettyDate(x.from)} — ${this.prettyDate(x.to)}</b><small>${this.esc(x.label)}</small></div><span>${x.kind==='study'?'Учёба':x.kind==='assessment'?'Аттестация':x.kind==='practice'?'Практика':'Каникулы'}</span></div>`).join(''):`<div class="empty-panel"><b>КУГ для этого курса не добавлен</b><span>Это не означает, что его нет у ИМО.</span></div>`;document.getElementById('kugSource').href=this.safeUrl(this.getCourseData()?.sources?.kug||p?.source||'#','#');},
   renderResources(){const list=this.sources?.sources||[],labels={hub:'Кабинет','live-ui':'Электронное расписание','week-calendar':'Учебные недели',catalog:'Каталог',structure:'Структура',portal:'Портал','live-json':'JSON',kug:'КУГ',lecture:'Лекции',practice:'ПЗ'};document.getElementById('resourceGrid').innerHTML=list.map(s=>`<article class="resource-card"><div class="resource-kicker">${this.esc(labels[s.kind]||s.kind)}</div><h3>${this.esc(s.title)}</h3><p>${this.esc(s.warning||((s.program||'')+(s.course?` · ${s.course} курс`:''))||'Официальный источник')}</p><div class="resource-links"><a href="${this.esc(this.safeUrl(s.url))}" target="_blank" rel="noopener noreferrer">Открыть ↗</a></div></article>`).join('');},
-  renderFaculties(){document.getElementById('facultyGrid').innerHTML=this.catalog.faculties.map(f=>`<article class="faculty-card"><div class="resource-kicker">Факультет</div><h3>${this.esc(f.name)}</h3><p>${f.units.length?`${f.units.length} структурных позиций в каталоге.`:'Без перечня кафедр на текущей странице.'}</p><div class="unit-list">${f.units.map(u=>`<span>${this.esc(u)}</span>`).join('')}</div></article>`).join('');},
+  renderFaculties(){
+    document.getElementById('facultyGrid').innerHTML=this.catalog.faculties.map(f=>{
+      const programs=this.catalog.programs.filter(p=>p.faculty===f.id);
+      const programHtml=programs.length?`<div class="faculty-programs">${programs.map(p=>{const supported=['31.05.01','31.05.02','37.05.01'].includes(p.id);return `<button class="program-link ${supported?'supported':''}" data-action="pick-program" data-program="${this.esc(p.id)}"><span>${this.esc(p.name)}</span><em>${supported?'Расписание':'Каталог'}</em></button>`;}).join('')}</div>`:'';
+      return `<article class="faculty-card"><div class="resource-kicker">Факультет</div><h3>${this.esc(f.name)}</h3><p>${f.units.length?`${f.units.length} структурных позиций в каталоге.`:'Без перечня кафедр на текущей странице.'}</p>${programHtml}<div class="unit-list">${f.units.map(u=>`<span>${this.esc(u)}</span>`).join('')}</div></article>`;
+    }).join('');
+  },
 
   exportIcs(){
     const events=this.filterWeek(this.eventsForCurrentGroup());if(!events.length){window.alert('Для экспорта в этой неделе нет занятий.');return;}
-    const lines=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Almazov Schedule Hub//RU','CALSCALE:GREGORIAN','METHOD:PUBLISH'];
-    for(const e of events){const start=e.date.replace(/-/g,'')+'T'+e.start.replace(':','')+'00';const end=e.date.replace(/-/g,'')+'T'+e.end.replace(':','')+'00';const uid=String(e.id||`${e.date}-${e.start}-${e.subject}`).replace(/[^A-Za-z0-9_.-]+/g,'-');lines.push('BEGIN:VEVENT',`UID:${uid}@almazov-hub`,`DTSTART;TZID=Europe/Moscow:${start}`,`DTEND;TZID=Europe/Moscow:${end}`,`SUMMARY:${this.icsEsc(e.subject+' · '+(e.lessonType==='lecture'?'Лекция':'ПЗ'))}`,`LOCATION:${this.icsEsc(e.location||'')}`,`DESCRIPTION:${this.icsEsc('Учебная неделя №'+(e.weekNumber||'—'))}`,'END:VEVENT');}
+    const lines=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Almazov Schedule Hub//RU','CALSCALE:GREGORIAN','METHOD:PUBLISH','BEGIN:VTIMEZONE','TZID:Europe/Moscow','BEGIN:STANDARD','DTSTART:19700101T000000','TZOFFSETFROM:+0300','TZOFFSETTO:+0300','TZNAME:MSK','END:STANDARD','END:VTIMEZONE'];
+    for(const e of events){const start=e.date.replace(/-/g,'')+'T'+e.start.replace(':','')+'00';const end=e.date.replace(/-/g,'')+'T'+e.end.replace(':','')+'00';const uid=String(e.id||`${e.date}-${e.start}-${e.subject}`).replace(/[^A-Za-z0-9_.-]+/g,'-');lines.push('BEGIN:VEVENT',`UID:${uid}@almazov-hub`,`DTSTART;TZID=Europe/Moscow:${start}`,`DTEND;TZID=Europe/Moscow:${end}`,`SUMMARY:${this.icsEsc(e.subject+' · '+(e.lessonType==='lecture'?'Лекция':e.lessonType==='assessment'?'Контроль':'ПЗ'))}`,`LOCATION:${this.icsEsc(e.location||'')}`,`DESCRIPTION:${this.icsEsc('Учебная неделя №'+(e.weekNumber||'—'))}`,'END:VEVENT');}
     lines.push('END:VCALENDAR');this.downloadBlob(new Blob([lines.join('\r\n')],{type:'text/calendar;charset=utf-8'}),`almazov-${this.state.group||'group'}-week-${this.weekNumberForDate(this.monday(new Date()))}.ics`);
   },
   icsEsc(v){return String(v||'').replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\r?\n/g,'\\n');}
 };
 
 try{const saved=JSON.parse(localStorage.getItem('almazov_hub_profile_v3')||localStorage.getItem('almazov_hub_profile_v2')||'{}');if(saved&&typeof saved==='object')Object.assign(APP.state, saved);}catch(_){ }
-const urlParams=typeof location!=='undefined'?new URLSearchParams(location.search):null;if(urlParams?.get('program'))APP.state.program=urlParams.get('program');if(urlParams?.get('course'))APP.state.course=urlParams.get('course');if(urlParams?.get('group'))APP.state.group=urlParams.get('group');
+const urlParams=typeof location!=='undefined'?new URLSearchParams(location.search):null;if(urlParams?.get('program'))APP.state.program=urlParams.get('program');if(urlParams?.get('course'))APP.state.course=urlParams.get('course');if(urlParams?.get('group'))APP.state.group=urlParams.get('group');if(['dashboard','schedule','homework','kug','resources','faculties'].includes(urlParams?.get('page')))APP.state.page=urlParams.get('page');
 window.APP=APP;APP.init();
