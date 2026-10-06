@@ -1,47 +1,189 @@
-# Almazov Universal Schedule Hub
+# Almazov Schedule Hub 2.2.0
 
-Релиз 1.2.0 · STREAM-HARDENED
+Production-oriented full-stack schedule service for the Institute of Medical Education of the Almazov National Medical Research Centre.
 
-Единый клиентский сервис для расписания ИМО НМИЦ им. В.А. Алмазова с отдельными слоями: программа → курс → группа → поток → дата → тип занятия.
+## Why the architecture changed
 
-## Что изменено в 1.2.0
+The old UI represented a week as a mostly fixed matrix of time cells. That made `rowspan/colspan`, merged Excel/HTML cells and incomplete source rows dangerous: one parser mistake could shift an entire day or leak events from another stream.
 
-- квадратная временная сетка заменена на недельную ленту из дневных колонок; на планшете — 2–4 колонки, на телефоне — одна;
-- добавлен поиск по предмету, аудитории и потоку;
-- добавлена кнопка «Поделиться» с ссылкой на контекст программы/курса/группы;
-- исправлена главная ошибка stream A/B: записи `group=ALL` теперь разрешаются через реестр потоков выбранной группы;
-- дата является источником истины для дня недели; занятия без определимой даты не попадают в рендер;
-- семантическая дедупликация нормализует регистр, `ё/е`, пробелы и пунктуацию;
-- live-обновление предпочитает свежий источник, затем локальный snapshot, затем IndexedDB cache;
-- UI стартует до медленного live-fetch и показывает состояние проверки вместо зависания страницы;
-- ДЗ, КУГ, источники и факультеты остаются отдельными модулями.
+The new model is **event-first**:
 
-## Источники
+`official source → adapter → normalized event → validation → dedupe → group/stream filter → agenda UI`
 
-Основным внешним источником для Лечебного дела служит опубликованный JSON snapshot/live-index проекта-сборщика расписаний; для Педиатрии и Клинической психологии применяются проверенные официальные PDF-источники из кабинета студента. Неподтверждённые или противоречивые документы помещаются в карантин, а не смешиваются с проверенными событиями.
+The UI never parses an original spreadsheet/HTML/PDF directly. Parsing is isolated in adapters and the browser consumes normalized events.
 
-Официальный сайт ИМО прямо предупреждает, что электронное расписание работает в тестовом режиме и может не отражать выполненные переносы.
+## Supported education programs
 
-## Запуск
+- `31.05.01` Лечебное дело — selector 1–6 courses; verified official schedule sources currently published for all six courses.
+- `31.05.02` Педиатрия — selector 1–6; the official student page currently publishes schedule links for courses 1–2. Courses 3–6 remain explicit `unpublished` states until the university publishes them.
+- `37.05.01` Клиническая психология — selector 1–6; the official student page currently publishes schedule links for courses 1–2. Courses 3–6 remain explicit `unpublished` states until publication.
 
-Откройте `index.html` через статический HTTP-сервер или разместите содержимое на GitHub Pages.
+The application does not invent missing courses, groups or lessons.
 
-## QA
+## Features
+
+### Schedule
+
+- agenda layout instead of empty square/time-cell grid;
+- weekly navigation and today shortcut;
+- mobile day cards; tablet/desktop multi-column agenda;
+- program/course/group selectors;
+- exact group + stream isolation;
+- lecture / practice / lab / assessment filters;
+- search by subject, room, teacher or stream;
+- `1/2` and `2/2` preservation;
+- semantic deduplication independent of source `id`;
+- empty, partial, cached and unavailable states;
+- skeleton during loading;
+- ICS export, print and shareable profile URL.
+
+### Parsing pipeline
+
+Adapters are separate and replaceable:
+
+- official JSON adapter;
+- PDF text/coordinate adapter;
+- XLSX/XLS adapter with merge expansion;
+- HTML table adapter with `rowspan` / `colspan` reconstruction.
+
+Normalization covers:
+
+- discipline names;
+- teacher names;
+- locations and room prefixes;
+- group IDs and ranges;
+- A/B stream labels, including Cyrillic variants;
+- lesson types;
+- time ranges with `:` or `.` separators;
+- half-term labels `1/2`, `2/2`, `числитель`, `знаменатель`;
+- week specifications such as `(2-5, 7)`.
+
+No date is invented from “today”. A record without a trustworthy date/week is quarantined or skipped.
+
+### User experience
+
+- dark / light / system theme;
+- inline boot theme script prevents FOUC;
+- persisted theme preference;
+- FAQ accordion + search;
+- quick glossary for `1/2`, `2/2`, streams and PZ;
+- dashboard with upcoming lessons;
+- local homework/task storage scoped by program/course/group;
+- PWA shell and offline page;
+- keyboard-focus styles, labels and semantic dialogs.
+
+### Caching and reliability
+
+Browser: in-memory → IndexedDB → localStorage fallback.
+
+Server: in-memory → Redis when `REDIS_URL` is configured → atomic disk snapshots. Redis is optional; the service remains fully functional without it.
+
+A failed remote fetch never replaces a valid snapshot with empty or malformed data.
+
+## Run locally
 
 ```bash
-npm test
-npm run validate
-npm run validate-live
+npm install
 npm run qa
+npm start
 ```
 
-Полный QA-отчёт находится в `QA_REPORT.md`.
+Open `http://127.0.0.1:4173`.
 
+## Synchronise official sources
 
-## 1.2.2 — AGENDA-UX-HARDENED
-- Недельное расписание переведено в семантическую ленту по дням: без пустых квадратов и фиксированной сетки времени.
-- Добавлена быстрая навигация по дням недели; на телефоне она прокручивается горизонтально.
-- Поток нормализуется для `A/А/Б/B`, а группы очищаются от вариантов вроде `Группа 124`.
-- Неограниченные события без группы не показываются, если источник явно не помечает их как общие (`audience=ALL`, `scope=all`, `forAll=true`).
-- Из карточек факультетов можно сразу перейти к поддерживаемому расписанию программы.
-- ICS содержит явный `VTIMEZONE` для `Europe/Moscow`.
+```bash
+npm run sync
+```
+
+This command fetches published official sources, parses them through adapters, validates output and stores atomic snapshots under `storage/snapshots/`.
+
+## Production deployment
+
+### Static-only
+
+`npm run build` creates `dist/`. Static-only mode is supported for the frontend; full multi-program parsing/import requires the Node server.
+
+### Full-stack (recommended)
+
+Run `npm start`. The same process serves `dist/` and `/api/schedule`.
+
+Environment:
+
+- `PORT` — HTTP port (default `4173`)
+- optional `REDIS_URL` — Redis cache for parsed schedule payloads
+- optional `HOST` — bind address (defaults to `0.0.0.0` for container-friendly deployment)
+
+## Data quality guarantees
+
+Before an event reaches the UI it must have:
+
+- supported program and course;
+- valid ISO date;
+- valid start/end time;
+- non-empty subject;
+- normalized group/stream;
+- dedupe identity.
+
+Stream-specific `ALL` events are only visible to groups in the same stream. Exact group events are only visible to the exact group.
+
+## Current official-source caveat
+
+The university's electronic schedule page explicitly warns that its schedule is published in test mode and may not reflect completed rescheduling. The Hub therefore shows source status rather than pretending its data is authoritative when the source is stale or unavailable.
+
+The official student cabinet currently publishes specialist schedule links for 31.05.01, 31.05.02 and 37.05.01. The public page currently exposes Peds/Psych schedule links for courses 1–2, while LD is exposed through course 6.
+
+## Repository structure
+
+```text
+src/
+  app.ts
+  core/          normalization, calendar, filtering, parsers, validation
+  data/          program and official source catalog
+  services/      cache, schedule, tasks
+  ui/            theme and FAQ
+server/
+  server.mjs
+  pipeline.mjs
+  pdf-adapter.mjs
+  xlsx-adapter.mjs
+  html-adapter.mjs
+  source-registry.mjs
+  redis-cache.mjs
+config/
+docs/
+tests/
+public/
+scripts/
+```
+
+## Production release checks
+
+`npm run qa` runs build, TypeScript checks through the test build, parser unit tests, distribution validation and Node syntax checks. The suite includes merged-cell HTML/XLSX fixtures, PDF coordinate fixtures, week/date normalization, stream isolation, deduplication, split 1/2 and 2/2, malformed-record validation and a 10,000-event filter stress case.
+
+Before deployment, also run `npm run sync` against the current official sources and review the generated snapshot validation report. The browser QA harness is separate from the deterministic parser test suite because some sandboxed CI environments cannot launch Chromium reliably.
+
+## Quality checks
+
+```bash
+npm run typecheck
+npm test
+npm run validate
+node --check server/server.mjs
+node --check server/pipeline.mjs
+node --check server/pdf-adapter.mjs
+node --check server/xlsx-adapter.mjs
+node --check server/html-adapter.mjs
+```
+
+## Important non-goals
+
+The service never fabricates official schedule data for unpublished courses. When an official document is missing or internally identifies the wrong specialty, it is quarantined and the UI directs the student to the original official page.
+
+## QA 2.2.0 hardening
+
+The 2.2.0 release adds a parser regression guard for the second common table orientation: **group-per-row + day-per-column**. HTML tables are now classified before semantic extraction so a data-row group cannot be mistaken for a group header column. Day dates are taken from the day header instead of room numbers such as `2.11`, preventing the exact date-shift bug that can move a lesson into another week. Leading separators left behind after time/type removal are also normalized.
+
+The release test suite currently contains 17 deterministic tests covering merged cells, both HTML orientations, stream isolation, group isolation, date/week normalization, semantic dedupe, split weeks, malformed data, PDF coordinates, XLSX merge alignment and a large filter stress case. `npm run qa` passes in the provided environment.
+
+A browser-origin E2E run remains environment-dependent when Chromium is sandboxed; deterministic parser and UI-source validation are therefore kept separate from the browser smoke layer.

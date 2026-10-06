@@ -1,13 +1,24 @@
 {
-  "name": "almazov-universal-schedule",
-  "version": "1.2.2",
+  "name": "almazov-schedule-hub",
+  "version": "2.2.0",
   "private": true,
-  "description": "Единый сервис расписания ИМО НМИЦ им. В.А. Алмазова",
+  "type": "module",
   "scripts": {
-    "validate": "python3 scripts/validate_data.py",
-    "sync": "python3 scripts/sync_official.py",
-    "validate-live": "python3 scripts/validate_live.py",
-    "test": "node scripts/test_logic.js",
-    "qa": "python3 scripts/qa_static.py"
+    "build": "rm -rf dist && tsc -p tsconfig.json && node scripts/copy-public.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "npm run build && node --test tests/*.test.mjs",
+    "validate": "npm run build && node scripts/validate-dist.mjs",
+    "qa": "npm test && npm run validate && node --check server/server.mjs && node --check server/pipeline.mjs && node --check server/pdf-adapter.mjs && node --check server/xlsx-adapter.mjs && node --check server/html-adapter.mjs",
+    "start": "npm run build && node server/server.mjs",
+    "sync": "node server/sync-schedules.mjs",
+    "validate-live": "node server/sync-official.mjs --validate-only"
+  },
+  "dependencies": {
+    "pdfjs-dist": "^5.4.296",
+    "xlsx": "^0.18.5",
+    "redis": "^5.7.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3"
   }
 }
