@@ -36,6 +36,10 @@ export interface ScheduleEvent {
   teacher: string;
   type: LessonType;
   half?: '1/2' | '2/2';
+  double?: boolean;
+  doublePart?: 1 | 2;
+  doubleOf?: string;
+  durationMinutes?: number;
   weeks?: string;
   sourceUrl?: string;
   sourceTitle?: string;

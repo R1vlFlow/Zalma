@@ -131,3 +131,12 @@ test('catalog exposes all 18 program/course selectors without inventing unpublis
     }
   }
 });
+
+test('official LD roster uses exact published group matrix',async()=>{
+  const {groupsFor,streamForGroup}=await import('../dist/data/roster.js');
+  assert.deepEqual(groupsFor('31.05.01',4).slice(-4),['421','422','423','424']);
+  assert.equal(groupsFor('31.05.01',4).length,24);
+  assert.equal(groupsFor('31.05.01',6).length,18);
+  assert.equal(streamForGroup('31.05.01','424'),'B');
+  assert.equal(streamForGroup('31.05.01','617'), null);
+});
