@@ -1227,7 +1227,7 @@ def session():
     s=requests.Session()
     retry=requests.adapters.Retry(total=4,connect=4,read=4,backoff_factor=1.2,status_forcelist=(429,500,502,503,504),allowed_methods=frozenset(['GET']))
     s.mount('https://',requests.adapters.HTTPAdapter(max_retries=retry,pool_connections=20,pool_maxsize=20))
-    s.headers.update({'User-Agent':'Almazov-Student-Schedule-Sync/4.3.0-pre7','Accept':'text/html,application/pdf,*/*'})
+    s.headers.update({'User-Agent':'Almazov-Student-Schedule-Sync/4.6.3','Accept':'text/html,application/pdf,*/*'})
     return s
 
 def classify_pdf(text, url, hinted_course=None, hinted_stream=None, hinted_kind=None):

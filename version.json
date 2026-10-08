@@ -1,5 +1,7 @@
 {
-  "version": "1.2.2",
+  "version": "2.3.0",
+  "uiVersion": "2.0.8",
+  "engineVersion": "4.6.3",
   "release": "AGENDA-UX-HARDENED",
   "released": "2026-10-06"
 }

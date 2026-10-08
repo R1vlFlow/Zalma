@@ -5,7 +5,7 @@ import json, re, subprocess, sys
 
 ROOT = Path(__file__).resolve().parents[1]
 required = [
-    'index.html','offline.html','404.html','README_FIRST.md','PRIVACY.md','COPYRIGHT.md',
+    'public/index.html','public/offline.html','404.html','README_FIRST.md','PRIVACY.md','COPYRIGHT.md',
     'logo.png','manifest.webmanifest','sw.js','version.json','package.json',
     'requirements-official-sync.txt','SCHEDULE_ENGINE_VERSION.txt','UI_VERSION.txt',
     'data/official-schedules.json','data/official-sync-status.json',
@@ -18,7 +18,7 @@ missing=[p for p in required if not (ROOT/p).exists()]
 if missing: raise SystemExit('RELEASE CHECK FAILED: missing '+', '.join(missing))
 
 pkg=json.loads((ROOT/'package.json').read_text())
-assert pkg.get('version')=='4.6.3', pkg.get('version')
+assert pkg.get('version')=='2.3.0', pkg.get('version')
 data=json.loads((ROOT/'data/official-schedules.json').read_text(encoding='utf-8'))
 assert data.get('schemaVersion')==7
 after=data.get('dataState')
@@ -29,11 +29,9 @@ for cid,c in data['courses'].items():
     assert set(sum(c['streams'].values(),[]))==set(c['groups'])
     assert any(e.get('type')=='lecture' for e in c['events'])
     assert any(e.get('type')=='practice' for e in c['events'])
-idx=(ROOT/'index.html').read_text(encoding='utf-8')
-for token in ['DEFAULT_SCHEDULE','normalizeData','renderSchedule','expandClientDoubleEvents','OFFICIAL_INDEX_URLS','official-schedules.json']:
-    assert token in idx, token
-assert 'const DEFAULT_SCHEDULE=' in idx
-assert 'const OFFICIAL_INDEX_URLS=' in idx
+idx=(ROOT/'public/index.html').read_text(encoding='utf-8')
+for token in ['main.js','Расписание']: assert token in idx, token
+
 assert 'document.cookie' not in idx
 subprocess.run([sys.executable,'scripts/verify_workflow_contract.py'],cwd=ROOT,check=True)
 subprocess.run([sys.executable,'scripts/validate_js.py'],cwd=ROOT,check=True)

@@ -1,7 +1,7 @@
 import { LIVE_LD_JSON, PROGRAMS, sourceFor, sourcesFor } from '../data/catalog.js';
 import { validateScheduleIndex, normalizeLiveEvents } from '../core/validate.js';
 import { saveCache, readCache } from './cache.js';
-const API_BASE = '/api/schedule';
+const API_BASE = './api/schedule';
 const memory = new Map();
 export async function loadSchedule(program, course) {
     const key = `${program}:${course}`;
@@ -12,12 +12,18 @@ export async function loadSchedule(program, course) {
         const api = await fetch(`${API_BASE}?program=${encodeURIComponent(program)}&course=${course}`, { cache: 'no-store' });
         if (api.ok) {
             const payload = await api.json();
-            const result = { status: (payload.status === 'partial' ? 'partial' : 'live'), events: Array.isArray(payload.events) ? payload.events : [], generatedAt: payload.generatedAt, sourceUrl: payload.sourceUrl, sourceName: payload.sourceName, issues: Array.isArray(payload.issues) ? payload.issues : [], message: payload.message ?? 'Расписание получено от сервера.' };
+            const status = ['partial', 'cache', 'unavailable', 'error', 'live'].includes(payload.status ?? '') ? payload.status : 'live';
+            const result = { status, events: Array.isArray(payload.events) ? payload.events : [], generatedAt: payload.generatedAt, sourceUrl: payload.sourceUrl, sourceName: payload.sourceName, issues: Array.isArray(payload.issues) ? payload.issues : [], message: payload.message ?? 'Расписание получено от сервера.' };
             memory.set(key, result);
             return result;
         }
     }
-    catch { /* direct source fallback below */ }
+    catch { /* static/offline fallback below */ }
+    const staticResult = await loadStaticSnapshot(program, course);
+    if (staticResult) {
+        memory.set(key, staticResult);
+        return staticResult;
+    }
     if (program === '31.05.01')
         return loadLdRemote(program, course, key);
     const source = sourcesFor(program, course).find(s => s.status === 'published') ?? sourcesFor(program, course)[0];
@@ -28,9 +34,24 @@ export async function loadSchedule(program, course) {
         return result;
     }
     const pub = PROGRAMS.find(p => p.code === program)?.publishedCourses.includes(course);
-    const result = { status: 'unavailable', events: [], sourceUrl: sourceFor(program, course), issues: [], message: pub ? `Официальный источник опубликован, но локальный parser/API сейчас недоступен. Запустите production API или используйте официальный источник.` : `Официальное расписание ${PROGRAMS.find(p => p.code === program)?.title ?? program}, ${course} курса, сейчас не опубликовано на странице кабинета студента.` };
+    const result = { status: 'unavailable', events: [], sourceUrl: sourceFor(program, course), issues: [], message: pub ? `Официальный источник опубликован, но серверный snapshot сейчас недоступен. Нажмите «Обновить» или откройте официальный источник.` : `Официальное расписание ${PROGRAMS.find(p => p.code === program)?.title ?? program}, ${course} курса, сейчас не опубликовано на странице кабинета студента.` };
     memory.set(key, result);
     return result;
+}
+async function loadStaticSnapshot(program, course) {
+    try {
+        const res = await fetch(`./data/schedules/${encodeURIComponent(program)}/${course}.json`, { cache: 'no-store' });
+        if (!res.ok)
+            return null;
+        const payload = await res.json();
+        if (!Array.isArray(payload.events) || payload.events.length === 0)
+            return null;
+        const status = (payload.status === 'partial' ? 'partial' : 'live');
+        return { status, events: payload.events, generatedAt: payload.generatedAt, sourceUrl: payload.sourceUrl, sourceName: payload.sourceName, issues: Array.isArray(payload.issues) ? payload.issues : [], message: payload.message ?? `Static snapshot · ${payload.events.length} событий` };
+    }
+    catch {
+        return null;
+    }
 }
 async function loadLdRemote(program, course, key) {
     try {

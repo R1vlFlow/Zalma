@@ -1,4 +1,5 @@
 import { PROGRAMS, sourceFor, sourcesFor } from './data/catalog.js';
+import { groupsFor, streamForGroup } from './data/roster.js';
 import { mondayOf, weekDates, formatDateRu, longDateRu, sameDay, addDays, todayISO } from './core/date.js';
 import { filterEvents, indexByDate } from './core/filter.js';
 import { loadSchedule, clearScheduleMemory } from './services/scheduleService.js';
@@ -8,46 +9,10 @@ import { FAQ } from './ui/faq.js';
 const DAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 const DEFAULT_PROFILE = { program: '31.05.01', course: 1, group: '123' };
 const initial = readInitialProfile();
-const state = { profile: initial, week: mondayOf(todayISO()), events: [], status: 'loading', message: 'Подготавливаем расписание…', search: '', type: 'all', page: 'schedule', tasks: readTasks(), theme: themeMode(), faqQuery: '' };
+const state = { profile: initial, week: mondayOf(todayISO()), events: [], status: 'loading', message: 'Подготавливаем расписание…', search: '', type: 'all', page: 'schedule', tasks: readTasks(), theme: themeMode(), faqQuery: '', double1: '#4b81da', double2: '#73e0c4' };
 function $(id) { const el = document.getElementById(id); if (!el)
     throw new Error(`Missing #${id}`); return el; }
 function esc(v) { return v.replace(/[&<>'"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#039;', '"': '&quot;' }[c])); }
-function streamForGroup(program, group) { if (program !== '31.05.01')
-    return null; const n = Number.parseInt(group, 10); if (!Number.isFinite(n))
-    return null; if (n >= 101 && n <= 122)
-    return 'A'; if (n >= 123 && n <= 135)
-    return 'B'; if (n >= 201 && n <= 216)
-    return 'A'; if (n >= 217 && n <= 232)
-    return 'B'; if (n >= 301 && n <= 312)
-    return 'A'; if (n >= 313 && n <= 324)
-    return 'B'; if (n >= 401 && n <= 412)
-    return 'A'; if (n >= 413 && n <= 423)
-    return 'B'; if (n >= 501 && n <= 512)
-    return 'A'; if (n >= 513 && n <= 522)
-    return 'B'; if (n >= 601 && n <= 616)
-    return 'A'; return null; }
-function groupsFor(program, course) {
-    if (program === '31.05.01') {
-        const maps = { 1: [101, 135], 2: [201, 232], 3: [301, 324], 4: [401, 423], 5: [501, 522], 6: [601, 616] };
-        const [a, b] = maps[course];
-        return Array.from({ length: b - a + 1 }, (_, i) => String(a + i));
-    }
-    if (program === '31.05.02') {
-        if (course === 1)
-            return Array.from({ length: 7 }, (_, i) => `${101 + i}П`);
-        if (course === 2)
-            return ['201П', '202П', '203П'];
-        return [];
-    }
-    if (program === '37.05.01') {
-        if (course === 1)
-            return ['101КП', '102КП'];
-        if (course === 2)
-            return ['201КП', '202КП'];
-        return [];
-    }
-    return [];
-}
 function groupOptions(program, course) { const groups = groupsFor(program, course); return groups.length ? groups : ['']; }
 function ensureProfile() { const groups = groupsFor(state.profile.program, state.profile.course); if (!groups.length) {
     state.profile.group = '';
@@ -69,7 +34,7 @@ function readInitialProfile() { try {
 catch {
     return { ...DEFAULT_PROFILE };
 } }
-export async function boot() { initTheme(); ensureProfile(); renderShell(); bind(); render(); await loadCurrent(); render(); }
+export async function boot() { initTheme(); loadAppearance(); applyAppearance(); ensureProfile(); renderShell(); bind(); render(); await loadCurrent(); render(); }
 async function loadCurrent() { state.status = 'loading'; state.message = 'Загружаем и проверяем источник…'; renderSchedule(); const result = await loadSchedule(state.profile.program, state.profile.course); state.events = result.events; state.status = result.status; state.message = result.message; }
 function renderShell() { const p = PROGRAMS.find(x => x.code === state.profile.program); $('profileName').textContent = state.profile.group ? `Группа ${state.profile.group}` : p?.shortTitle ?? 'Профиль'; $('profileMeta').textContent = `${p?.title ?? ''} · ${state.profile.course} курс${streamForGroup(state.profile.program, state.profile.group) ? ` · поток ${streamForGroup(state.profile.program, state.profile.group)}` : ''}`; $('syncLabel').textContent = state.message; $('statusDot').className = `${state.status === 'live' ? 'ok' : state.status === 'cache' ? 'cache' : state.status === 'loading' ? 'loading' : 'bad'}`; }
 function render() { renderShell(); renderProfileOptions(); renderSchedule(); renderTasks(); renderFaculties(); renderResources(); renderKug(); renderFaq(state.faqQuery); renderHome(); }
@@ -116,7 +81,7 @@ function renderSchedule() {
 function renderSkeleton(desktop) { const cols = desktop ? 7 : 2; return `<div class="skeleton-grid">${Array.from({ length: cols }, () => `<div class="skeleton-day"><i></i><i></i><i></i></div>`).join('')}</div>`; }
 function dayColumn(date, index, list) { return `<section class="day-column ${date === todayISO() ? 'today' : ''}"><header><div><span>${DAYS[index]}</span><b>${date.slice(8, 10)} ${new Intl.DateTimeFormat('ru-RU', { month: 'short' }).format(new Date(`${date}T12:00:00Z`)).replace('.', '')}</b></div><strong>${list.length || '—'}</strong></header><div class="day-list">${list.length ? list.map(lessonCard).join('') : `<div class="day-empty">Свободный день</div>`}</div></section>`; }
 function mobileDay(date, index, list) { return `<section class="mobile-day ${date === todayISO() ? 'today' : ''}"><header><div><span>${DAYS[index]}</span><h3>${longDateRu(date)}</h3></div><b>${list.length}</b></header><div class="day-list">${list.length ? list.map(lessonCard).join('') : `<div class="day-empty">Свободный день</div>`}</div></section>`; }
-function lessonCard(e) { const label = { lecture: 'Лекция', practice: 'ПЗ', lab: 'Lab', assessment: 'Контроль', other: 'Занятие' }[e.type]; return `<article class="lesson ${e.type}" tabindex="0" aria-label="${esc(`${e.start}–${e.end} · ${label} · ${e.subject}`)}"><div class="lesson-top"><span class="time">${esc(e.start)}–${esc(e.end)}</span><span class="type">${label}</span>${e.half ? `<span class="half ${e.half === '1/2' ? 'num' : 'den'}">${e.half}</span>` : ''}${e.stream ? `<span class="stream">Поток ${e.stream}</span>` : ''}</div><h4>${esc(e.subject)}</h4>${e.location ? `<p>⌖ ${esc(e.location)}</p>` : ''}${e.teacher ? `<p>◌ ${esc(e.teacher)}</p>` : ''}${e.weeks ? `<span class="weeks">${esc(e.weeks)}</span>` : ''}</article>`; }
+function lessonCard(e) { const label = { lecture: 'Лекция', practice: 'ПЗ', lab: 'Lab', assessment: 'Контроль', other: 'Занятие' }[e.type]; const split = e.half ?? (e.doublePart === 1 ? '1/2' : e.doublePart === 2 ? '2/2' : undefined); return `<article class="lesson ${e.type}" tabindex="0" aria-label="${esc(`${e.start}–${e.end} · ${label} · ${e.subject}`)}"><div class="lesson-top"><span class="time">${esc(e.start)}–${esc(e.end)}</span><span class="type">${label}</span>${split ? `<span class="half ${split === '1/2' ? 'num' : 'den'}" title="${split === '1/2' ? 'Числитель' : 'Знаменатель'}">${split}</span>` : ''}${e.stream ? `<span class="stream">Поток ${e.stream}</span>` : ''}</div><h4>${esc(e.subject)}</h4>${e.location ? `<p>⌖ ${esc(e.location)}</p>` : ''}${e.teacher ? `<p>◌ ${esc(e.teacher)}</p>` : ''}${e.weeks ? `<span class="weeks">${esc(e.weeks)}</span>` : ''}</article>`; }
 function plural(n, a, b, c) { const m = n % 10, k = n % 100; if (m === 1 && k !== 11)
     return a; if (m >= 2 && m <= 4 && (k < 12 || k > 14))
     return b; return c; }
@@ -248,13 +213,26 @@ function bind() {
     $('scheduleSearch').addEventListener('input', () => { state.search = $('scheduleSearch').value; renderSchedule(); });
     document.querySelectorAll('#typeFilter [data-type]').forEach(b => b.addEventListener('click', () => { state.type = b.dataset.type ?? 'all'; document.querySelectorAll('#typeFilter [data-type]').forEach(x => x.classList.remove('active')); b.classList.add('active'); renderSchedule(); }));
     $('faqSearch').addEventListener('input', () => { state.faqQuery = $('faqSearch').value; renderFaq(state.faqQuery); });
+    $('double1')?.addEventListener('input', () => { state.double1 = $('double1').value; applyAppearance(); });
+    $('double2')?.addEventListener('input', () => { state.double2 = $('double2').value; applyAppearance(); });
     $('modalProgram').addEventListener('change', () => { const p = $('modalProgram').value; const c = Number($('modalCourse').value); fillModalOptions(p, c, groupsFor(p, c)[0] ?? ''); });
     $('modalCourse').addEventListener('change', () => { const p = $('modalProgram').value; const c = Number($('modalCourse').value); fillModalOptions(p, c, groupsFor(p, c)[0] ?? ''); });
     window.addEventListener('storage', () => { state.tasks = readTasks(); renderTasks(); });
 }
 function openModal(id) { $(id).classList.add('open'); $(id).setAttribute('aria-hidden', 'false'); document.body.classList.add('modal-open'); const focus = $(id).querySelector('button,select,input,textarea'); focus?.focus(); }
 function closeModal(id) { $(id).classList.remove('open'); $(id).setAttribute('aria-hidden', 'true'); document.body.classList.remove('modal-open'); }
-async function saveProfile() { const p = $('modalProgram').value, c = Number($('modalCourse').value), g = $('modalGroup').value; state.profile = { program: p, course: c, group: g }; ensureProfile(); localStorage.setItem('almazov.profile', JSON.stringify(state.profile)); closeModal('profileModal'); state.week = mondayOf(todayISO()); state.events = []; state.status = 'loading'; state.message = 'Подготавливаем новое расписание…'; clearScheduleMemory(); render(); await loadCurrent(); render(); }
+function loadAppearance() { try {
+    const raw = JSON.parse(localStorage.getItem('almazov.appearance') ?? 'null');
+    const valid = (v, fallback) => typeof v === 'string' && /^#[0-9a-fA-F]{6}$/.test(v) ? v : fallback;
+    state.double1 = valid(raw?.double1, state.double1);
+    state.double2 = valid(raw?.double2, state.double2);
+}
+catch { } }
+function applyAppearance() { document.documentElement.style.setProperty('--double1', state.double1); document.documentElement.style.setProperty('--double2', state.double2); const d1 = document.getElementById('double1'); const d2 = document.getElementById('double2'); if (d1)
+    d1.value = state.double1; if (d2)
+    d2.value = state.double2; }
+function saveAppearance() { localStorage.setItem('almazov.appearance', JSON.stringify({ double1: state.double1, double2: state.double2 })); applyAppearance(); }
+async function saveProfile() { const p = $('modalProgram').value, c = Number($('modalCourse').value), g = $('modalGroup').value; state.profile = { program: p, course: c, group: g }; ensureProfile(); localStorage.setItem('almazov.profile', JSON.stringify(state.profile)); saveAppearance(); closeModal('profileModal'); state.week = mondayOf(todayISO()); state.events = []; state.status = 'loading'; state.message = 'Подготавливаем новое расписание…'; clearScheduleMemory(); render(); await loadCurrent(); render(); }
 function openTask() { $('taskSubject').value = ''; $('taskText').value = ''; $('taskDate').value = ''; $('taskNotice').textContent = ''; openModal('taskModal'); }
 function saveTask() { const subject = $('taskSubject').value.trim(), text = $('taskText').value.trim(); if (!subject || !text) {
     $('taskNotice').textContent = 'Заполните предмет и задание.';

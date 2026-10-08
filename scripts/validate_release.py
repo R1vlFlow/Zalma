@@ -1,24 +1,44 @@
 #!/usr/bin/env python3
-import json,re,sys
+import json, re, sys
 from pathlib import Path
-root=Path('.')
+
+ROOT=Path(__file__).resolve().parents[1]
 errors=[]
-required=['index.html','offline.html','404.html','README_FIRST.md','PRIVACY.md','COPYRIGHT.md','logo.png','manifest.webmanifest','sw.js','version.json','data/official-schedules.json','.github/workflows/sync-official-schedules.yml','scripts/sync_official.py','scripts/validate_js.py','scripts/validate_release.py']
-for p in required:
-    if not (root/p).exists(): errors.append(f'missing {p}')
+required=[
+    'public/index.html','public/styles.css','public/boot.js','public/sw.js','public/manifest.webmanifest',
+    'src/main.ts','src/app.ts','src/core/types.ts','src/core/normalize.ts','src/core/filter.ts',
+    'src/data/catalog.ts','src/data/roster.ts','server/server.mjs','server/pipeline.mjs',
+    'data/official-schedules.json','data/official-roster-contract.json','version.json','package.json',
+    '.github/workflows/pages.yml','.github/workflows/qa.yml','.github/workflows/sync-official-schedules.yml'
+]
+for rel in required:
+    if not (ROOT/rel).exists(): errors.append(f'missing {rel}')
+
 try:
- d=json.loads((root/'data/official-schedules.json').read_text())
- if d.get('schemaVersion')!=7:errors.append('wrong schemaVersion')
- for c in '123456':
-  x=d['courses'][c]
-  if not x.get('groups') or not x.get('streams'):errors.append(f'course {c} roster missing')
-  if any(g not in x['groups'] for gs in x['streams'].values() for g in gs):errors.append(f'course {c} stream/group mismatch')
-except Exception as e: errors.append(f'bad schedule json: {e}')
-s=(root/'index.html').read_text(errors='ignore')
-for token in ['DEFAULT_SCHEDULE','normalizeData','renderSchedule','expandClientDoubleEvents','OFFICIAL_INDEX_URLS','localStorage']:
- if token not in s: errors.append(f'index missing {token}')
-if 'document.cookie' in s: errors.append('cookie API must not be used')
-if 'const DEFAULT_SCHEDULE=' not in s: errors.append('embedded schedule fallback missing')
+    pkg=json.loads((ROOT/'package.json').read_text())
+    version=json.loads((ROOT/'version.json').read_text())
+    if pkg.get('version') != version.get('version'): errors.append('package.json/version.json version mismatch')
+    if pkg.get('version') != '2.3.0': errors.append(f"unexpected release version: {pkg.get('version')}")
+except Exception as exc: errors.append(f'bad release metadata: {exc}')
+
+try:
+    data=json.loads((ROOT/'data/official-schedules.json').read_text(encoding='utf8'))
+    if data.get('schemaVersion')!=7: errors.append('wrong official schedule schemaVersion')
+    for course in '123456':
+        item=data['courses'][course]
+        if not item.get('groups'): errors.append(f'course {course}: empty groups')
+        if not item.get('events'): errors.append(f'course {course}: empty events')
+        stream_groups={str(g) for gs in (item.get('streams') or {}).values() for g in gs}
+        if stream_groups != set(map(str,item.get('groups',[]))): errors.append(f'course {course}: roster/stream mismatch')
+except Exception as exc: errors.append(f'bad official schedule data: {exc}')
+
+html=(ROOT/'public/index.html').read_text(encoding='utf8') if (ROOT/'public/index.html').exists() else ''
+ids=re.findall(r'id=["\']([^"\']+)',html)
+if len(ids)!=len(set(ids)): errors.append('duplicate public HTML ids')
+if 'document.cookie' in html: errors.append('document.cookie is forbidden')
+for x in ['main.js','styles.css','boot.js','Расписание','data-page="home"','data-page="schedule"']:
+    if x not in html: errors.append(f'public HTML missing runtime contract: {x}')
+
 if errors:
- print('\n'.join('ERROR: '+e for e in errors));sys.exit(1)
+    print('\n'.join('ERROR: '+e for e in errors)); sys.exit(1)
 print('release contract: PASS')

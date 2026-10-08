@@ -44,7 +44,7 @@ export function normalizeLiveEvents(payload) {
             for (const group of safeGroups) {
                 if (!group)
                     continue;
-                result.push({ id: String(raw?.id ?? `${program}-${course}-${group}-${date}-${time.start}-${time.end}-${subject}-${index}`), program, course: course, group, stream, date, start: time.start, end: time.end, subject, location: cleanLocation(raw?.location), teacher: cleanTeacher(raw?.teacher), type: normalizeType(raw?.type, subject), half: normalizeHalf(raw?.half), weeks: raw?.weekNumber ? `нед. ${raw.weekNumber}` : undefined, sourceUrl: raw?.sourceUrl, sourceTitle: raw?.sourceTitle, sourceKind: 'live-json', confidence: 1 });
+                result.push({ id: String(raw?.id ?? `${program}-${course}-${group}-${date}-${time.start}-${time.end}-${subject}-${index}`), program, course: course, group, stream, date, start: time.start, end: time.end, subject, location: cleanLocation(raw?.location), teacher: cleanTeacher(raw?.teacher), type: normalizeType(raw?.type, subject), half: normalizeHalf(raw?.half), double: raw?.double === true || raw?.doublePart === 1 || raw?.doublePart === 2, doublePart: raw?.doublePart === 1 || raw?.doublePart === 2 ? raw.doublePart : undefined, doubleOf: typeof raw?.doubleOf === 'string' ? raw.doubleOf : undefined, durationMinutes: Number.isFinite(Number(raw?.durationMinutes)) ? Number(raw.durationMinutes) : undefined, weeks: raw?.weekNumber ? `нед. ${raw.weekNumber}` : undefined, sourceUrl: raw?.sourceUrl, sourceTitle: raw?.sourceTitle, sourceKind: 'live-json', confidence: 1 });
             }
         }
     }

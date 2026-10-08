@@ -3,9 +3,10 @@ name: Deploy GitHub Pages
 on:
   push:
     branches: [ main ]
+    paths-ignore:
+      - 'data/official-schedules.json'
+      - 'data/official-sync-status.json'
   workflow_dispatch:
-  schedule:
-    - cron: '17 */6 * * *'
 
 permissions:
   contents: read
@@ -28,7 +29,6 @@ jobs:
         with:
           node-version: 22
       - run: npm install
-      - run: npm run sync
       - run: npm run qa
       - run: touch dist/.nojekyll
       - uses: actions/configure-pages@v5
