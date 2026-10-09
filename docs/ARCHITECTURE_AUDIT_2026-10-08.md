@@ -30,14 +30,13 @@ The current repository does **not** contain:
 
 - production authentication/session service;
 - User/Role/RBAC database model;
-- server-side user/calendar/task persistence;
+- shared team/client collaboration backend;
 - notification service with email/push channels;
-- support ticket service;
 - FAQ administration backend;
 - Google/Microsoft/Apple/Zoom/Teams/Meet/Slack OAuth integrations;
 - global cross-entity search index;
 - audit-log persistence;
-- database migrations.
+- database migrations for shared account entities.
 
 These capabilities must be introduced as explicit product/backend modules. They must not be simulated with client-side flags or localStorage because that would not provide real authorization or data integrity.
 

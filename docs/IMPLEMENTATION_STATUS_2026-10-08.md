@@ -1,82 +1,57 @@
 # Implementation Status — 2026-10-08
 
-## Completed in this hardening pass
+## Implemented and verified in this pass
 
-### Schedule data integrity
+### Schedule / calendar
 
-- Replaced inline hard-coded LD group ranges in `src/app.ts` with `src/data/roster.ts`.
-- Aligned LD group matrices with `data/official-roster-contract.json`.
-- Restored 4th-course group `424` and 6th-course groups `617–618` in the selector model.
-- Enforced that course 6 has no A/B stream in `streamForGroup()`.
-- Preserved double-lesson metadata through validation and live normalization.
-- Rendered double lesson parts as explicit `1/2` and `2/2` when `half` is absent.
-- Added independent color controls for `1/2` and `2/2` in the profile appearance settings.
+- Fixed `weekly-block` official records by materializing dates from `weekStart + matrixSlots`.
+- Fixed 4–6 course normalization and preserved exact official group roster, including 424 and 617–618.
+- Added explicit split of 185/205-minute double practicals into `1/2` and `2/2` with a 15-minute break.
+- Preserved double-part metadata through server and client normalization and semantic dedupe.
+- Added Day, Work Week, Week, Month, Agenda and List views.
+- Added real loading skeleton, empty and error states.
+- Added current-time line, today highlighting, weekend-aware week strip and mobile event list.
+- Added personal event CRUD through the Node API with browser fallback.
+- Added drag-to-day and resize interactions for personal events plus undo for single-event changes.
+- Added recurring daily/weekly/monthly/yearly series and edit scopes: single, following, series.
+- Added all-day strip, multi-day segment rendering, conflict warning, categories and statuses.
+- Fixed UTC canonicalization: API stores and returns ISO UTC instants; display uses an explicit IANA timezone.
+- Added DST tests for Zurich summer/winter offsets and cross-timezone rendering.
+- Added API validation for malformed timezone, ranges and event timestamps.
+- Added versioned schedule snapshots and versioned Redis entries so old normalization results cannot silently replace current data.
 
-### Static/GitHub Pages resilience
+### FAQ / support
 
-- Fixed `scripts/copy-public.mjs` so copying public assets no longer deletes compiled `dist/data/*.js` modules.
-- Added copying of `public/boot.js`.
-- Added bundled official LD 1–6 snapshot generation into `dist/data/schedules/` from `data/official-schedules.json` so static fallback remains useful when API/live fetch is unavailable.
-- Added missing `scripts/validate-project.mjs` and `scripts/smoke-server.mjs` required by the canonical QA command.
-- Moved GitHub Actions workflow definitions to `.github/workflows/`.
-- Added canonical `sync-official-schedules.yml` workflow for scheduled sync, regression tests, build, validation and Pages deployment.
+- FAQ is a real searchable/category-filtered centralized data source with popular articles and support CTA.
+- Support has a real API-backed ticket flow with subject/category/priority/description, history, user replies and attachments.
+- Attachments are size-limited, stored outside the database and ownership-protected at download time.
+- Support state automatically moves from `waiting_user` to `in_progress` when the user replies.
 
-### Release consistency
+### Theme / UI
 
-- Set project version to `2.3.0` consistently in the active build/release metadata.
-- Updated the schedule builder user-agent to the current engine version.
-- Reworked release/static validation scripts to target the current `public/` + `src/` architecture rather than obsolete root-level artifacts.
+- Added semantic CSS tokens for backgrounds, surfaces, text, borders, focus, status, calendar and shadows.
+- Added Light / Dark / System theme mode with pre-boot theme selection to prevent FOUC.
+- Added visible focus states, skip link, reduced-motion handling and mobile touch targets.
+- Added responsive desktop/tablet/mobile layouts without introducing a second UI framework.
 
-### Tests / validation
+### QA / release
 
-The current hardening pass verifies:
+- Added a repeatable lint gate for runtime code (strict TypeScript + temporary marker/console-log checks).
+- Added HTTP acceptance coverage to the project QA command.
+- Added production `dist` tests that verify normalized 4K double parts survive the build.
+- Updated deployment and environment documentation.
 
-- TypeScript strict typecheck.
-- Node unit/integration tests.
-- Schedule parser regression fixtures for 4K/5K/6K.
-- Double-lesson/bookmark contract.
-- Schedule coverage contract (20/20).
-- Generated index and schedule data validation.
-- Workflow contract validation.
-- Static project QA.
-- Build/dist integrity.
-- Backend smoke tests.
+## Still intentionally limited
 
-## Not implemented yet
+These capabilities are not simulated because the current repository still has no real identity provider or shared-account domain:
 
-The requested new platform modules are **not** claimed as implemented because they require a real product/backend layer that is absent from the supplied repository:
+- server-authenticated login/session management;
+- secure Super Admin/Admin/Manager/Employee/Client/Viewer RBAC;
+- shared teams/users/clients/project collaboration;
+- email/push notification delivery;
+- Google/Outlook/Apple/Zoom/Teams/Meet/Slack OAuth integrations;
+- global cross-entity search;
+- admin-side FAQ CMS;
+- GDPR account export/deletion workflows tied to authenticated accounts.
 
-- server-side authentication and sessions;
-- Super Admin/Admin/Manager/Employee/Client/Viewer RBAC;
-- persistent User/Calendar/Event/Task/Project/Team/Notification/etc. database models;
-- full Day/Week/Work Week/Month/List/Agenda calendar engine with recurrence, attendees, reminders, timezone and conflict workflows;
-- complete Dashboard widget configuration;
-- projects/team/clients modules;
-- email/push notification service;
-- support ticket system;
-- FAQ administration;
-- external calendar/video/chat integrations;
-- global search across entities;
-- GDPR account export/deletion workflows backed by the server;
-- full API-level security layer for those future modules;
-- dedicated ESLint/Playwright/Vitest-style test stack (the current deterministic Node/Python QA remains active).
-
-## Migration
-
-There is no database migration for this hardening pass because the supplied application currently has no production database schema.
-
-When server persistence is introduced, migrations should be added before switching user-facing data from local storage to server persistence.
-
-## Environment
-
-Current schedule API can run with Node. Redis remains optional. No OAuth/email/storage credentials are required for the hardening changes themselves.
-
-## Known limitations
-
-- Upstream official-source synchronization cannot be fully verified against the live internet from the local development environment; CI is responsible for scheduled upstream refreshes.
-- Some programs/courses remain intentionally unpublished because the current official source contract does not provide them.
-- The repository still contains historical scripts from earlier releases; the canonical QA path now targets the current source architecture.
-
-## Next phase
-
-The next implementation phase should start with extracting a reusable design system and a proper calendar/event domain, then introduce authentication + RBAC + persistence before adding collaboration and third-party integrations.
+The current API ownership model uses the SPA's `x-user-id` client identifier. This is deliberately documented as a limitation and must not be treated as production-grade authentication for untrusted multi-user deployments.
