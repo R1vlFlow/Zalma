@@ -1,2 +1,2 @@
-Almazov Student UI: 2.0.9
+Almazov Student UI: 2.1.0
 Runtime build: 4.6.3

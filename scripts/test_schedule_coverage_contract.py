@@ -22,7 +22,7 @@ for course, expected in ROSTER.items():
               for g in groups) if SCHEDULE.get('events') else True)
 check('builder uses official roster contract', 'official-roster-contract.json' in BUILD)
 check('builder preserves double metadata', 'doubleIndex' in BUILD and 'doubleOf' in BUILD)
-check('client renders double parts', 'doublePart' in APP and '1/2' in APP and '2/2' in APP)
+check('client renders double parts in all views', 'function eventHalfLabel(e:CalendarEvent)' in APP and all(f'function {name}(' in APP and APP[APP.index(f'function {name}('):APP.find('\nfunction ', APP.index(f'function {name}(')+10) if APP.find('\nfunction ', APP.index(f'function {name}(')+10)>=0 else len(APP)].find(('eventTitleRow(' if name == 'eventHtml' else 'eventHalfMarkup('))>=0 for name in ('eventHtml','renderMobile','renderMonth','renderAgenda','renderList')))
 check('workflow runs JS validation', 'python scripts/validate_js.py' in WF)
 check('workflow runs generated-index validation', 'python scripts/validate_generated_index.py' in WF)
 check('workflow runs schedule-data validation', 'python scripts/validate_schedule_data.py' in WF)

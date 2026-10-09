@@ -1,4 +1,4 @@
-# Almazov Schedule Hub 2.3.1
+# Almazov Schedule Hub 2.3.3
 
 Production-oriented full-stack schedule service for the Institute of Medical Education of the Almazov National Medical Research Centre.
 
@@ -190,11 +190,11 @@ A browser-origin E2E run remains environment-dependent when Chromium is sandboxe
 
 ## GitHub Pages deployment
 
-The included `.github/workflows/pages.yml` rebuilds the static snapshot from official sources on every push to `main` and every 6 hours. It runs `npm run sync`, the full deterministic QA suite and deploys `dist/` to GitHub Pages. For a server deployment, use `npm start` or Docker; Redis is optional.
+The `.github/workflows/pages.yml` workflow runs on source-code pushes to `main`/`master`, executes `npm run qa`, and deploys the contents of `dist/` to the repository-root Pages URL. `.github/workflows/sync-official-schedules.yml` is the separate scheduled/manual official-data refresh workflow (every 6 hours). The two workflows share a non-cancelling concurrency group so a code deployment and a schedule refresh cannot cancel each other. With GitHub Actions as the Pages source, use the Pages URL without `/dist/`. For a server deployment, use `npm start` or Docker; Redis is optional.
 
 ## 2.3.0 production hardening
 
-The release adds a CSP-compatible external boot script, service-worker API network-first handling, static schedule snapshot fallback for GitHub Pages, force-refresh source synchronisation, atomic static snapshot writes, stream/group-safe live JSON expansion, stronger group-token normalization, half-term/week ambiguity protection, and project-level QA checks. The included Pages workflow runs source sync + QA before deployment.
+The static release includes versioned assets, a network-first service worker, official schedule snapshots, timeout-bounded data requests, and split-part labels in every calendar view. The source-deployment workflow runs QA; scheduled/manual source sync runs its own parser regression suite before publishing.
 
 ## Dependency lockfile
 

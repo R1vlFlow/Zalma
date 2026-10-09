@@ -15,6 +15,9 @@ await cp(join(root,'public','data'),join(dist,'data'),{recursive:true});
 try{
   const {normalizeLiveEvents}=await import(join(dist,'core','validate.js'));
   const payload=JSON.parse(await readFile(join(root,'data','official-schedules.json'),'utf8'));
+  const kugPayload={schemaVersion:1,generatedAt:payload.generatedAt??null,sources:Array.isArray(payload.kugSources)?payload.kugSources:[],periods:Array.isArray(payload.assessmentPeriods)?payload.assessmentPeriods:[]};
+  await mkdir(join(dist,'data'),{recursive:true});
+  await writeFile(join(dist,'data','kug.json'),JSON.stringify(kugPayload));
   const events=normalizeLiveEvents(payload);
   for(let course=1;course<=6;course++){
     const courseEvents=events.filter(e=>e.program==='31.05.01'&&e.course===course);

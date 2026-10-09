@@ -5,6 +5,8 @@ const root=fileURLToPath(new URL('..',import.meta.url));
 const dist=join(root,'dist');
 for(const f of ['index.html','styles.css','boot.js','main.js','sw.js','manifest.webmanifest','offline.html','version.json'])await readFile(join(dist,f));
 const html=await readFile(join(dist,'index.html'),'utf8');
+const css=await readFile(join(dist,'styles.css'),'utf8');
+for(const selector of ['.modal-backdrop{','.modal-backdrop.open{','.modal{','.modal-body{'])if(!css.includes(selector))throw new Error(`Required modal/layout CSS missing: ${selector}`);
 const version=JSON.parse(await readFile(join(dist,'version.json'),'utf8'));
 if(!/^[a-f0-9]{16}$/.test(version.buildId??''))throw new Error('Missing/invalid content-derived buildId in dist/version.json');
 if(!html.includes(`data-build-id="${version.buildId}"`)||!html.includes(`name="app-build" content="${version.buildId}"`))throw new Error('HTML build marker does not match version.json');

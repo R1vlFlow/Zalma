@@ -55,16 +55,21 @@ def validate_payload(data):
             if semantic in seen: raise ValueError(f'course {course}: duplicate semantic event')
             seen.add(semantic)
 
-req=urllib.request.Request(URL, headers={'User-Agent':'Almazov-Universal-Schedule-Sync/1.1'})
-try:
-    with urllib.request.urlopen(req, timeout=30) as r:
-        payload=json.load(r)
-    validate_payload(payload)
-    tmp=OUT.with_suffix('.tmp')
-    tmp.write_text(json.dumps(payload,ensure_ascii=False),encoding='utf-8')
-    tmp.replace(OUT)
-    print(f'saved {OUT} generatedAt={payload.get("generatedAt")}')
-except Exception as e:
-    print(f'official index sync failed: {e}')
-    if OUT.exists(): print('keeping existing live-index.json')
-    else: raise
+def sync_official_index():
+    # Network I/O must occur only when executed, never as an import side effect.
+    req=urllib.request.Request(URL, headers={'User-Agent':'Almazov-Universal-Schedule-Sync/1.1'})
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            payload=json.load(r)
+        validate_payload(payload)
+        tmp=OUT.with_suffix('.tmp')
+        tmp.write_text(json.dumps(payload,ensure_ascii=False),encoding='utf-8')
+        tmp.replace(OUT)
+        print(f"saved {OUT} generatedAt={payload.get('generatedAt')}")
+    except Exception as e:
+        print(f'official index sync failed: {e}')
+        if OUT.exists(): print('keeping existing live-index.json')
+        else: raise
+
+if __name__ == '__main__':
+    sync_official_index()
