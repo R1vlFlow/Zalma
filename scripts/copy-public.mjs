@@ -15,7 +15,33 @@ await cp(join(root,'public','data'),join(dist,'data'),{recursive:true});
 try{
   const {normalizeLiveEvents}=await import(join(dist,'core','validate.js'));
   const payload=JSON.parse(await readFile(join(root,'data','official-schedules.json'),'utf8'));
-  const kugPayload={schemaVersion:1,generatedAt:payload.generatedAt??null,sources:Array.isArray(payload.kugSources)?payload.kugSources:[],periods:Array.isArray(payload.assessmentPeriods)?payload.assessmentPeriods:[]};
+  const curatedKug=JSON.parse(await readFile(join(root,'data','kug.json'),'utf8'));
+  const officialSources=Array.isArray(payload.kugSources)?payload.kugSources:[];
+  const periods=[];
+  for(const [program,courses] of Object.entries(curatedKug)){
+    if(!courses||typeof courses!=='object') continue;
+    for(const [course,items] of Object.entries(courses)){
+      if(!Array.isArray(items)) continue;
+      const source=program==='31.05.01'?(officialSources.find(x=>String(x.course)===String(course))||null):null;
+      for(const item of items){
+        if(!item||typeof item.from!=='string'||typeof item.to!=='string'||item.from>item.to) continue;
+        periods.push({program,course,kind:String(item.kind||'study'),label:String(item.label||'Учебный период'),start:item.from,end:item.to,sourceUrl:source?.url||null});
+      }
+    }
+  }
+  // Merge official assessment periods only when they are not already represented in the curated full-year KUG.
+  for(const p of (Array.isArray(payload.assessmentPeriods)?payload.assessmentPeriods:[])){
+    const period={program:'31.05.01',course:String(p.course),kind:String(p.kind||'assessment'),label:String(p.label||'Промежуточная аттестация'),start:p.start,end:p.end,semester:p.semester,sourceUrl:p.sourceUrl};
+    if(typeof period.start!=='string'||typeof period.end!=='string') continue;
+    if(!periods.some(x=>x.program===period.program&&String(x.course)===period.course&&x.start===period.start&&x.end===period.end)) periods.push(period);
+  }
+  const sources=[];
+  for(const [program,courses] of Object.entries(curatedKug)) for(const [course,items] of Object.entries(courses||{})){
+    const periodCount=Array.isArray(items)?items.length:0;
+    const source=program==='31.05.01'?(officialSources.find(x=>String(x.course)===String(course))||null):null;
+    sources.push({program,course,title:source?.title||`КУГ · ${program} · ${course} курс`,url:source?.url||'https://education.almazovcentre.ru/about_institute/programm/specialist_programme/student/',periods:periodCount,status:source?.status||'verified-bootstrap'});
+  }
+  const kugPayload={schemaVersion:2,generatedAt:payload.generatedAt??null,sources,periods};
   await mkdir(join(dist,'data'),{recursive:true});
   await writeFile(join(dist,'data','kug.json'),JSON.stringify(kugPayload));
   const events=normalizeLiveEvents(payload);

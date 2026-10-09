@@ -14,7 +14,8 @@ test('schedule boot tolerates a not-yet-created empty state and always exits loa
  assert.match(app,/document\.getElementById\('emptyState'\)\?\.remove\(\)/);
  assert.doesNotMatch(app,/\$\('emptyState'\)\?\.remove\(\)/);
  assert.match(app,/async function reloadEvents\(\)[\s\S]*?catch\(error\)[\s\S]*?state\.status='error'/);
- assert.match(app,/state\.status==='loading'\)[\s\S]*?renderSkeleton\(\)/);
+ assert.match(app,/state\.status==='loading'&&state\.scheduleMode!=='kug'[\s\S]*?renderSkeleton\(\)/);
+ assert.match(app,/state\.scheduleMode==='kug'&&state\.kugStatus==='loading'[\s\S]*?renderSkeleton\(\)/);
 });
 
 test('modals stay outside document flow unless explicitly opened',()=>{
