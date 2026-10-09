@@ -1,6 +1,6 @@
-import { LIVE_LD_JSON, PROGRAMS, sourceFor, sourcesFor } from '../data/catalog.js';
-import { validateScheduleIndex, normalizeLiveEvents } from '../core/validate.js';
-import { saveCache, readCache } from './cache.js';
+import { LIVE_LD_JSON, PROGRAMS, sourceFor, sourcesFor } from '../data/catalog.js?v=3e057c0da2aed0ed';
+import { validateScheduleIndex, normalizeLiveEvents } from '../core/validate.js?v=3e057c0da2aed0ed';
+import { saveCache, readCache } from './cache.js?v=3e057c0da2aed0ed';
 const API_BASE = './api/schedule';
 const memory = new Map();
 export async function loadSchedule(program, course) {

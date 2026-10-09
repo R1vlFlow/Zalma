@@ -1,16 +1,16 @@
-import { PROGRAMS, sourceFor, sourcesFor } from './data/catalog.js';
-import { groupsFor, streamForGroup } from './data/roster.js';
-import { mondayOf, weekDates, formatDateRu, longDateRu, addDays, todayISO } from './core/date.js';
-import { eventAppliesToGroup } from './core/filter.js';
-import { loadSchedule, clearScheduleMemory } from './services/scheduleService.js';
-import { addTask, readTasks, removeTask, updateTask } from './services/taskService.js';
-import { applyTheme, cycleTheme, initTheme, themeMode } from './ui/theme.js';
-import { FAQ } from './ui/faq.js';
-import { createPersonalEvent, deletePersonalEvent, listPersonalEvents, updatePersonalEvent } from './services/eventService.js';
-import { fileToAttachment } from './services/supportService.js';
-import { createTicket, listTickets, getTicket, addTicketMessage } from './services/supportService.js';
-import { localDate, localDateTimeToUtc, localTime, userTimeZone, localDateTimeInput } from './core/time.js';
-import { scheduleToCalendarEvent } from './core/calendar.js';
+import { PROGRAMS, sourceFor, sourcesFor } from './data/catalog.js?v=3e057c0da2aed0ed';
+import { groupsFor, streamForGroup } from './data/roster.js?v=3e057c0da2aed0ed';
+import { mondayOf, weekDates, formatDateRu, longDateRu, addDays, todayISO } from './core/date.js?v=3e057c0da2aed0ed';
+import { eventAppliesToGroup } from './core/filter.js?v=3e057c0da2aed0ed';
+import { loadSchedule, clearScheduleMemory } from './services/scheduleService.js?v=3e057c0da2aed0ed';
+import { addTask, readTasks, removeTask, updateTask } from './services/taskService.js?v=3e057c0da2aed0ed';
+import { applyTheme, cycleTheme, initTheme, themeMode } from './ui/theme.js?v=3e057c0da2aed0ed';
+import { FAQ } from './ui/faq.js?v=3e057c0da2aed0ed';
+import { createPersonalEvent, deletePersonalEvent, listPersonalEvents, updatePersonalEvent } from './services/eventService.js?v=3e057c0da2aed0ed';
+import { fileToAttachment } from './services/supportService.js?v=3e057c0da2aed0ed';
+import { createTicket, listTickets, getTicket, addTicketMessage } from './services/supportService.js?v=3e057c0da2aed0ed';
+import { localDate, localDateTimeToUtc, localTime, userTimeZone, localDateTimeInput } from './core/time.js?v=3e057c0da2aed0ed';
+import { scheduleToCalendarEvent } from './core/calendar.js?v=3e057c0da2aed0ed';
 const DAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 const STATUS_LABEL = { planned: 'Запланировано', confirmed: 'Подтверждено', in_progress: 'В процессе', completed: 'Завершено', cancelled: 'Отменено' };
 const VIEW_LABEL = { day: 'День', workweek: 'Рабочая неделя', week: 'Неделя', month: 'Месяц', agenda: 'Agenda', list: 'Список' };
@@ -445,6 +445,11 @@ function bind() {
         }
         if (action === 'toggle-menu') {
             document.body.classList.toggle('menu-open');
+            return;
+        }
+        if (action === 'check-updates') {
+            window.dispatchEvent(new Event('app:check-update'));
+            toast('Проверяем опубликованную версию…');
             return;
         }
         if (action === 'theme') {

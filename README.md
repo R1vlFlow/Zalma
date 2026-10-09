@@ -1,4 +1,4 @@
-# Almazov Schedule Hub 2.3.0
+# Almazov Schedule Hub 2.3.1
 
 Production-oriented full-stack schedule service for the Institute of Medical Education of the Almazov National Medical Research Centre.
 
@@ -199,3 +199,12 @@ The release adds a CSP-compatible external boot script, service-worker API netwo
 ## Dependency lockfile
 
 The repository intentionally uses `npm install` rather than `npm ci` because this delivery environment cannot reach the public npm registry to generate a complete `package-lock.json` with exact integrity metadata. Do not commit a hand-written or incomplete lockfile. On GitHub, `npm install` resolves the declared package ranges normally.
+
+
+## 2.3.1 — browser cache and deployment freshness
+
+- The build creates a content-derived `buildId` and adds it to CSS, JavaScript entry points and every generated ES-module import.
+- The service worker uses network-first navigation/data requests, pre-caches only build-versioned assets, removes old app cache generations, checks updates without the browser HTTP cache, and reloads already-open tabs after activation. User-specific `/api/` responses are not stored in Cache Storage.
+- `dist/version.json` exposes the deployed `buildId`; Settings displays the current fingerprint and includes **Check for updates**.
+- Root-level `index.html` is now a compatibility redirect to the canonical `dist/` build when Pages is mistakenly configured to publish the repository root. GitHub Actions remains the recommended Pages source.
+- Added a cache-invalidation QA gate covering versioned imports, service-worker strategy, runtime version verification and the root deployment bridge.

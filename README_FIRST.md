@@ -1,15 +1,24 @@
-# Almazov Student — PRE-RELEASE 2.0.2
+# Almazov Schedule Hub — release 2.3.0
 
-Пользовательская версия интерфейса: **PRE-RELEASE 2.0.2**.
-Движок официального расписания: **4.3.0-pre8**.
+Версия приложения: **2.3.0**.
+Версия интерфейса: **2.0.8**.
+Движок официального расписания: **4.6.3**.
 
-## Установка
+## Установка и правильная публикация
 
 1. Распакуй ZIP локально.
-2. Загрузи содержимое в корень GitHub-репозитория.
-3. Обязательно сохрани `.github/workflows/sync-official-schedules.yml`.
-4. Открой **Actions → Sync official Almazov schedules → Run workflow**.
-5. GitHub Actions обнаружит документы на официальной странице независимо от расширения, определит реальный формат по содержимому (PDF/XLSX/XLS/ODS/CSV/DOCX/PPTX/HTML/TXT), распознает их универсальным parser и опубликует `data/official-schedules.json`.
+2. Загрузи **содержимое** архива в корень GitHub-репозитория, включая `.github/`, `public/`, `src/`, `scripts/`, `package.json` и актуальный `dist/`.
+3. В GitHub открой **Settings → Pages → Build and deployment** и выбери **GitHub Actions** как источник публикации. Не выбирай `Deploy from a branch` для старой root-страницы.
+4. Открой **Actions → Deploy GitHub Pages** и дождись зелёного завершения `build-deploy`. Для обновления официального расписания отдельно запускай workflow синхронизации.
+5. В приложении открой **Настройки** и проверь значение «Версия сборки». Оно должно соответствовать файлу `dist/version.json` из последнего релиза.
+
+Если Pages публикует ветку из корня, файл `index.html` теперь перенаправляет в каноническую `dist/` сборку. Service worker проверяет новый релиз, а HTML/JS/CSS получают content-based версию, чтобы старые файлы не продолжали подхватываться из кэша.
+
+## Установка (подробно)
+
+1. Убедись, что `.github/workflows/sync-official-schedules.yml` сохранён.
+2. Открой **Actions → Sync official schedules and deploy → Run workflow**.
+3. GitHub Actions обнаружит официальные документы, обновит `data/official-schedules.json`, проверит данные и опубликует `dist/`.
 
 ## Важное
 
