@@ -4,6 +4,8 @@ export type LessonType = 'lecture' | 'practice' | 'lab' | 'assessment' | 'other'
 export type Stream = 'A' | 'B' | null;
 export type ThemeMode = 'dark' | 'light' | 'system';
 export type LoadStatus = 'loading' | 'live' | 'cache' | 'unavailable' | 'partial' | 'error';
+export type EventStatus = 'planned' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled';
+export type RecurrenceFrequency = 'daily' | 'weekly' | 'monthly' | 'yearly';
 
 export interface Program {
   code: ProgramCode;
@@ -45,6 +47,20 @@ export interface ScheduleEvent {
   sourceTitle?: string;
   sourceKind?: 'live-json' | 'official-pdf' | 'official-xlsx' | 'official-html' | 'manual';
   confidence?: number;
+  kind?: 'schedule' | 'personal';
+  startAt?: string;
+  endAt?: string;
+  timeZone?: string;
+  allDay?: boolean;
+  status?: EventStatus;
+  category?: string;
+  description?: string;
+  meetingUrl?: string;
+  attendees?: string[];
+  recurrence?: {frequency:RecurrenceFrequency;interval:number;weekdays?:number[];until?:string|null}|null;
+  seriesId?: string;
+  readOnly?: boolean;
+  privacy?: 'public'|'private';
 }
 
 export interface ScheduleIndex {

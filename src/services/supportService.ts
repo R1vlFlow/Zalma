@@ -1,0 +1,13 @@
+export type TicketStatus='new'|'in_progress'|'waiting_user'|'resolved'|'closed';
+export interface SupportAttachment{name:string;type:string;size:number;dataBase64:string;}
+export interface SupportTicket{id:string;number:string;subject:string;category:string;priority:string;status:TicketStatus;createdAt:string;updatedAt:string;messages?:{id:string;authorType:'user'|'support';body:string;createdAt:string}[];attachments?:{id:string;name:string;type:string;size:number;downloadUrl:string}[];}
+
+async function request(path:string,options:RequestInit={}){const id=getClientId();const headers=new Headers(options.headers);headers.set('x-user-id',id);if(options.body&&!headers.has('content-type'))headers.set('content-type','application/json');const r=await fetch(path,{...options,headers});if(!r.ok){let msg=`HTTP ${r.status}`;try{const p=await r.json();if(typeof p?.error==='string')msg=p.error;}catch{}const e=new Error(msg);(e as Error & {status?:number}).status=r.status;throw e;}return r;}
+const KEY='almazov.client.id';
+function getClientId(){let id=localStorage.getItem(KEY);if(!id){id=crypto.randomUUID();localStorage.setItem(KEY,id);}return id;}
+export async function listTickets():Promise<SupportTicket[]>{const r=await request('./api/support/tickets');return (await r.json() as {tickets:SupportTicket[]}).tickets;}
+export async function getTicket(id:string):Promise<SupportTicket>{const r=await request(`./api/support/tickets/${encodeURIComponent(id)}`);return (await r.json() as {ticket:SupportTicket}).ticket;}
+export async function createTicket(input:{subject:string;category:string;priority:string;description:string;attachments?:SupportAttachment[]}):Promise<SupportTicket>{const r=await request('./api/support/tickets',{method:'POST',body:JSON.stringify(input)});return (await r.json() as {ticket:SupportTicket}).ticket;}
+export async function addTicketMessage(id:string,body:string):Promise<SupportTicket>{const r=await request(`./api/support/tickets/${encodeURIComponent(id)}/messages`,{method:'POST',body:JSON.stringify({body})});return (await r.json() as {ticket:SupportTicket}).ticket;}
+
+export async function fileToAttachment(file:File):Promise<SupportAttachment>{if(file.size>3*1024*1024)throw new Error('Размер одного файла не должен превышать 3 МБ.');const data=await file.arrayBuffer();const bytes=new Uint8Array(data);let binary='';const chunk=0x8000;for(let i=0;i<bytes.length;i+=chunk)binary+=String.fromCharCode(...bytes.subarray(i,i+chunk));return{name:file.name,type:file.type||'application/octet-stream',size:file.size,dataBase64:btoa(binary)};}
