@@ -89,13 +89,13 @@ export function normalizeCourse(value) {
 }
 export function normalizeType(value, subject = '') {
     const s = `${cleanText(value)} ${cleanText(subject)}`.toLowerCase();
-    if (/лекц/.test(s))
+    if (/лекц|\blecture\b|\blem\b/.test(s))
         return 'lecture';
-    if (/лаб(?:оратор)?/.test(s))
+    if (/лаб(?:оратор)?|\blab(?:oratory)?\b/.test(s))
         return 'lab';
-    if (/экзам|зач[её]т|аттест|контрол|коллоквиум|дифференц/.test(s))
+    if (/экзам|зач[её]т|аттест|контрол|коллоквиум|дифференц|\bexam\b|\bassessment\b/.test(s))
         return 'assessment';
-    if (/пз|практи|семинар|занятия семинарского/.test(s))
+    if (/пз|практи|семинар|занятия семинарского|\bpractice\b|\bseminar\b/.test(s))
         return 'practice';
     return 'other';
 }

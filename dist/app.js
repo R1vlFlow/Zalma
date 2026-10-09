@@ -1,18 +1,25 @@
 import { PROGRAMS, sourceFor, sourcesFor } from './data/catalog.js';
 import { groupsFor, streamForGroup } from './data/roster.js';
-import { mondayOf, weekDates, formatDateRu, longDateRu, sameDay, addDays, todayISO } from './core/date.js';
-import { filterEvents, indexByDate } from './core/filter.js';
+import { mondayOf, weekDates, formatDateRu, longDateRu, addDays, todayISO } from './core/date.js';
+import { eventAppliesToGroup } from './core/filter.js';
 import { loadSchedule, clearScheduleMemory } from './services/scheduleService.js';
 import { addTask, readTasks, removeTask, updateTask } from './services/taskService.js';
-import { cycleTheme, initTheme, themeMode } from './ui/theme.js';
+import { applyTheme, cycleTheme, initTheme, themeMode } from './ui/theme.js';
 import { FAQ } from './ui/faq.js';
+import { createPersonalEvent, deletePersonalEvent, listPersonalEvents, updatePersonalEvent } from './services/eventService.js';
+import { fileToAttachment } from './services/supportService.js';
+import { createTicket, listTickets, getTicket, addTicketMessage } from './services/supportService.js';
+import { localDate, localDateTimeToUtc, localTime, userTimeZone, localDateTimeInput } from './core/time.js';
+import { scheduleToCalendarEvent } from './core/calendar.js';
 const DAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+const STATUS_LABEL = { planned: 'Запланировано', confirmed: 'Подтверждено', in_progress: 'В процессе', completed: 'Завершено', cancelled: 'Отменено' };
+const VIEW_LABEL = { day: 'День', workweek: 'Рабочая неделя', week: 'Неделя', month: 'Месяц', agenda: 'Agenda', list: 'Список' };
 const DEFAULT_PROFILE = { program: '31.05.01', course: 1, group: '123' };
 const initial = readInitialProfile();
-const state = { profile: initial, week: mondayOf(todayISO()), events: [], status: 'loading', message: 'Подготавливаем расписание…', search: '', type: 'all', page: 'schedule', tasks: readTasks(), theme: themeMode(), faqQuery: '', double1: '#4b81da', double2: '#73e0c4' };
+const state = { profile: initial, week: mondayOf(todayISO(userTimeZone())), focusDate: todayISO(userTimeZone()), events: [], official: [], personal: [], status: 'loading', message: 'Подготавливаем расписание…', search: '', type: 'all', statusFilter: 'all', categoryFilter: 'all', page: 'schedule', tasks: readTasks(), theme: themeMode(), faqQuery: '', faqCategory: 'Все', view: 'week', timezone: readTimezone(), double1: '#4b81da', double2: '#73e0c4', editingId: '', draft: false, undo: null, ticketList: [], ticketSelected: '', supportStatus: 'idle' };
 function $(id) { const el = document.getElementById(id); if (!el)
     throw new Error(`Missing #${id}`); return el; }
-function esc(v) { return v.replace(/[&<>'"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#039;', '"': '&quot;' }[c])); }
+function esc(v) { return String(v).replace(/[&<>'"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#039;', '"': '&quot;' }[c])); }
 function groupOptions(program, course) { const groups = groupsFor(program, course); return groups.length ? groups : ['']; }
 function ensureProfile() { const groups = groupsFor(state.profile.program, state.profile.course); if (!groups.length) {
     state.profile.group = '';
@@ -34,75 +41,406 @@ function readInitialProfile() { try {
 catch {
     return { ...DEFAULT_PROFILE };
 } }
-export async function boot() { initTheme(); loadAppearance(); applyAppearance(); ensureProfile(); renderShell(); bind(); render(); await loadCurrent(); render(); }
-async function loadCurrent() { state.status = 'loading'; state.message = 'Загружаем и проверяем источник…'; renderSchedule(); const result = await loadSchedule(state.profile.program, state.profile.course); state.events = result.events; state.status = result.status; state.message = result.message; }
-function renderShell() { const p = PROGRAMS.find(x => x.code === state.profile.program); $('profileName').textContent = state.profile.group ? `Группа ${state.profile.group}` : p?.shortTitle ?? 'Профиль'; $('profileMeta').textContent = `${p?.title ?? ''} · ${state.profile.course} курс${streamForGroup(state.profile.program, state.profile.group) ? ` · поток ${streamForGroup(state.profile.program, state.profile.group)}` : ''}`; $('syncLabel').textContent = state.message; $('statusDot').className = `${state.status === 'live' ? 'ok' : state.status === 'cache' ? 'cache' : state.status === 'loading' ? 'loading' : 'bad'}`; }
-function render() { renderShell(); renderProfileOptions(); renderSchedule(); renderTasks(); renderFaculties(); renderResources(); renderKug(); renderFaq(state.faqQuery); renderHome(); }
-function nav(page) { state.page = page; document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === `page-${page}`)); document.querySelectorAll('[data-page]').forEach(b => b.classList.toggle('active', b.dataset.page === page)); $('pageTitle').textContent = { home: 'Главная', schedule: 'Расписание', homework: 'ДЗ и задачи', kug: 'КУГ', resources: 'Материалы', faculties: 'Факультеты', faq: 'Справка' }[page] ?? 'Almazov'; document.body.classList.remove('menu-open'); if (page === 'schedule')
+function readTimezone() { return localStorage.getItem('almazov.timezone') || userTimeZone(); }
+function setTimezone(zone) { try {
+    new Intl.DateTimeFormat('en-US', { timeZone: zone }).format();
+    localStorage.setItem('almazov.timezone', zone);
+    state.timezone = zone;
+}
+catch {
+    throw new Error('Некорректный часовой пояс');
+} }
+function startOfWeek(d) { return mondayOf(d); }
+function monthStart(d) { return `${d.slice(0, 7)}-01`; }
+function monthEnd(d) { const x = new Date(`${monthStart(d)}T00:00:00Z`); x.setUTCMonth(x.getUTCMonth() + 1); x.setUTCDate(0); return x.toISOString().slice(0, 10); }
+function rangeDates() {
+    if (state.view === 'day') {
+        return { from: state.focusDate, to: state.focusDate, dates: [state.focusDate] };
+    }
+    if (state.view === 'workweek') {
+        const m = startOfWeek(state.focusDate);
+        const dates = weekDates(m).slice(0, 5);
+        return { from: dates[0], to: dates[4], dates };
+    }
+    if (state.view === 'month') {
+        const from = monthStart(state.focusDate);
+        const to = monthEnd(state.focusDate);
+        const first = startOfWeek(from);
+        const last = addDays(startOfWeek(to), 6);
+        const dates = [];
+        for (let d = first; d <= last; d = addDays(d, 1))
+            dates.push(d);
+        return { from, to, dates };
+    }
+    const dates = weekDates(startOfWeek(state.focusDate));
+    return { from: dates[0], to: dates[6], dates: state.view === 'agenda' || state.view === 'list' ? dates : dates };
+}
+function localMidnightUtc(date) { return localDateTimeToUtc(`${date}T00:00`, state.timezone); }
+function getDisplayEvents() {
+    const selected = state.official.filter(e => eventAppliesToGroup(e, { ...state.profile, stream: streamForGroup(state.profile.program, state.profile.group) })).map(e => scheduleToCalendarEvent(e, state.timezone));
+    const personal = state.personal.map(e => ({ id: e.id, kind: 'personal', title: e.title, description: e.description ?? '', category: e.category, status: e.status, startAt: e.startAt, endAt: e.endAt, timeZone: e.timeZone, allDay: e.allDay, location: e.location ?? '', meetingUrl: e.meetingUrl, attendees: e.attendees, recurrence: e.recurrence, seriesId: e.seriesId, readOnly: false }));
+    const combined = [...selected, ...personal];
+    return combined.filter(e => {
+        if (state.search && !`${e.title ?? (('subject' in e) ? e.subject : '')} ${e.location ?? ''} ${e.teacher ?? ''} ${e.category ?? ''}`.toLowerCase().includes(state.search.toLowerCase()))
+            return false;
+        if (state.type !== 'all' && e.type !== state.type)
+            return false;
+        if (state.statusFilter !== 'all' && (e.status ?? 'planned') !== state.statusFilter)
+            return false;
+        if (state.categoryFilter !== 'all' && (e.category ?? 'personal') !== state.categoryFilter)
+            return false;
+        return true;
+    }).sort((a, b) => a.startAt.localeCompare(b.startAt) || String(a.title ?? a.subject).localeCompare(String(b.title ?? b.subject), 'ru'));
+}
+async function reloadEvents() {
+    state.status = 'loading';
+    state.message = 'Загружаем расписание и личные события…';
+    renderSchedule();
+    const result = await loadSchedule(state.profile.program, state.profile.course);
+    state.official = result.events;
+    state.status = result.status;
+    state.message = result.message;
+    const range = rangeDates();
+    const from = localMidnightUtc(range.from);
+    const to = localMidnightUtc(addDays(range.to, 1));
+    try {
+        state.personal = await listPersonalEvents(from, to);
+    }
+    catch (error) {
+        state.personal = [];
+        state.message += ` Личные события не загружены: ${error instanceof Error ? error.message : 'ошибка'}`;
+    }
+}
+export async function boot() { initTheme(); loadAppearance(); applyAppearance(); ensureProfile(); renderShell(); bind(); render(); await reloadEvents(); render(); }
+function render() { renderShell(); renderProfileOptions(); renderSchedule(); renderTasks(); renderFaculties(); renderResources(); renderKug(); renderFaq(state.faqQuery); renderHome(); renderSupport(); renderSettings(); renderProfilePage(); }
+function nav(page) { state.page = page; document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === `page-${page}`)); document.querySelectorAll('[data-page]').forEach(b => b.classList.toggle('active', b.dataset.page === page)); $('pageTitle').textContent = { home: 'Главная', schedule: 'Расписание', homework: 'Задачи', kug: 'КУГ', resources: 'Материалы', faculties: 'Факультеты', faq: 'FAQ', support: 'Поддержка', settings: 'Настройки', profilePage: 'Профиль' }[page] ?? 'Almazov'; document.body.classList.remove('menu-open'); if (page === 'schedule')
     renderSchedule(); if (page === 'homework')
     renderTasks(); if (page === 'faq')
     renderFaq(state.faqQuery); if (page === 'home')
-    renderHome(); }
-function renderHome() { const events = filterEvents(state.events, { ...state.profile, stream: streamForGroup(state.profile.program, state.profile.group) }, state.week, '', 'all'); const today = todayISO(); const upcoming = events.filter(e => e.date >= today).slice(0, 4); $('homeContext').textContent = state.profile.group ? `${PROGRAMS.find(p => p.code === state.profile.program)?.title} · ${state.profile.course} курс · группа ${state.profile.group}` : 'Выберите группу'; $('homeStats').innerHTML = [['На неделе', String(events.length)], ['Сегодня', String(events.filter(e => e.date === today).length)], ['Курс', String(state.profile.course)], ['Источник', state.status === 'live' ? 'live' : state.status === 'cache' ? 'cache' : 'offline']].map(([a, b]) => `<div class="stat-card"><span>${a}</span><b>${b}</b></div>`).join(''); $('homeUpcoming').innerHTML = upcoming.length ? upcoming.map(e => `<article class="next-item"><div><span>${longDateRu(e.date)} · ${e.start}</span><b>${esc(e.subject)}</b><small>${esc(e.location || 'Аудитория не указана')}</small></div><button class="btn small" data-jump-date="${e.date}">Открыть</button></article>`).join('') : `<div class="empty-state compact card"><div class="empty-icon">◷</div><h3>Ближайших занятий нет</h3><p>Откройте расписание или выберите другую неделю.</p></div>`; }
+    renderHome(); if (page === 'support')
+    loadSupport(); if (page === 'settings')
+    renderSettings(); if (page === 'profilePage')
+    renderProfilePage(); }
+function renderShell() { const p = PROGRAMS.find(x => x.code === state.profile.program); $('profileName').textContent = state.profile.group ? `Группа ${state.profile.group}` : p?.shortTitle ?? 'Профиль'; $('profileMeta').textContent = `${p?.title ?? ''} · ${state.profile.course} курс${streamForGroup(state.profile.program, state.profile.group) ? ` · поток ${streamForGroup(state.profile.program, state.profile.group)}` : ''}`; $('syncLabel').textContent = state.message; $('statusDot').className = `${state.status === 'live' ? 'ok' : state.status === 'cache' ? 'cache' : state.status === 'loading' ? 'loading' : 'bad'}`; }
+function renderHome() { const events = getDisplayEvents(); const today = state.focusDate; const weekEvents = events.filter(e => { const d = localDate(e.startAt, state.timezone); return d >= startOfWeek(today) && d <= addDays(startOfWeek(today), 6); }); const upcoming = weekEvents.filter(e => localDate(e.startAt, state.timezone) >= today).slice(0, 5); $('homeContext').textContent = state.profile.group ? `${PROGRAMS.find(p => p.code === state.profile.program)?.title} · ${state.profile.course} курс · группа ${state.profile.group}` : 'Выберите группу'; $('homeStats').innerHTML = [['Занятий сегодня', String(weekEvents.filter(e => localDate(e.startAt, state.timezone) === today).length)], ['На неделе', String(weekEvents.length)], ['Личные события', String(state.personal.length)], ['Источник', state.status === 'live' ? 'LIVE' : state.status === 'cache' ? 'CACHE' : 'OFFLINE']].map(([a, b]) => `<div class="stat-card"><span>${a}</span><b>${b}</b></div>`).join(''); $('homeUpcoming').innerHTML = upcoming.length ? upcoming.map(e => `<article class="next-item"><div><span>${longDateRu(localDate(e.startAt, state.timezone))} · ${localTime(e.startAt, state.timezone)}</span><b>${esc(String(e.title ?? (('subject' in e) ? e.subject : '')))}</b><small>${esc(e.location || 'Без места')}</small></div><button class="btn small" data-open-event="${esc(e.id)}">Открыть</button></article>`).join('') : `<div class="empty-state compact card"><div class="empty-icon">◷</div><h3>Ближайших событий нет</h3><p>Создайте личную встречу или откройте другой период.</p></div>`; }
 function renderSchedule() {
     $('emptyState')?.remove();
-    const events = filterEvents(state.events, { ...state.profile, stream: streamForGroup(state.profile.program, state.profile.group) }, state.week, state.search, state.type);
-    const dateMap = indexByDate(events);
-    const dates = weekDates(state.week);
-    const p = PROGRAMS.find(x => x.code === state.profile.program);
-    $('weekLabel').textContent = `${formatDateRu(state.week)} — ${formatDateRu(addDays(state.week, 6))}`;
-    $('weekSubLabel').textContent = `${p?.shortTitle ?? ''} · ${state.profile.course} курс${state.profile.group ? ` · группа ${state.profile.group}` : ''}`;
-    $('scheduleCount').textContent = `${events.length} ${plural(events.length, 'пара', 'пары', 'пар')}`;
-    $('weekStrip').innerHTML = dates.map((d, i) => `<button class="day-pill ${sameDay(d, todayISO()) ? 'is-today' : ''}" data-jump-date="${d}"><span>${DAYS[i]}</span><b>${d.slice(8, 10)}</b><em>${dateMap.get(d)?.length ?? 0}</em></button>`).join('');
-    $('desktopSchedule').innerHTML = `<div class="agenda-grid">${dates.map((d, i) => dayColumn(d, i, dateMap.get(d) ?? [])).join('')}</div>`;
-    $('mobileSchedule').innerHTML = dates.map((d, i) => mobileDay(d, i, dateMap.get(d) ?? [])).join('');
-    document.querySelectorAll('.desktop-schedule .day-column').forEach((el, i) => { el.id = `day-${dates[i]}`; });
-    document.querySelectorAll('.mobile-schedule .mobile-day').forEach((el, i) => { el.id = `mobile-day-${dates[i]}`; });
+    const events = getDisplayEvents();
+    const range = rangeDates();
+    $('weekLabel').textContent = state.view === 'month' ? `${formatDateRu(monthStart(state.focusDate))} — ${formatDateRu(monthEnd(state.focusDate))}` : `${formatDateRu(range.from)} — ${formatDateRu(range.to)}`;
+    $('weekSubLabel').textContent = `${PROGRAMS.find(p => p.code === state.profile.program)?.shortTitle ?? ''} · ${state.profile.course} курс${state.profile.group ? ` · группа ${state.profile.group}` : ''} · ${state.timezone}`;
+    $('scheduleCount').textContent = `${events.length} событий`;
+    document.querySelectorAll('[data-view]').forEach(b => b.classList.toggle('active', b.dataset.view === state.view));
+    const dates = range.dates.length ? range.dates : weekDates(startOfWeek(state.focusDate));
+    $('weekStrip').innerHTML = dates.slice(0, 31).map((d, i) => `<button class="day-pill ${d === todayISO(state.timezone) ? 'is-today' : ''}" data-jump-date="${d}"><span>${DAYS[i % 7]}</span><b>${d.slice(8, 10)}</b><em>${events.filter(e => localDate(e.startAt, state.timezone) === d).length}</em></button>`).join('');
+    const html = state.view === 'month' ? renderMonth(events) : state.view === 'agenda' ? renderAgenda(events) : state.view === 'list' ? renderList(events) : renderTimeGrid(events, dates);
+    $('desktopSchedule').innerHTML = html;
+    $('mobileSchedule').innerHTML = state.view === 'month' ? html : renderMobile(events, dates);
     $('dataHealthTitle').textContent = state.status === 'live' ? 'Источник актуален' : state.status === 'cache' ? 'Локальный snapshot' : state.status === 'loading' ? 'Загрузка…' : state.status === 'partial' ? 'Частичные данные' : 'Источник недоступен';
-    $('dataHealthText').textContent = state.message;
+    $('dataHealthText').textContent = `${state.message} Часовой пояс интерфейса: ${state.timezone}.`;
     $('sourceLink').href = sourceFor(state.profile.program, state.profile.course);
-    $('statusText').textContent = state.status === 'live' ? 'LIVE' : state.status === 'cache' ? 'CACHE' : state.status === 'loading' ? 'LOAD' : 'CHECK';
-    if (state.status === 'loading') {
-        $('desktopSchedule').innerHTML = renderSkeleton(true);
-        $('mobileSchedule').innerHTML = renderSkeleton(false);
-    }
-    else if (!events.length) {
+    $('statusText').textContent = state.status.toUpperCase();
+    if (state.status === 'loading')
+        $('desktopSchedule').innerHTML = renderSkeleton();
+    if (state.status !== 'loading' && !events.length && !state.personal.length) {
         const el = document.createElement('div');
         el.id = 'emptyState';
         el.className = 'empty-state card';
-        const noPublished = !PROGRAMS.find(x => x.code === state.profile.program)?.publishedCourses.includes(state.profile.course);
-        el.innerHTML = `<div class="empty-icon">${state.status === 'unavailable' ? '!' : '∅'}</div><h3>${noPublished ? 'Официальное расписание не опубликовано' : state.status === 'error' ? 'Не удалось загрузить расписание' : 'На выбранной неделе занятий нет'}</h3><p>${esc(state.message)}</p><div class="empty-actions"><a class="btn primary" href="${sourceFor(state.profile.program, state.profile.course)}" target="_blank" rel="noopener noreferrer">Официальный источник ↗</a><button class="btn" data-action="refresh-data">Повторить</button></div>`;
+        el.innerHTML = `<div class="empty-icon">∅</div><h3>В этом периоде нет событий</h3><p>Проверьте фильтры или создайте личное событие.</p><div class="empty-actions"><button class="btn primary" data-action="new-event">Создать событие</button><a class="btn" href="${sourceFor(state.profile.program, state.profile.course)}" target="_blank" rel="noopener noreferrer">Официальный источник ↗</a></div>`;
         $('scheduleRoot').appendChild(el);
     }
-    else {
-        $('emptyState')?.remove();
+}
+function renderSkeleton() { return `<div class="calendar-skeleton">${Array.from({ length: 7 }, (_, i) => `<div><span></span><i></i><i></i><i></i></div>`).join('')}</div>`; }
+function visibleSegments(events, date) { return events.filter(e => { const s = localDate(e.startAt, state.timezone), end = localDate(e.endAt, state.timezone); return s <= date && end >= date; }); }
+function layoutForDay(list, date) { const day = visibleSegments(list, date); const decorated = day.map(e => { const startDate = localDate(e.startAt, state.timezone), endDate = localDate(e.endAt, state.timezone); const st = startDate === date ? localTime(e.startAt, state.timezone) : '00:00'; const en = endDate === date ? localTime(e.endAt, state.timezone) : '24:00'; return { e, sm: timeMinutes(st), em: timeMinutes(en) }; }).sort((a, b) => a.sm - b.sm || a.em - b.em); const lanes = []; const result = []; for (const item of decorated) {
+    let lane = 0;
+    let occupied = lanes[lane];
+    while (occupied !== undefined && occupied > item.sm) {
+        lane++;
+        occupied = lanes[lane];
+    }
+    lanes[lane] = item.em;
+    result.push({ ...item, lane });
+} return result.map(x => ({ ...x, total: Math.max(...result.filter(r => r.sm < x.em && r.em > x.sm).map(r => r.lane + 1), x.lane + 1) })); }
+function timeMinutes(v) { if (v === '24:00')
+    return 1440; const [h, m] = v.split(':').map(Number); return (h || 0) * 60 + (m || 0); }
+function renderTimeGrid(events, dates) { const start = 420, px = 1.15; const labels = Array.from({ length: 17 }, (_, i) => `${String(7 + i).padStart(2, '0')}:00`); return `<div class="time-grid" style="--day-count:${dates.length}"><div class="time-axis">${labels.map((l, i) => `<span style="top:${i * 60 * px}px">${l}</span>`).join('')}</div><div class="time-days">${dates.map((date, i) => { const dayEvents = visibleSegments(events, date); const allDay = dayEvents.filter(e => e.allDay); const laid = layoutForDay(dayEvents.filter(e => !e.allDay), date); return `<section class="time-day ${date === todayISO(state.timezone) ? 'today' : ''}" data-drop-date="${date}"><header><span>${DAYS[i % 7]}</span><b>${date.slice(8, 10)} ${new Intl.DateTimeFormat('ru-RU', { month: 'short' }).format(new Date(`${date}T12:00:00Z`)).replace('.', '')}</b></header>${allDay.length ? `<div class="all-day-strip">${allDay.map(e => `<button class="all-day-event ${e.kind === 'personal' ? 'personal' : ''}" data-open-event="${esc(e.id)}"><span>Весь день</span><strong>${esc(String(e.title ?? (('subject' in e) ? e.subject : '')))}</strong></button>`).join('')}</div>` : ''}<div class="time-canvas">${Array.from({ length: 17 }, (_, n) => `<i class="hour-line" style="top:${n * 60 * px}px"></i>`).join('')}${laid.map((x) => { const top = Math.max(0, (x.sm - start) * px), height = Math.max(42, (x.em - x.sm) * px); const width = 100 / x.total, left = x.lane * width; return eventHtml(x.e, date, top, height, left, width); }).join('')}${date === todayISO(state.timezone) ? currentTimeLine(px, start) : ''}</div></section>`; }).join('')}</div></div>`; }
+function currentTimeLine(px, start) { const now = new Date(); const tm = new Intl.DateTimeFormat('en-US', { timeZone: state.timezone, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(now).split(':').map(Number); const hh = Number(tm[0] ?? 0), mm = Number(tm[1] ?? 0); const top = ((hh * 60 + mm) - start) * px; if (top < 0 || top > 1100)
+    return ''; return `<div class="current-time" style="top:${top}px"><i></i><b>Сейчас</b></div>`; }
+function eventHtml(e, date, top, height, left, width) { const isPersonal = e.kind === 'personal'; const title = e.title ?? (('subject' in e) ? e.subject : ''); const st = e.allDay ? 'Весь день' : localDate(e.startAt, state.timezone) === date ? localTime(e.startAt, state.timezone) : '00:00'; const en = e.allDay ? '' : localDate(e.endAt, state.timezone) === date ? localTime(e.endAt, state.timezone) : '24:00'; const status = e.status ?? (isPersonal ? 'planned' : undefined); const draggable = isPersonal ? ' draggable="true"' : ''; return `<article class="calendar-event ${isPersonal ? 'personal' : 'official'} status-${status ?? 'planned'}" data-event-id="${esc(e.id)}" data-event-kind="${e.kind}"${draggable} tabindex="0" style="top:${top}px;height:${height}px;left:${left}%;width:${width}%;"><div class="event-accent"></div><div class="event-time">${esc(st)}–${esc(en)}</div><strong>${esc(String(title))}</strong><div class="event-meta">${esc(isPersonal ? (e.category || 'Личное') : (e.type === 'practice' ? 'ПЗ' : e.type === 'lecture' ? 'Лекция' : 'Занятие'))}${e.location ? ` · ${esc(e.location)}` : ''}</div>${status ? `<span class="event-status">${STATUS_LABEL[status]}</span>` : ''}${isPersonal ? '<button class="resize-handle" data-resize-event="true" aria-label="Изменить длительность"></button>' : ''}</article>`; }
+function renderMobile(events, dates) { return `<div class="mobile-days">${dates.map((d, i) => `<section class="mobile-day ${d === todayISO(state.timezone) ? 'today' : ''}" data-drop-date="${d}"><header><div><span>${DAYS[i % 7]}</span><h3>${longDateRu(d)}</h3></div><b>${visibleSegments(events, d).length}</b></header><div class="mobile-event-list">${visibleSegments(events, d).map(e => { const st = localDate(e.startAt, state.timezone) === d ? localTime(e.startAt, state.timezone) : '00:00'; const en = localDate(e.endAt, state.timezone) === d ? localTime(e.endAt, state.timezone) : '24:00'; return `<button class="mobile-event ${e.kind === 'personal' ? 'personal' : ''}" data-open-event="${esc(e.id)}"><span>${st}–${en}</span><strong>${esc(String(e.title ?? (('subject' in e) ? e.subject : '')))}</strong><small>${esc(e.location || '')} ${e.kind === 'personal' ? '· личное' : '· официальное'}</small></button>`; }).join('') || '<div class="day-empty">Свободный день</div>'}</div></section>`).join('')}</div>`; }
+function renderMonth(events) { const from = startOfWeek(monthStart(state.focusDate)); const to = addDays(startOfWeek(monthEnd(state.focusDate)), 6); const dates = []; for (let d = from; d <= to; d = addDays(d, 1))
+    dates.push(d); return `<div class="month-grid">${DAYS.map(d => `<div class="month-head">${d}</div>`).join('')}${dates.map(d => `<button class="month-cell ${d.slice(0, 7) !== state.focusDate.slice(0, 7) ? 'muted-month' : ''} ${d === todayISO(state.timezone) ? 'today' : ''}" data-jump-date="${d}"><span>${d.slice(8, 10)}</span><div>${visibleSegments(events, d).slice(0, 4).map(e => `<em class="month-event ${e.kind === 'personal' ? 'personal' : ''}">${localTime(e.startAt, state.timezone)} ${esc(String(e.title ?? (('subject' in e) ? e.subject : '')))}</em>`).join('')}</div>${visibleSegments(events, d).length > 4 ? `<small>+${visibleSegments(events, d).length - 4}</small>` : ''}</button>`).join('')}</div>`; }
+function renderAgenda(events) { const dates = rangeDates().dates; return `<div class="agenda-list">${dates.flatMap(d => visibleSegments(events, d).map(e => ({ d, e }))).sort((a, b) => a.e.startAt.localeCompare(b.e.startAt)).map(({ d, e }) => `<article class="agenda-item card"><time>${esc(longDateRu(d))}<br><b>${localTime(e.startAt, state.timezone)}</b></time><div><span class="eyebrow">${e.kind === 'personal' ? 'Личное' : 'Официальное'}</span><h3>${esc(String(e.title ?? (('subject' in e) ? e.subject : '')))}</h3><p>${esc(e.location || 'Без места')} · ${e.category ? esc(e.category) : e.type}</p></div><div><span class="status-badge">${STATUS_LABEL[e.status ?? 'planned']}</span>${e.kind === 'personal' ? `<button class="btn small" data-open-event="${esc(e.id)}">Открыть</button>` : ''}</div></article>`).join('') || '<div class="empty-state card"><h3>Пустая повестка</h3><p>В выбранном периоде нет событий.</p></div>'}</div>`; }
+function renderList(events) { return `<div class="event-table card"><div class="table-head"><span>Дата</span><span>Время</span><span>Событие</span><span>Тип</span><span>Статус</span></div>${events.map(e => `<div class="table-row"><span>${esc(localDate(e.startAt, state.timezone))}</span><span>${esc(localTime(e.startAt, state.timezone))}–${esc(localTime(e.endAt, state.timezone))}</span><strong>${esc(String(e.title ?? (('subject' in e) ? e.subject : '')))}</strong><span>${e.kind === 'personal' ? 'Личное' : e.type}</span><span>${STATUS_LABEL[e.status ?? 'planned']}</span></div>`).join('') || '<div class="empty-table">Нет событий</div>'}</div>`; }
+function renderTasks() { state.tasks = readTasks(); $('taskCount').textContent = String(state.tasks.filter(x => !x.done).length); $('taskList').innerHTML = state.tasks.length ? state.tasks.map(t => `<article class="task-row ${t.done ? 'done' : ''}"><button class="task-check" data-task-toggle="${esc(t.id)}">${t.done ? '✓' : ''}</button><div class="task-body"><b>${esc(t.subject)}</b><p>${esc(t.text)}</p><small>${t.due ? `Дедлайн: ${esc(t.due)}` : 'Без дедлайна'}</small></div><div class="task-actions"><button class="btn small danger" data-task-delete="${esc(t.id)}">Удалить</button></div></article>`).join('') : `<div class="empty-state card"><div class="empty-icon">✓</div><h3>Задач пока нет</h3><p>Создайте первую задачу для текущей группы.</p><button class="btn primary" data-action="add-task">Создать задачу</button></div>`; }
+function renderFaculties() { $('facultyGrid').innerHTML = PROGRAMS.map(p => { const published = p.publishedCourses.length; return `<article class="faculty-card card"><span class="eyebrow">${p.code}</span><h3>${esc(p.title)}</h3><p>${esc(p.faculty)}</p><div class="faculty-tags"><span>1–6 курсы</span><span>${published}/6 опубликовано</span></div><button class="btn small primary" data-pick-program="${p.code}">Открыть расписание</button></article>`; }).join(''); }
+function renderResources() { const grouped = PROGRAMS.flatMap(p => p.scheduleCourses.map(course => ({ p, course, sources: sourcesFor(p.code, course) }))); $('resourceList').innerHTML = grouped.map(({ p, course, sources }) => { const published = sources.filter(s => s.status === 'published' || s.status === 'verified'); const status = !p.publishedCourses.includes(course) ? 'Не опубликовано' : published.length ? 'Источник доступен' : 'Требуется серверный импорт'; return `<article class="resource-card card"><div class="meta"><span class="eyebrow">${p.code} · ${course} курс</span><b>${esc(p.title)}</b><p>${published.length ? published.map(s => esc(s.title)).join(' · ') : 'Официальная страница / parser adapter'}</p></div><div><span class="resource-status">${status}</span><div style="height:6px"></div><a class="btn small" href="${sourceFor(p.code, course)}" target="_blank" rel="noopener noreferrer">Источник ↗</a></div></article>`; }).join(''); }
+function renderKug() { $('kugContext').textContent = `${state.profile.course} курс · ${state.profile.group || 'группа не выбрана'}`; }
+function renderFaq(filter = '') { const q = filter.trim().toLowerCase(); const items = FAQ.filter(x => (state.faqCategory === 'Все' || x.category === state.faqCategory) && (`${x.question} ${x.answer}`).toLowerCase().includes(q)); $('faqCategories').innerHTML = ['Все', ...Array.from(new Set(FAQ.map(x => x.category)))].map(c => `<button class="chip-button ${c === state.faqCategory ? 'active' : ''}" data-faq-category="${esc(c)}">${esc(c)}</button>`).join(''); $('faqPopular').innerHTML = FAQ.filter(x => x.popular).slice(0, 4).map(x => `<button class="faq-popular" data-faq-open="${esc(x.id)}"><b>${esc(x.question)}</b><small>${esc(x.category)}</small></button>`).join(''); $('faqList').innerHTML = items.length ? items.map(x => `<details id="faq-${esc(x.id)}"><summary>${esc(x.question)}<span>+</span></summary><p>${esc(x.answer)}</p></details>`).join('') : `<div class="empty-state compact card"><h3>Ничего не найдено</h3><p>Попробуйте изменить запрос или категорию.</p><button class="btn" data-page="support">Обратиться в поддержку</button></div>`; }
+function renderSettings() { const tz = $('settingsTimezone'); if (tz) {
+    const common = ['Europe/Zurich', 'Europe/Moscow', 'Europe/London', 'Europe/Berlin', 'Asia/Tokyo', 'America/New_York', 'America/Los_Angeles', 'UTC'];
+    tz.innerHTML = Array.from(new Set([...common, state.timezone])).map(z => `<option value="${z}">${z}</option>`).join('');
+    tz.value = state.timezone;
+} const theme = $('settingsTheme'); if (theme)
+    theme.value = themeMode(); }
+function renderProfilePage() { const p = PROGRAMS.find(x => x.code === state.profile.program); $('profileSummary').innerHTML = `<div class="profile-large"><div class="avatar large">A</div><div><h2>Профиль студента</h2><p>${esc(p?.title ?? '')} · ${state.profile.course} курс · группа ${esc(state.profile.group || 'не выбрана')}</p><small>Часовой пояс календаря: ${esc(state.timezone)}</small></div></div><div class="profile-grid"><div class="card profile-stat"><span>Программа</span><b>${esc(p?.shortTitle ?? state.profile.program)}</b></div><div class="card profile-stat"><span>Группа</span><b>${esc(state.profile.group || '—')}</b></div><div class="card profile-stat"><span>Источник</span><b>${state.status.toUpperCase()}</b></div></div>`; }
+async function loadSupport() { if (state.supportStatus === 'loading')
+    return; state.supportStatus = 'loading'; renderSupport(); try {
+    state.ticketList = await listTickets();
+    state.supportStatus = 'ready';
+    if (state.ticketSelected)
+        await loadTicketDetail(state.ticketSelected);
+}
+catch {
+    state.supportStatus = 'error';
+} renderSupport(); }
+async function loadTicketDetail(id) { try {
+    const t = await getTicket(id);
+    state.ticketList = [...state.ticketList.filter(x => x.id !== id), t];
+    state.ticketSelected = id;
+}
+catch {
+    state.ticketSelected = '';
+} }
+function renderSupport() { const list = $('ticketList'); const selected = state.ticketList.find(x => x.id === state.ticketSelected); if (state.supportStatus === 'loading') {
+    list.innerHTML = renderSkeletonCards(3);
+    $('ticketDetail').innerHTML = '<div class="empty-state card"><p>Загружаем обращения…</p></div>';
+}
+else if (state.supportStatus === 'error') {
+    list.innerHTML = '<div class="empty-state card"><h3>Не удалось загрузить обращения</h3><button class="btn" data-action="support-retry">Повторить</button></div>';
+    $('ticketDetail').innerHTML = '';
+}
+else {
+    list.innerHTML = state.ticketList.length ? state.ticketList.map(t => `<button class="ticket-row ${t.id === state.ticketSelected ? 'active' : ''}" data-ticket="${esc(t.id)}"><span>${esc(t.number)}</span><b>${esc(t.subject)}</b><small>${ticketStatusLabel(t.status)} · ${new Intl.DateTimeFormat('ru-RU', { dateStyle: 'medium' }).format(new Date(t.updatedAt))}</small></button>`).join('') : '<div class="empty-state compact"><h3>Обращений пока нет</h3><p>Создайте тикет, если FAQ не помог.</p></div>';
+    if (selected) {
+        $('ticketDetail').innerHTML = `<article class="ticket-detail card"><div class="ticket-head"><div><span class="eyebrow">${esc(selected.number)}</span><h2>${esc(selected.subject)}</h2><p>${ticketStatusLabel(selected.status)} · ${esc(selected.priority)}</p></div><button class="btn small" data-action="support-close">Закрыть</button></div><div class="message-list">${(selected.messages ?? []).map(m => `<div class="message ${m.authorType === 'support' ? 'support' : ''}"><b>${m.authorType === 'support' ? 'Поддержка' : 'Вы'}</b><p>${esc(m.body)}</p><small>${new Date(m.createdAt).toLocaleString('ru-RU')}</small></div>`).join('')}</div><form id="ticketReplyForm" class="reply-form"><textarea id="ticketReply" rows="4" placeholder="Добавить сообщение…" aria-label="Ответ по тикету"></textarea><button class="btn primary" type="submit">Отправить</button></form></article>`;
+    }
+    else
+        $('ticketDetail').innerHTML = '<div class="empty-state card"><h3>Выберите обращение</h3><p>Или создайте новое.</p></div>';
+} }
+function ticketStatusLabel(s) { return { new: 'Новое', in_progress: 'В работе', waiting_user: 'Ожидает ответа', resolved: 'Решено', closed: 'Закрыто' }[s] ?? s; }
+function renderSkeletonCards(n) { return `<div class="skeleton-stack">${Array.from({ length: n }, () => '<div class="skeleton-card"></div>').join('')}</div>`; }
+function openModal(id) { $(id).classList.add('open'); $(id).setAttribute('aria-hidden', 'false'); document.body.classList.add('modal-open'); const focus = $(id).querySelector('button,select,input,textarea'); focus?.focus(); }
+function closeModal(id) { $(id).classList.remove('open'); $(id).setAttribute('aria-hidden', 'true'); document.body.classList.remove('modal-open'); }
+function loadAppearance() { try {
+    const raw = JSON.parse(localStorage.getItem('almazov.appearance') ?? 'null');
+    const valid = (v, fallback) => typeof v === 'string' && /^#[0-9a-fA-F]{6}$/.test(v) ? v : fallback;
+    state.double1 = valid(raw?.double1, state.double1);
+    state.double2 = valid(raw?.double2, state.double2);
+}
+catch { } }
+function applyAppearance() { document.documentElement.style.setProperty('--double1', state.double1); document.documentElement.style.setProperty('--double2', state.double2); }
+function saveAppearance() { localStorage.setItem('almazov.appearance', JSON.stringify({ double1: state.double1, double2: state.double2 })); applyAppearance(); }
+function renderProfileOptions() { const ps = $('programSelect'), cs = $('courseSelect'), gs = $('groupSelect'); ps.innerHTML = PROGRAMS.map(p => `<option value="${p.code}">${esc(p.title)} · ${p.code}</option>`).join(''); cs.innerHTML = [1, 2, 3, 4, 5, 6].map(c => `<option value="${c}">${c} курс</option>`).join(''); gs.innerHTML = groupOptions(state.profile.program, state.profile.course).map(g => g ? `<option value="${esc(g)}">${esc(g)}</option>` : `<option value="">— группы не опубликованы —</option>`).join(''); ps.value = state.profile.program; cs.value = String(state.profile.course); gs.value = state.profile.group; fillModalOptions(state.profile.program, state.profile.course, state.profile.group); }
+function fillModalOptions(program, course, group) { const p = $('modalProgram'), c = $('modalCourse'), g = $('modalGroup'); p.innerHTML = PROGRAMS.map(x => `<option value="${x.code}">${esc(x.title)}</option>`).join(''); c.innerHTML = [1, 2, 3, 4, 5, 6].map(x => `<option value="${x}">${x} курс</option>`).join(''); g.innerHTML = groupOptions(program, course).map(x => `<option value="${esc(x)}">${esc(x || '—')}</option>`).join(''); p.value = program; c.value = String(course); g.value = group; }
+async function saveProfile() { const p = $('modalProgram').value, c = Number($('modalCourse').value), g = $('modalGroup').value; state.profile = { program: p, course: c, group: g }; ensureProfile(); localStorage.setItem('almazov.profile', JSON.stringify(state.profile)); saveAppearance(); closeModal('profileModal'); state.week = mondayOf(state.focusDate); state.focusDate = state.week; clearScheduleMemory(); render(); await reloadEvents(); render(); }
+function openTask() { $('taskSubject').value = ''; $('taskText').value = ''; $('taskDate').value = ''; $('taskNotice').textContent = ''; openModal('taskModal'); }
+function saveTask() { const subject = $('taskSubject').value.trim(), text = $('taskText').value.trim(); if (!subject || !text) {
+    $('taskNotice').textContent = 'Заполните предмет и задание.';
+    return;
+} addTask({ id: crypto.randomUUID(), subject, text, due: $('taskDate').value || undefined, done: false, ...state.profile, createdAt: new Date().toISOString() }); closeModal('taskModal'); renderTasks(); }
+function readEventForm() { const title = $('eventTitle').value.trim(), start = $('eventStart').value, end = $('eventEnd').value, tz = $('eventTimezone').value; if (!title) {
+    setEventNotice('Введите название события.');
+    return null;
+} if (!start || !end) {
+    setEventNotice('Укажите начало и окончание.');
+    return null;
+} try {
+    const startAt = localDateTimeToUtc(start, tz), endAt = localDateTimeToUtc(end, tz);
+    if (Date.parse(endAt) <= Date.parse(startAt)) {
+        setEventNotice('Окончание должно быть позже начала.');
+        return null;
+    }
+    const freq = $('eventRepeat').value;
+    const recurrence = freq === 'none' ? null : { frequency: freq, interval: Number($('eventInterval').value || 1), until: ($('eventUntil').value) || null, weekdays: Array.from(document.querySelectorAll('[data-weekday]:checked')).map(x => Number(x.dataset.weekday)) };
+    return { title, description: $('eventDescription').value.trim(), category: $('eventCategory').value, status: $('eventStatus').value, startAt, endAt, timeZone: tz, allDay: $('eventAllDay').checked, location: $('eventLocation').value.trim(), meetingUrl: $('eventMeeting').value.trim(), attendees: $('eventAttendees').value.split(',').map(x => x.trim()).filter(Boolean), privacy: $('eventPrivacy').value, recurrence };
+}
+catch (error) {
+    setEventNotice(error instanceof Error ? error.message : 'Некорректные данные');
+    return null;
+} }
+function setEventNotice(msg) { $('eventNotice').textContent = msg; }
+function saveDraft() { const ids = ['eventTitle', 'eventStart', 'eventEnd', 'eventTimezone', 'eventRepeat', 'eventInterval', 'eventUntil', 'eventCategory', 'eventStatus', 'eventLocation', 'eventMeeting', 'eventAttendees', 'eventPrivacy', 'eventDescription', 'eventAllDay']; const obj = {}; for (const id of ids) {
+    const el = document.getElementById(id);
+    if (el)
+        obj[id] = el instanceof HTMLInputElement && el.type === 'checkbox' ? el.checked : el.value;
+} localStorage.setItem('almazov.event.draft', JSON.stringify(obj)); }
+function restoreDraft() { try {
+    const raw = JSON.parse(localStorage.getItem('almazov.event.draft') ?? '{}');
+    for (const [id, v] of Object.entries(raw)) {
+        const el = document.getElementById(id);
+        if (!el)
+            continue;
+        if (el instanceof HTMLInputElement && el.type === 'checkbox')
+            el.checked = v === true;
+        else
+            el.value = String(v ?? '');
     }
 }
-function renderSkeleton(desktop) { const cols = desktop ? 7 : 2; return `<div class="skeleton-grid">${Array.from({ length: cols }, () => `<div class="skeleton-day"><i></i><i></i><i></i></div>`).join('')}</div>`; }
-function dayColumn(date, index, list) { return `<section class="day-column ${date === todayISO() ? 'today' : ''}"><header><div><span>${DAYS[index]}</span><b>${date.slice(8, 10)} ${new Intl.DateTimeFormat('ru-RU', { month: 'short' }).format(new Date(`${date}T12:00:00Z`)).replace('.', '')}</b></div><strong>${list.length || '—'}</strong></header><div class="day-list">${list.length ? list.map(lessonCard).join('') : `<div class="day-empty">Свободный день</div>`}</div></section>`; }
-function mobileDay(date, index, list) { return `<section class="mobile-day ${date === todayISO() ? 'today' : ''}"><header><div><span>${DAYS[index]}</span><h3>${longDateRu(date)}</h3></div><b>${list.length}</b></header><div class="day-list">${list.length ? list.map(lessonCard).join('') : `<div class="day-empty">Свободный день</div>`}</div></section>`; }
-function lessonCard(e) { const label = { lecture: 'Лекция', practice: 'ПЗ', lab: 'Lab', assessment: 'Контроль', other: 'Занятие' }[e.type]; const split = e.half ?? (e.doublePart === 1 ? '1/2' : e.doublePart === 2 ? '2/2' : undefined); return `<article class="lesson ${e.type}" tabindex="0" aria-label="${esc(`${e.start}–${e.end} · ${label} · ${e.subject}`)}"><div class="lesson-top"><span class="time">${esc(e.start)}–${esc(e.end)}</span><span class="type">${label}</span>${split ? `<span class="half ${split === '1/2' ? 'num' : 'den'}" title="${split === '1/2' ? 'Числитель' : 'Знаменатель'}">${split}</span>` : ''}${e.stream ? `<span class="stream">Поток ${e.stream}</span>` : ''}</div><h4>${esc(e.subject)}</h4>${e.location ? `<p>⌖ ${esc(e.location)}</p>` : ''}${e.teacher ? `<p>◌ ${esc(e.teacher)}</p>` : ''}${e.weeks ? `<span class="weeks">${esc(e.weeks)}</span>` : ''}</article>`; }
-function plural(n, a, b, c) { const m = n % 10, k = n % 100; if (m === 1 && k !== 11)
-    return a; if (m >= 2 && m <= 4 && (k < 12 || k > 14))
-    return b; return c; }
-function renderKug() { const p = PROGRAMS.find(x => x.code === state.profile.program); $('kugContext').textContent = state.profile.group ? `${p?.title ?? ''} · ${state.profile.course} курс · ${state.profile.group}` : `${p?.title ?? ''} · ${state.profile.course} курс`; }
-function renderResources() { const grouped = PROGRAMS.flatMap(p => p.scheduleCourses.map(course => ({ p, course, sources: sourcesFor(p.code, course) }))); $('resourceList').innerHTML = grouped.map(({ p, course, sources }) => { const published = sources.filter(s => s.status === 'published' || s.status === 'verified'); const status = !p.publishedCourses.includes(course) ? 'Не опубликовано' : published.length ? 'Источник доступен' : 'Требуется серверный импорт'; return `<article class="resource-card card"><div class="meta"><span class="eyebrow">${p.code} · ${course} курс</span><b>${p.title}</b><p>${published.length ? published.map(s => esc(s.title)).join(' · ') : 'Официальная страница / parser adapter'}</p></div><div><span class="resource-status">${status}</span><div style="height:6px"></div><a class="btn small" href="${sourceFor(p.code, course)}" target="_blank" rel="noopener noreferrer">Источник ↗</a></div></article>`; }).join(''); }
-function syncProfileSelects() { const program = $('programSelect'), course = $('courseSelect'), group = $('groupSelect'); program.value = state.profile.program; course.value = String(state.profile.course); group.value = state.profile.group; }
-function fillModalOptions(program, course, group) { const ps = $('modalProgram'), cs = $('modalCourse'), gs = $('modalGroup'); ps.innerHTML = PROGRAMS.map(p => `<option value="${p.code}">${p.title} · ${p.code}</option>`).join(''); cs.innerHTML = [1, 2, 3, 4, 5, 6].map(c => `<option value="${c}">${c} курс</option>`).join(''); const groups = groupOptions(program, course); gs.innerHTML = groups.map(g => g ? `<option value="${g}">${g}</option>` : `<option value="">— группы не опубликованы —</option>`).join(''); ps.value = program; cs.value = String(course); gs.value = group; }
-function renderTasks() { const tasks = state.tasks.filter(t => t.program === state.profile.program && t.course === state.profile.course && t.group === state.profile.group); $('taskCount').textContent = String(tasks.filter(t => !t.done).length); $('taskList').innerHTML = tasks.length ? tasks.sort((a, b) => Number(a.done) - Number(b.done) || (a.due ?? '9999').localeCompare(b.due ?? '9999')).map(t => `<article class="task-row ${t.done ? 'done' : ''}"><div class="task-check">${t.done ? '✓' : '○'}</div><div class="task-body"><b>${esc(t.subject)}</b><p>${esc(t.text)}</p>${t.due ? `<small>до ${esc(t.due)}</small>` : ''}</div><div class="task-actions"><button class="btn small" data-task-toggle="${t.id}">${t.done ? 'Вернуть' : 'Готово'}</button><button class="btn small danger" data-task-delete="${t.id}">Удалить</button></div></article>`).join('') : `<div class="empty-state compact card"><div class="empty-icon">✓</div><h3>Задач пока нет</h3><p>Добавьте домашнее задание и привяжите его к выбранной группе.</p></div>`; }
-function renderFaculties() { $('facultyGrid').innerHTML = PROGRAMS.map(p => { const published = p.publishedCourses.length; return `<article class="faculty-card card"><span class="eyebrow">${p.code}</span><h3>${p.title}</h3><p>${p.faculty}</p><div class="faculty-tags"><span>1–6 курсы</span><span>${published}/6 опубликовано</span></div><button class="btn small primary" data-pick-program="${p.code}">Открыть расписание</button></article>`; }).join(''); }
-function renderFaq(filter = '') { const q = filter.trim().toLowerCase(); $('faqList').innerHTML = FAQ.filter(([a, b]) => `${a} ${b}`.toLowerCase().includes(q)).map(([a, b]) => `<details><summary>${esc(a)}<span>+</span></summary><p>${esc(b)}</p></details>`).join('') || `<div class="empty-state compact card"><h3>Ничего не найдено</h3></div>`; }
-function renderProfileOptions() { const ps = $('programSelect'), cs = $('courseSelect'), gs = $('groupSelect'); ps.innerHTML = PROGRAMS.map(p => `<option value="${p.code}">${p.title} · ${p.code}</option>`).join(''); cs.innerHTML = [1, 2, 3, 4, 5, 6].map(c => `<option value="${c}">${c} курс</option>`).join(''); const groups = groupOptions(state.profile.program, state.profile.course); gs.innerHTML = groups.map(g => g ? `<option value="${g}">${g}</option>` : `<option value="">— группы не опубликованы —</option>`).join(''); syncProfileSelects(); fillModalOptions(state.profile.program, state.profile.course, state.profile.group); }
-function applySelectProfile() { const p = $('programSelect'), c = $('courseSelect'), g = $('groupSelect'); state.profile = { program: p.value, course: Number(c.value), group: g.value || '' }; ensureProfile(); localStorage.setItem('almazov.profile', JSON.stringify(state.profile)); state.week = mondayOf(todayISO()); state.events = []; state.status = 'loading'; state.message = 'Подготавливаем новое расписание…'; clearScheduleMemory(); render(); return loadCurrent().then(render); }
+catch { } }
+function clearDraft() { localStorage.removeItem('almazov.event.draft'); }
+function fillEventModal(e, date) { const tz = $('eventTimezone'); const scopeWrap = $('eventEditScopeWrap'); const scope = $('eventEditScope'); tz.innerHTML = [state.timezone, 'Europe/Moscow', 'UTC', 'Europe/Berlin', 'America/New_York', 'Asia/Tokyo'].filter((x, i, a) => a.indexOf(x) === i).map(x => `<option value="${x}">${x}</option>`).join(''); state.editingId = e?.kind === 'personal' ? e.id : ''; state.draft = !e; scopeWrap.hidden = !(e?.kind === 'personal' && !!e.recurrence); scope.value = 'series'; if (e) {
+    $('eventTitle').value = e.title ?? (('subject' in e) ? e.subject : '');
+    $('eventStart').value = localDateTimeInput(e.startAt, e.timeZone || state.timezone);
+    $('eventEnd').value = localDateTimeInput(e.endAt, e.timeZone || state.timezone);
+    tz.value = e.timeZone || state.timezone;
+    $('eventDescription').value = e.description ?? '';
+    $('eventCategory').value = e.category ?? 'personal';
+    $('eventStatus').value = e.status ?? 'planned';
+    $('eventLocation').value = e.location ?? '';
+    $('eventMeeting').value = e.meetingUrl ?? '';
+    $('eventAttendees').value = (e.attendees ?? []).join(', ');
+    $('eventPrivacy').value = e.privacy ?? 'private';
+    $('eventAllDay').checked = !!e.allDay;
+    $('eventRepeat').value = e.recurrence?.frequency ?? 'none';
+    $('eventInterval').value = String(e.recurrence?.interval ?? 1);
+    $('eventUntil').value = e.recurrence?.until ?? '';
+    scopeWrap.hidden = !e.recurrence;
+}
+else {
+    const start = date ? `${date}T09:00` : state.focusDate + 'T09:00';
+    const end = date ? `${date}T10:00` : state.focusDate + 'T10:00';
+    $('eventTitle').value = '';
+    $('eventStart').value = start;
+    $('eventEnd').value = end;
+    tz.value = state.timezone;
+    $('eventDescription').value = '';
+    $('eventCategory').value = 'personal';
+    $('eventStatus').value = 'planned';
+    $('eventLocation').value = '';
+    $('eventMeeting').value = '';
+    $('eventAttendees').value = '';
+    $('eventPrivacy').value = 'private';
+    $('eventAllDay').checked = false;
+    $('eventRepeat').value = 'none';
+    $('eventInterval').value = '1';
+    $('eventUntil').value = '';
+    restoreDraft();
+} setEventNotice(''); $('eventModalTitle').textContent = e ? 'Редактировать событие' : 'Новое событие'; openModal('eventModal'); }
+function detectConflict(input, ignoreId = '') { return getDisplayEvents().filter(e => e.kind === 'schedule' || e.id !== ignoreId).some(e => Date.parse(input.endAt) > Date.parse(e.startAt) && Date.parse(input.startAt) < Date.parse(e.endAt)); }
+async function saveEvent() { const input = readEventForm(); if (!input)
+    return; if (detectConflict(input, state.editingId)) {
+    const ok = confirm('Событие пересекается с другим событием. Всё равно сохранить?');
+    if (!ok)
+        return;
+} try {
+    const wasEditing = !!state.editingId;
+    if (state.editingId) {
+        const current = state.personal.find(x => x.id === state.editingId);
+        const before = current ? toInput(current) : input;
+        const scope = (document.getElementById('eventEditScope')?.value ?? 'series');
+        const updated = await updatePersonalEvent(state.editingId, input, scope);
+        state.undo = { id: updated.id, before, scope, kind: 'update' };
+    }
+    else {
+        await createPersonalEvent(input);
+    }
+    clearDraft();
+    closeModal('eventModal');
+    state.editingId = '';
+    await reloadEvents();
+    render();
+    showUndo(wasEditing ? 'Изменение сохранено' : 'Событие создано');
+}
+catch (error) {
+    setEventNotice(error instanceof Error ? error.message : 'Не удалось сохранить событие.');
+} }
+function toInput(e) { return { title: e.title, description: e.description, category: e.category, status: e.status, startAt: e.startAt, endAt: e.endAt, timeZone: e.timeZone, allDay: e.allDay, location: e.location, meetingUrl: e.meetingUrl, attendees: e.attendees, privacy: e.privacy, recurrence: e.recurrence ?? null }; }
+async function deleteSelected(id) { const e = state.personal.find(x => x.id === id); if (!e)
+    return; if (!confirm('Удалить личное событие?'))
+    return; const before = toInput(e); try {
+    await deletePersonalEvent(id, e.seriesId ? 'series' : 'single');
+    state.undo = { id, before, scope: e.seriesId ? 'series' : 'single', kind: 'delete' };
+    await reloadEvents();
+    render();
+    showUndo('Событие удалено');
+}
+catch (error) {
+    toast(error instanceof Error ? error.message : 'Не удалось удалить событие', 'error');
+} }
+let undoTimer;
+function showUndo(text) { const root = document.getElementById('toastRoot'); if (!root)
+    return; root.innerHTML = `<div class="toast"><span>${esc(text)}</span><button class="btn small" data-action="undo">Отменить</button></div>`; if (undoTimer)
+    window.clearTimeout(undoTimer); undoTimer = window.setTimeout(() => { root.innerHTML = ''; state.undo = null; }, 7000); }
+async function undo() { const u = state.undo; if (!u)
+    return; try {
+    if (u.kind === 'delete') {
+        const created = await createPersonalEvent(u.before);
+        state.undo = { ...u, id: created.id };
+    }
+    else
+        await updatePersonalEvent(u.id, u.before, 'series');
+    state.undo = null;
+    if (undoTimer)
+        window.clearTimeout(undoTimer);
+    $('toastRoot').innerHTML = '';
+    await reloadEvents();
+    render();
+}
+catch (error) {
+    toast(error instanceof Error ? error.message : 'Не удалось отменить действие', 'error');
+} }
+function toast(text, kind = 'success') { $('toastRoot').innerHTML = `<div class="toast ${kind}">${esc(text)}</div>`; window.setTimeout(() => { $('toastRoot').innerHTML = ''; }, 5000); }
+function openEventById(id) { const e = state.events.find(x => x.id === id); if (!e)
+    return; if (e.kind === 'personal') {
+    fillEventModal(e);
+}
+else {
+    openEventDetail(e);
+} }
+function openEventDetail(e) { $('detailTitle').textContent = String(e.title ?? (('subject' in e) ? e.subject : '')); $('detailBody').innerHTML = `<div class="detail-grid"><span>Дата</span><b>${esc(longDateRu(localDate(e.startAt, state.timezone)))}</b><span>Время</span><b>${esc(localTime(e.startAt, state.timezone))}–${esc(localTime(e.endAt, state.timezone))}</b><span>Часовой пояс</span><b>${esc(state.timezone)}</b><span>Тип</span><b>${esc(e.kind === 'personal' ? 'Личное' : String(e.type ?? 'Занятие'))}</b><span>Место</span><b>${esc(e.location || '—')}</b><span>Статус</span><b>${esc(STATUS_LABEL[e.status ?? 'planned'])}</b><span>Описание</span><p>${esc(e.description || '—')}</p></div>${e.kind === 'personal' ? '<div class="detail-actions"><button class="btn primary" data-action="edit-opened">Изменить</button><button class="btn danger" data-action="delete-opened">Удалить</button></div>' : ''}`; state.editingId = e.kind === 'personal' ? e.id : ''; openModal('eventDetailModal'); }
+async function handleSupportSubmit(form) { const subject = $('ticketSubject').value.trim(), description = $('ticketDescription').value.trim(); if (subject.length < 3 || description.length < 5) {
+    $('ticketNotice').textContent = 'Заполните тему и подробное описание.';
+    return;
+} const files = Array.from($('ticketFiles').files ?? []); try {
+    const attachments = await Promise.all(files.slice(0, 5).map(fileToAttachment));
+    const t = await createTicket({ subject, description, category: $('ticketCategory').value, priority: $('ticketPriority').value, attachments });
+    state.ticketList = [t, ...state.ticketList.filter(x => x.id !== t.id)];
+    state.ticketSelected = t.id;
+    form.reset();
+    $('ticketNotice').textContent = '';
+    renderSupport();
+    toast(`Обращение ${t.number} создано`);
+}
+catch (error) {
+    $('ticketNotice').textContent = error instanceof Error ? error.message : 'Не удалось создать тикет.';
+} }
 function bind() {
-    $('themeMeta')?.addEventListener('click', () => { });
     document.addEventListener('click', async (e) => {
-        const t = e.target.closest('[data-action],[data-page],[data-pick-program],[data-task-delete],[data-task-toggle],[data-jump-date]');
-        if (!t)
+        const target = e.target.closest('[data-action],[data-page],[data-view],[data-pick-program],[data-task-delete],[data-task-toggle],[data-jump-date],[data-open-event],[data-ticket],[data-faq-category],[data-faq-open]');
+        if (!target)
             return;
-        const action = t.dataset.action;
-        if (t.dataset.page) {
-            nav(t.dataset.page);
+        const action = target.dataset.action;
+        if (target.dataset.page) {
+            nav(target.dataset.page);
+            return;
+        }
+        if (target.dataset.view) {
+            state.view = target.dataset.view;
+            renderSchedule();
+            await reloadEvents();
+            render();
+            return;
+        }
+        if (target.dataset.faqCategory) {
+            state.faqCategory = target.dataset.faqCategory;
+            renderFaq(state.faqQuery);
+            return;
+        }
+        if (target.dataset.faqOpen) {
+            document.getElementById(`faq-${target.dataset.faqOpen}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            document.getElementById(`faq-${target.dataset.faqOpen}`)?.setAttribute('open', '');
+            return;
+        }
+        if (target.dataset.ticket) {
+            state.ticketSelected = target.dataset.ticket;
+            await loadTicketDetail(state.ticketSelected);
+            renderSupport();
+            return;
+        }
+        if (target.dataset.openEvent) {
+            openEventById(target.dataset.openEvent);
             return;
         }
         if (action === 'toggle-menu') {
@@ -112,35 +450,53 @@ function bind() {
         if (action === 'theme') {
             cycleTheme();
             state.theme = themeMode();
+            renderSettings();
             return;
         }
         if (action === 'today') {
-            state.week = mondayOf(todayISO());
-            renderSchedule();
+            state.focusDate = todayISO(state.timezone);
+            state.week = mondayOf(state.focusDate);
+            await reloadEvents();
+            render();
             return;
         }
-        if (action === 'prev-week') {
-            state.week = addDays(state.week, -7);
-            renderSchedule();
+        if (action === 'prev-period') {
+            state.focusDate = state.view === 'month' ? addDays(state.focusDate, -30) : addDays(state.focusDate, state.view === 'day' ? -1 : -7);
+            state.week = mondayOf(state.focusDate);
+            await reloadEvents();
+            render();
             return;
         }
-        if (action === 'next-week') {
-            state.week = addDays(state.week, 7);
-            renderSchedule();
+        if (action === 'next-period') {
+            state.focusDate = state.view === 'month' ? addDays(state.focusDate, 30) : addDays(state.focusDate, state.view === 'day' ? 1 : 7);
+            state.week = mondayOf(state.focusDate);
+            await reloadEvents();
+            render();
             return;
         }
         if (action === 'refresh-data') {
             clearScheduleMemory();
-            await loadCurrent();
+            await reloadEvents();
             render();
             return;
         }
-        if (action === 'profile') {
-            openModal('profileModal');
+        if (action === 'new-event') {
+            fillEventModal(undefined, target.dataset.jumpDate);
+            return;
+        }
+        if (action === 'save-event') {
+            await saveEvent();
             return;
         }
         if (action === 'close-modal') {
             closeModal('profileModal');
+            closeModal('eventModal');
+            closeModal('taskModal');
+            closeModal('eventDetailModal');
+            return;
+        }
+        if (action === 'profile') {
+            openModal('profileModal');
             return;
         }
         if (action === 'save-profile') {
@@ -171,82 +527,177 @@ function bind() {
             window.print();
             return;
         }
-        if (t.dataset.pickProgram) {
-            state.profile.program = t.dataset.pickProgram;
+        if (action === 'undo') {
+            await undo();
+            return;
+        }
+        if (action === 'edit-opened') {
+            const e = state.personal.find(x => x.id === state.editingId);
+            closeModal('eventDetailModal');
+            if (e)
+                fillEventModal(e);
+            return;
+        }
+        if (action === 'delete-opened') {
+            const id = state.editingId;
+            closeModal('eventDetailModal');
+            await deleteSelected(id);
+            return;
+        }
+        if (action === 'support-new') {
+            openModal('ticketModal');
+            return;
+        }
+        if (action === 'support-retry') {
+            state.supportStatus = 'idle';
+            await loadSupport();
+            return;
+        }
+        if (action === 'support-close') {
+            state.ticketSelected = '';
+            renderSupport();
+            return;
+        }
+        if (action === 'save-settings') {
+            try {
+                setTimezone($('settingsTimezone').value);
+                applyTheme($('settingsTheme').value);
+                toast('Настройки сохранены');
+                await reloadEvents();
+                render();
+            }
+            catch (error) {
+                toast(error instanceof Error ? error.message : 'Не удалось сохранить настройки', 'error');
+            }
+            return;
+        }
+        if (target.dataset.pickProgram) {
+            state.profile.program = target.dataset.pickProgram;
             state.profile.course = 1;
             state.profile.group = groupsFor(state.profile.program, 1)[0] ?? '';
             localStorage.setItem('almazov.profile', JSON.stringify(state.profile));
-            state.week = mondayOf(todayISO());
-            state.events = [];
-            state.status = 'loading';
-            state.message = 'Подготавливаем новое расписание…';
+            state.focusDate = todayISO(state.timezone);
+            state.week = mondayOf(state.focusDate);
             clearScheduleMemory();
             nav('schedule');
-            await loadCurrent();
+            await reloadEvents();
             render();
             return;
         }
-        if (t.dataset.taskDelete) {
-            removeTask(t.dataset.taskDelete);
-            state.tasks = readTasks();
+        if (target.dataset.taskDelete) {
+            removeTask(target.dataset.taskDelete);
             renderTasks();
             return;
         }
-        if (t.dataset.taskToggle) {
-            const tt = readTasks().find(x => x.id === t.dataset.taskToggle);
+        if (target.dataset.taskToggle) {
+            const tt = readTasks().find(x => x.id === target.dataset.taskToggle);
             if (tt)
                 updateTask(tt.id, { done: !tt.done });
-            state.tasks = readTasks();
             renderTasks();
             return;
         }
-        if (t.dataset.jumpDate) {
-            const date = t.dataset.jumpDate;
-            document.getElementById(`day-${date}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            document.getElementById(`mobile-day-${date}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        if (target.dataset.jumpDate) {
+            state.focusDate = target.dataset.jumpDate;
+            state.week = mondayOf(state.focusDate);
+            if (state.view === 'month') { }
+            else
+                state.view = 'day';
+            renderSchedule();
+            await reloadEvents();
+            render();
             return;
         }
     });
-    for (const id of ['programSelect', 'courseSelect', 'groupSelect'])
-        $(id).addEventListener('change', () => { if (id === 'programSelect' || id === 'courseSelect')
-            renderProfileOptions(); applySelectProfile(); });
-    $('scheduleSearch').addEventListener('input', () => { state.search = $('scheduleSearch').value; renderSchedule(); });
+    document.addEventListener('submit', async (e) => { if (e.target instanceof HTMLFormElement) {
+        if (e.target.id === 'ticketForm') {
+            e.preventDefault();
+            await handleSupportSubmit(e.target);
+        }
+        if (e.target.id === 'ticketReplyForm') {
+            e.preventDefault();
+            const id = state.ticketSelected;
+            const body = $('ticketReply').value.trim();
+            if (id && body) {
+                const t = await addTicketMessage(id, body);
+                state.ticketList = state.ticketList.map(x => x.id === id ? t : x);
+                renderSupport();
+            }
+        }
+    } });
+    document.addEventListener('input', e => { const t = e.target; if (t.closest('#eventModal')) {
+        saveDraft();
+    } if (t.id === 'scheduleSearch') {
+        state.search = t.value;
+        renderSchedule();
+    } if (t.id === 'faqSearch') {
+        state.faqQuery = t.value;
+        renderFaq(t.value);
+    } if (t.id === 'double1') {
+        state.double1 = t.value;
+        saveAppearance();
+    } if (t.id === 'double2') {
+        state.double2 = t.value;
+        saveAppearance();
+    } });
+    ['programSelect', 'courseSelect', 'groupSelect'].forEach(id => $(id).addEventListener('change', async () => { if (id === 'programSelect' || id === 'courseSelect')
+        renderProfileOptions(); applySelectProfile(); }));
     document.querySelectorAll('#typeFilter [data-type]').forEach(b => b.addEventListener('click', () => { state.type = b.dataset.type ?? 'all'; document.querySelectorAll('#typeFilter [data-type]').forEach(x => x.classList.remove('active')); b.classList.add('active'); renderSchedule(); }));
-    $('faqSearch').addEventListener('input', () => { state.faqQuery = $('faqSearch').value; renderFaq(state.faqQuery); });
-    $('double1')?.addEventListener('input', () => { state.double1 = $('double1').value; applyAppearance(); });
-    $('double2')?.addEventListener('input', () => { state.double2 = $('double2').value; applyAppearance(); });
-    $('modalProgram').addEventListener('change', () => { const p = $('modalProgram').value; const c = Number($('modalCourse').value); fillModalOptions(p, c, groupsFor(p, c)[0] ?? ''); });
-    $('modalCourse').addEventListener('change', () => { const p = $('modalProgram').value; const c = Number($('modalCourse').value); fillModalOptions(p, c, groupsFor(p, c)[0] ?? ''); });
-    window.addEventListener('storage', () => { state.tasks = readTasks(); renderTasks(); });
+    $('statusFilter').addEventListener('change', e => { state.statusFilter = e.target.value; renderSchedule(); });
+    $('categoryFilter').addEventListener('change', e => { state.categoryFilter = e.target.value; renderSchedule(); });
+    ['eventStart', 'eventEnd', 'eventTimezone'].forEach(id => $(id).addEventListener('change', () => { const tz = $('eventTimezone').value; if (id === 'eventTimezone') {
+        const s = $('eventStart'), en = $('eventEnd');
+        if (s.value && en.value) { /* values remain in selected zone by design */ }
+    } setEventNotice(''); }));
+    document.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        $('scheduleSearch').focus();
+    } if (e.key === 'Escape') {
+        ['profileModal', 'eventModal', 'taskModal', 'eventDetailModal', 'ticketModal'].forEach(closeModal);
+    } });
+    document.addEventListener('dragstart', e => { const t = e.target.closest('.calendar-event'); if (t?.dataset.eventKind === 'personal' && e.dataTransfer) {
+        e.dataTransfer.setData('text/event-id', t.dataset.eventId ?? '');
+        e.dataTransfer.effectAllowed = 'move';
+    } });
+    document.addEventListener('dragover', e => { const t = e.target.closest('[data-drop-date]'); if (t)
+        e.preventDefault(); });
+    document.addEventListener('drop', async (e) => { const t = e.target.closest('[data-drop-date]'); if (!t)
+        return; e.preventDefault(); const id = e.dataTransfer?.getData('text/event-id'); if (!id)
+        return; const ev = state.personal.find(x => x.id === id); if (!ev)
+        return; const old = toInput(ev); const date = t.dataset.dropDate; const startInput = localDateTimeInput(ev.startAt, ev.timeZone); const endInput = localDateTimeInput(ev.endAt, ev.timeZone); const ns = localDateTimeToUtc(`${date}T${startInput.slice(11)}`, ev.timeZone), ne = localDateTimeToUtc(`${date}T${endInput.slice(11)}`, ev.timeZone); const next = { ...old, startAt: ns, endAt: ne }; try {
+        await updatePersonalEvent(id, next, 'single');
+        state.undo = { id, before: old, scope: 'single', kind: 'update' };
+        await reloadEvents();
+        render();
+        showUndo('Событие перенесено');
+    }
+    catch (error) {
+        toast(error instanceof Error ? error.message : 'Не удалось перенести событие', 'error');
+    } });
+    document.addEventListener('pointerdown', e => { const t = e.target.closest('[data-resize-event]'); if (!t)
+        return; const eventEl = t.closest('.calendar-event'); const id = eventEl?.dataset.eventId; const ev = id ? state.personal.find(x => x.id === id) : undefined; if (!ev || !eventEl)
+        return; e.preventDefault(); const startY = e.clientY, base = toInput(ev), baseEnd = Date.parse(ev.endAt); const move = (ev2) => { const min = Math.max(15, Math.round((baseEnd - Date.parse(base.startAt)) / 60000 + ((ev2.clientY - startY) / 1.15) / 15) * 15); eventEl.style.height = `${Math.max(42, min * 1.15)}px`; }; const up = async (ev2) => { document.removeEventListener('pointermove', move); document.removeEventListener('pointerup', up); const duration = Math.max(15, Math.round((baseEnd - Date.parse(base.startAt)) / 60000 + ((ev2.clientY - startY) / 1.15) / 15) * 15); const end = new Date(Date.parse(base.startAt) + duration * 60000).toISOString(); try {
+        await updatePersonalEvent(id, { ...base, endAt: end }, 'single');
+        state.undo = { id: id, before: base, scope: 'single', kind: 'update' };
+        await reloadEvents();
+        render();
+        showUndo('Длительность изменена');
+    }
+    catch (error) {
+        toast(error instanceof Error ? error.message : 'Не удалось изменить длительность', 'error');
+    } }; document.addEventListener('pointermove', move); document.addEventListener('pointerup', up, { once: true }); });
 }
-function openModal(id) { $(id).classList.add('open'); $(id).setAttribute('aria-hidden', 'false'); document.body.classList.add('modal-open'); const focus = $(id).querySelector('button,select,input,textarea'); focus?.focus(); }
-function closeModal(id) { $(id).classList.remove('open'); $(id).setAttribute('aria-hidden', 'true'); document.body.classList.remove('modal-open'); }
-function loadAppearance() { try {
-    const raw = JSON.parse(localStorage.getItem('almazov.appearance') ?? 'null');
-    const valid = (v, fallback) => typeof v === 'string' && /^#[0-9a-fA-F]{6}$/.test(v) ? v : fallback;
-    state.double1 = valid(raw?.double1, state.double1);
-    state.double2 = valid(raw?.double2, state.double2);
-}
-catch { } }
-function applyAppearance() { document.documentElement.style.setProperty('--double1', state.double1); document.documentElement.style.setProperty('--double2', state.double2); const d1 = document.getElementById('double1'); const d2 = document.getElementById('double2'); if (d1)
-    d1.value = state.double1; if (d2)
-    d2.value = state.double2; }
-function saveAppearance() { localStorage.setItem('almazov.appearance', JSON.stringify({ double1: state.double1, double2: state.double2 })); applyAppearance(); }
-async function saveProfile() { const p = $('modalProgram').value, c = Number($('modalCourse').value), g = $('modalGroup').value; state.profile = { program: p, course: c, group: g }; ensureProfile(); localStorage.setItem('almazov.profile', JSON.stringify(state.profile)); saveAppearance(); closeModal('profileModal'); state.week = mondayOf(todayISO()); state.events = []; state.status = 'loading'; state.message = 'Подготавливаем новое расписание…'; clearScheduleMemory(); render(); await loadCurrent(); render(); }
-function openTask() { $('taskSubject').value = ''; $('taskText').value = ''; $('taskDate').value = ''; $('taskNotice').textContent = ''; openModal('taskModal'); }
-function saveTask() { const subject = $('taskSubject').value.trim(), text = $('taskText').value.trim(); if (!subject || !text) {
-    $('taskNotice').textContent = 'Заполните предмет и задание.';
-    return;
-} addTask({ id: crypto.randomUUID(), subject, text, due: $('taskDate').value || undefined, done: false, ...state.profile, createdAt: new Date().toISOString() }); state.tasks = readTasks(); closeModal('taskModal'); renderTasks(); }
+async function applySelectProfile() { const p = $('programSelect'), c = $('courseSelect'), g = $('groupSelect'); state.profile = { program: p.value, course: Number(c.value), group: g.value || '' }; ensureProfile(); localStorage.setItem('almazov.profile', JSON.stringify(state.profile)); state.focusDate = todayISO(state.timezone); state.week = mondayOf(state.focusDate); state.events = []; state.status = 'loading'; clearScheduleMemory(); render(); await reloadEvents(); render(); }
 async function shareLink() { const url = new URL(location.href); url.search = ''; url.searchParams.set('program', state.profile.program); url.searchParams.set('course', String(state.profile.course)); if (state.profile.group)
     url.searchParams.set('group', state.profile.group); try {
     await navigator.clipboard.writeText(url.toString());
-    state.message = 'Ссылка с выбранным профилем скопирована.';
+    toast('Ссылка скопирована');
 }
 catch {
-    state.message = url.toString();
-} renderSchedule(); }
-function exportICS() { const events = filterEvents(state.events, { ...state.profile, stream: streamForGroup(state.profile.program, state.profile.group) }, state.week, '', 'all'); const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Almazov Schedule Hub//RU', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH', 'X-WR-CALNAME:Almazov Schedule', 'X-WR-TIMEZONE:Europe/Moscow', 'BEGIN:VTIMEZONE', 'TZID:Europe/Moscow', 'BEGIN:STANDARD', 'DTSTART:19700101T000000', 'TZOFFSETFROM:+0300', 'TZOFFSETTO:+0300', 'END:STANDARD', 'END:VTIMEZONE']; for (const e of events) {
-    lines.push('BEGIN:VEVENT', `UID:${e.id}@almazov-hub`, `DTSTART;TZID=Europe/Moscow:${e.date.replaceAll('-', '')}T${e.start.replace(':', '')}00`, `DTEND;TZID=Europe/Moscow:${e.date.replaceAll('-', '')}T${e.end.replace(':', '')}00`, `SUMMARY:${escapeICS(e.subject)}`, `LOCATION:${escapeICS(e.location)}`, `DESCRIPTION:${escapeICS([e.teacher, e.weeks, e.half].filter(Boolean).join(' · '))}`, 'END:VEVENT');
-} lines.push('END:VCALENDAR'); const blob = new Blob([lines.join('\r\n')], { type: 'text/calendar;charset=utf-8' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `almazov-${state.profile.group || 'group'}-${state.week}.ics`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); }
+    toast(url.toString());
+} }
+function exportICS() { const events = getDisplayEvents(); const tz = state.timezone; const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Almazov Schedule Hub//RU', 'CALSCALE:GREGORIAN']; for (const e of events) {
+    const start = new Date(e.startAt).toISOString().replaceAll('-', '').replaceAll(':', '').replace(/\.\d{3}Z$/, 'Z');
+    const end = new Date(e.endAt).toISOString().replaceAll('-', '').replaceAll(':', '').replace(/\.\d{3}Z$/, 'Z');
+    lines.push('BEGIN:VEVENT', `UID:${escapeICS(e.id)}@almazov-hub`, `DTSTART:${start}`, `DTEND:${end}`, `SUMMARY:${escapeICS(String(e.title ?? (('subject' in e) ? e.subject : '')))}`, `DESCRIPTION:${escapeICS(e.description ?? '')}`, `LOCATION:${escapeICS(e.location ?? '')}`, 'END:VEVENT');
+} lines.push('END:VCALENDAR'); const blob = new Blob([lines.join('\r\n')], { type: 'text/calendar;charset=utf-8' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `almazov-${state.profile.group || 'group'}-${state.focusDate}-${tz.replaceAll('/', '_')}.ics`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); }
 function escapeICS(v) { return v.replace(/([,;\\])/g, '\\$1').replace(/\n/g, '\\n'); }

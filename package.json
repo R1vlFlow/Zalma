@@ -8,10 +8,11 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "npm run build && node --test tests/*.test.mjs",
     "validate": "npm run build && node scripts/validate-dist.mjs",
-    "qa": "npm run typecheck && npm test && npm run validate && node --check server/server.mjs && node --check server/pipeline.mjs && node --check server/source-parser.mjs && node --check server/academic-config.mjs && node --check server/pdf-adapter.mjs && node --check server/xlsx-adapter.mjs && node --check server/html-adapter.mjs && node --check server/sync-schedules.mjs && node scripts/validate-project.mjs && node scripts/smoke-server.mjs",
+    "qa": "npm run lint && npm test && npm run validate && python3 scripts/check_theme_contrast.py && node scripts/http-acceptance.mjs && node --check server/server.mjs && node --check server/pipeline.mjs && node --check server/source-parser.mjs && node --check server/academic-config.mjs && node --check server/pdf-adapter.mjs && node --check server/xlsx-adapter.mjs && node --check server/html-adapter.mjs && node --check server/sync-schedules.mjs && node scripts/validate-project.mjs && node scripts/smoke-server.mjs",
     "start": "npm run build && node server/server.mjs",
     "sync": "node server/sync-schedules.mjs",
-    "validate-live": "node server/sync-official.mjs --validate-only"
+    "validate-live": "node server/sync-official.mjs --validate-only",
+    "lint": "npm run typecheck && node scripts/lint-project.mjs"
   },
   "dependencies": {
     "pdfjs-dist": "^5.4.296",
@@ -20,5 +21,8 @@
   },
   "devDependencies": {
     "typescript": "^5.8.3"
+  },
+  "engines": {
+    "node": ">=22.5.0"
   }
 }
