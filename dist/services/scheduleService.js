@@ -1,6 +1,6 @@
-import { LIVE_LD_JSON, PROGRAMS, sourceFor, sourcesFor } from '../data/catalog.js?v=3e057c0da2aed0ed';
-import { validateScheduleIndex, normalizeLiveEvents } from '../core/validate.js?v=3e057c0da2aed0ed';
-import { saveCache, readCache } from './cache.js?v=3e057c0da2aed0ed';
+import { LIVE_LD_JSON, PROGRAMS, sourceFor, sourcesFor } from '../data/catalog.js?v=8b54ecbe24579506';
+import { validateScheduleIndex, normalizeLiveEvents } from '../core/validate.js?v=8b54ecbe24579506';
+import { saveCache, readCache } from './cache.js?v=8b54ecbe24579506';
 const API_BASE = './api/schedule';
 const memory = new Map();
 export async function loadSchedule(program, course) {
@@ -9,7 +9,7 @@ export async function loadSchedule(program, course) {
     if (cachedResult && cachedResult.status !== 'error')
         return cachedResult;
     try {
-        const api = await fetch(`${API_BASE}?program=${encodeURIComponent(program)}&course=${course}`, { cache: 'no-store' });
+        const api = await fetch(`${API_BASE}?program=${encodeURIComponent(program)}&course=${course}`, { cache: 'no-store', signal: AbortSignal.timeout(8000) });
         if (api.ok) {
             const payload = await api.json();
             const status = ['partial', 'cache', 'unavailable', 'error', 'live'].includes(payload.status ?? '') ? payload.status : 'live';
@@ -40,7 +40,7 @@ export async function loadSchedule(program, course) {
 }
 async function loadStaticSnapshot(program, course) {
     try {
-        const res = await fetch(`./data/schedules/${encodeURIComponent(program)}/${course}.json`, { cache: 'no-store' });
+        const res = await fetch(`./data/schedules/${encodeURIComponent(program)}/${course}.json`, { cache: 'no-store', signal: AbortSignal.timeout(5000) });
         if (!res.ok)
             return null;
         const payload = await res.json();
@@ -55,7 +55,7 @@ async function loadStaticSnapshot(program, course) {
 }
 async function loadLdRemote(program, course, key) {
     try {
-        const res = await fetch(LIVE_LD_JSON, { cache: 'no-store' });
+        const res = await fetch(LIVE_LD_JSON, { cache: 'no-store', signal: AbortSignal.timeout(8000) });
         if (!res.ok)
             throw new Error(`HTTP ${res.status}`);
         const payload = await res.json();

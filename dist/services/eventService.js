@@ -13,7 +13,7 @@ catch {
 function localWrite(events) { localStorage.setItem(KEY, JSON.stringify(events)); }
 async function request(path, options = {}) { const headers = new Headers(options.headers); headers.set('x-user-id', clientId()); if (options.body && !headers.has('content-type'))
     headers.set('content-type', 'application/json'); let response; try {
-    response = await fetch(path, { ...options, headers });
+    response = await fetch(path, { ...options, headers, signal: options.signal ?? AbortSignal.timeout(8000) });
 }
 catch (error) {
     const networkError = new Error('Сервер недоступен или соединение потеряно.');

@@ -1,5 +1,5 @@
 async function request(path, options = {}) { const id = getClientId(); const headers = new Headers(options.headers); headers.set('x-user-id', id); if (options.body && !headers.has('content-type'))
-    headers.set('content-type', 'application/json'); const r = await fetch(path, { ...options, headers }); if (!r.ok) {
+    headers.set('content-type', 'application/json'); const r = await fetch(path, { ...options, headers, signal: options.signal ?? AbortSignal.timeout(8000) }); if (!r.ok) {
     let msg = `HTTP ${r.status}`;
     try {
         const p = await r.json();

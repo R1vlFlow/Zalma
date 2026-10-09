@@ -1,8 +1,8 @@
 {
-  "version": "2.3.1",
-  "uiVersion": "2.0.9",
+  "version": "2.3.3",
+  "uiVersion": "2.1.0",
   "engineVersion": "4.6.3",
-  "release": "CACHE-INVALIDATION",
+  "release": "SCHEDULE-DEPLOY-RACE-DOUBLE-PARTS-TIMEOUT-FIX",
   "released": "2026-10-09",
-  "buildId": "3e057c0da2aed0ed"
+  "buildId": "8b54ecbe24579506"
 }
