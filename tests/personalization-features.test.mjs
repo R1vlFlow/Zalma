@@ -38,7 +38,7 @@ test('central personalization store persists profile, theme, subject colors, hom
   assert.deepEqual(next.materials[0].tags, ['экзамен', 'конспект']);
   assert.equal(next.materials[0].helpfulness, 5);
   assert.ok(globalThis.localStorage.getItem('almazov.personalization.v1'));
-  assert.equal(initial.version, 1);
+  assert.equal(initial.version, 2);
 });
 
 test('weekly workweek explicitly includes Monday through Saturday', () => {

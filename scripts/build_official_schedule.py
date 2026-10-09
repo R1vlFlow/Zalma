@@ -65,12 +65,16 @@ def _clock_from_minutes(value):
     value=value%(24*60); return f'{value//60:02d}:{value%60:02d}'
 
 def expand_double_lesson_events(events):
-    """Split long official blocks that represent two standard consecutive pairs."""
+    """Split known long blocks and log source anomalies instead of guessing."""
     out=[]
     for e in events:
         try:
             a=_clock_minutes(e['start']); b=_clock_minutes(e['end']); duration=b-a
-        except Exception:
+        except Exception as exc:
+            print(f"PARSER_ANOMALY invalid_time source={e.get('sourceTitle','?')} group={e.get('group','?')} event={e.get('subject','?')!r}: {exc}",file=sys.stderr)
+            out.append(e); continue
+        if duration <= 0:
+            print(f"PARSER_ANOMALY non_positive_duration group={e.get('group','?')} subject={e.get('subject','?')!r} start={e.get('start')} end={e.get('end')}",file=sys.stderr)
             out.append(e); continue
         # Current Almazov exports use 09:00–12:25, 09:20–12:25 and
         # 13:30–16:55 as two equal slots with a 15-minute break.
@@ -81,6 +85,8 @@ def expand_double_lesson_events(events):
             first.update({'end':_clock_from_minutes(a+slot),'double':True,'doubleIndex':1,'doubleOf':parent,'durationMinutes':slot})
             second.update({'start':_clock_from_minutes(a+slot+15),'double':True,'doubleIndex':2,'doubleOf':parent,'durationMinutes':slot})
             out.extend([first,second]); continue
+        if duration >= 175:
+            print(f"PARSER_ANOMALY long_block_requires_review duration_min={duration} group={e.get('group','?')} weekday={e.get('weekday','?')} date={e.get('date','?')} subject={e.get('subject','?')!r} time={e.get('start')}-{e.get('end')}; kept_as_single_event",file=sys.stderr)
         out.append(e)
     return out
 
