@@ -1,23 +1,25 @@
-import { PROGRAMS, sourceFor, sourcesFor } from './data/catalog.js?v=8b54ecbe24579506';
-import { groupsFor, streamForGroup } from './data/roster.js?v=8b54ecbe24579506';
-import { mondayOf, weekDates, formatDateRu, longDateRu, addDays, todayISO } from './core/date.js?v=8b54ecbe24579506';
-import { eventAppliesToGroup } from './core/filter.js?v=8b54ecbe24579506';
-import { loadSchedule, clearScheduleMemory } from './services/scheduleService.js?v=8b54ecbe24579506';
-import { addTask, readTasks, removeTask, updateTask } from './services/taskService.js?v=8b54ecbe24579506';
-import { applyTheme, cycleTheme, initTheme, themeMode } from './ui/theme.js?v=8b54ecbe24579506';
-import { FAQ } from './ui/faq.js?v=8b54ecbe24579506';
-import { createPersonalEvent, deletePersonalEvent, listPersonalEvents, updatePersonalEvent } from './services/eventService.js?v=8b54ecbe24579506';
-import { fileToAttachment } from './services/supportService.js?v=8b54ecbe24579506';
-import { createTicket, listTickets, getTicket, addTicketMessage } from './services/supportService.js?v=8b54ecbe24579506';
-import { localDate, localDateTimeToUtc, localTime, userTimeZone, localDateTimeInput } from './core/time.js?v=8b54ecbe24579506';
-import { scheduleToCalendarEvent } from './core/calendar.js?v=8b54ecbe24579506';
+import { PROGRAMS, sourceFor, sourcesFor } from './data/catalog.js?v=90bfa026bc22b4d4';
+import { groupsFor, streamForGroup } from './data/roster.js?v=90bfa026bc22b4d4';
+import { mondayOf, weekDates, formatDateRu, longDateRu, addDays, todayISO } from './core/date.js?v=90bfa026bc22b4d4';
+import { eventAppliesToGroup } from './core/filter.js?v=90bfa026bc22b4d4';
+import { loadSchedule, clearScheduleMemory } from './services/scheduleService.js?v=90bfa026bc22b4d4';
+import { addTask, readTasks, removeTask, updateTask } from './services/taskService.js?v=90bfa026bc22b4d4';
+import { readPersonalization, updatePersonalization, setAcademicProfile, subjectColorKey } from './services/personalizationStore.js?v=90bfa026bc22b4d4';
+import { applyTheme, cycleTheme, initTheme, themeMode } from './ui/theme.js?v=90bfa026bc22b4d4';
+import { FAQ } from './ui/faq.js?v=90bfa026bc22b4d4';
+import { createPersonalEvent, deletePersonalEvent, listPersonalEvents, updatePersonalEvent } from './services/eventService.js?v=90bfa026bc22b4d4';
+import { fileToAttachment } from './services/supportService.js?v=90bfa026bc22b4d4';
+import { createTicket, listTickets, getTicket, addTicketMessage } from './services/supportService.js?v=90bfa026bc22b4d4';
+import { localDate, localDateTimeToUtc, localTime, userTimeZone, localDateTimeInput } from './core/time.js?v=90bfa026bc22b4d4';
+import { scheduleToCalendarEvent } from './core/calendar.js?v=90bfa026bc22b4d4';
 const DAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 const STATUS_LABEL = { planned: 'Запланировано', confirmed: 'Подтверждено', in_progress: 'В процессе', completed: 'Завершено', cancelled: 'Отменено' };
 const VIEW_LABEL = { day: 'День', workweek: 'Рабочая неделя', week: 'Неделя', month: 'Месяц', agenda: 'Agenda', list: 'Список' };
 const DEFAULT_PROFILE = { program: '31.05.01', course: 1, group: '123' };
+const personalization = readPersonalization();
 const initial = readInitialProfile();
 let reloadSequence = 0;
-const state = { profile: initial, week: mondayOf(todayISO(userTimeZone())), focusDate: todayISO(userTimeZone()), events: [], official: [], personal: [], status: 'loading', message: 'Подготавливаем расписание…', search: '', type: 'all', statusFilter: 'all', categoryFilter: 'all', page: 'schedule', tasks: readTasks(), theme: themeMode(), faqQuery: '', faqCategory: 'Все', view: 'week', timezone: readTimezone(), double1: '#4b81da', double2: '#73e0c4', editingId: '', draft: false, undo: null, ticketList: [], ticketSelected: '', supportStatus: 'idle', kugData: null, kugStatus: 'loading' };
+const state = { profile: initial, week: mondayOf(todayISO(userTimeZone())), focusDate: todayISO(userTimeZone()), events: [], official: [], personal: [], status: 'loading', message: 'Подготавливаем расписание…', search: '', type: 'all', statusFilter: 'all', categoryFilter: 'all', page: 'schedule', tasks: readTasks(), theme: themeMode(), faqQuery: '', faqCategory: 'Все', view: 'week', scheduleMode: 'regular', timezone: readTimezone(), double1: personalization.double1, double2: personalization.double2, taskSearch: '', taskFilterStatus: 'all', taskFilterSubject: 'all', resourceSearch: '', resourceSubject: 'all', resourceCategory: 'all', resourceType: 'all', personalization, avatarPresetDraft: personalization.avatarPreset, avatarDataDraft: personalization.avatarDataUrl, editingId: '', draft: false, undo: null, ticketList: [], ticketSelected: '', supportStatus: 'idle', kugData: null, kugStatus: 'loading' };
 function $(id) { const el = document.getElementById(id); if (!el)
     throw new Error(`Missing #${id}`); return el; }
 function esc(v) { return String(v).replace(/[&<>'"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#039;', '"': '&quot;' }[c])); }
@@ -31,9 +33,10 @@ function readInitialProfile() { try {
     const params = new URLSearchParams(location.search);
     const raw = JSON.parse(localStorage.getItem('almazov.profile') ?? 'null');
     const stored = raw && typeof raw === 'object' ? raw : {};
-    const programValue = params.get('program') ?? String(stored.program ?? '');
-    const courseValue = params.get('course') ?? String(stored.course ?? '');
-    const groupValue = params.get('group') ?? String(stored.group ?? '');
+    const centralized = readPersonalization().academicProfile;
+    const programValue = params.get('program') ?? String(stored.program ?? centralized.program ?? '');
+    const courseValue = params.get('course') ?? String(stored.course ?? centralized.course ?? '');
+    const groupValue = params.get('group') ?? String(stored.group ?? centralized.group ?? '');
     const program = PROGRAMS.some(x => x.code === programValue) ? programValue : DEFAULT_PROFILE.program;
     const n = Number(courseValue);
     const course = Number.isInteger(n) && n >= 1 && n <= 6 ? n : DEFAULT_PROFILE.course;
@@ -42,16 +45,19 @@ function readInitialProfile() { try {
 catch {
     return { ...DEFAULT_PROFILE };
 } }
-function readTimezone() { return localStorage.getItem('almazov.timezone') || userTimeZone(); }
+function readTimezone() { return readPersonalization().timezone || localStorage.getItem('almazov.timezone') || userTimeZone(); }
 function setTimezone(zone) { try {
     new Intl.DateTimeFormat('en-US', { timeZone: zone }).format();
     localStorage.setItem('almazov.timezone', zone);
     state.timezone = zone;
+    state.personalization = updatePersonalization({ timezone: zone });
 }
 catch {
     throw new Error('Некорректный часовой пояс');
 } }
 function startOfWeek(d) { return mondayOf(d); }
+function weekdayIndex(d) { const day = new Date(`${d}T12:00:00Z`).getUTCDay(); return (day + 6) % 7; }
+function weekdayLabel(d) { return DAYS[weekdayIndex(d)] ?? '—'; }
 function monthStart(d) { return `${d.slice(0, 7)}-01`; }
 function monthEnd(d) { const x = new Date(`${monthStart(d)}T00:00:00Z`); x.setUTCMonth(x.getUTCMonth() + 1); x.setUTCDate(0); return x.toISOString().slice(0, 10); }
 function rangeDates() {
@@ -60,8 +66,8 @@ function rangeDates() {
     }
     if (state.view === 'workweek') {
         const m = startOfWeek(state.focusDate);
-        const dates = weekDates(m).slice(0, 5);
-        return { from: dates[0], to: dates[4], dates };
+        const dates = weekDates(m).slice(0, 6);
+        return { from: dates[0], to: dates[5], dates };
     }
     if (state.view === 'month') {
         const from = monthStart(state.focusDate);
@@ -78,6 +84,8 @@ function rangeDates() {
 }
 function localMidnightUtc(date) { return localDateTimeToUtc(`${date}T00:00`, state.timezone); }
 function getDisplayEvents() {
+    if (state.scheduleMode === 'kug')
+        return [];
     const selected = state.official.filter(e => eventAppliesToGroup(e, { ...state.profile, stream: streamForGroup(state.profile.program, state.profile.group) })).map(e => scheduleToCalendarEvent(e, state.timezone));
     const personal = state.personal.map(e => ({ id: e.id, kind: 'personal', title: e.title, description: e.description ?? '', category: e.category, status: e.status, startAt: e.startAt, endAt: e.endAt, timeZone: e.timeZone, allDay: e.allDay, location: e.location ?? '', meetingUrl: e.meetingUrl, attendees: e.attendees, recurrence: e.recurrence, seriesId: e.seriesId, readOnly: false }));
     const combined = [...selected, ...personal];
@@ -164,13 +172,14 @@ function nav(page) {
     if (page === 'profilePage')
         renderProfilePage();
 }
-function renderShell() { const p = PROGRAMS.find(x => x.code === state.profile.program); $('profileName').textContent = state.profile.group ? `Группа ${state.profile.group}` : p?.shortTitle ?? 'Профиль'; $('profileMeta').textContent = `${p?.title ?? ''} · ${state.profile.course} курс${streamForGroup(state.profile.program, state.profile.group) ? ` · поток ${streamForGroup(state.profile.program, state.profile.group)}` : ''}`; $('syncLabel').textContent = state.message; $('statusDot').className = `${state.status === 'live' ? 'ok' : state.status === 'cache' ? 'cache' : state.status === 'loading' ? 'loading' : 'bad'}`; }
+function renderShell() { state.personalization = readPersonalization(); const p = PROGRAMS.find(x => x.code === state.profile.program); $('profileName').textContent = state.personalization.displayName || (state.profile.group ? `Группа ${state.profile.group}` : p?.shortTitle ?? 'Профиль'); $('profileMeta').textContent = `${p?.title ?? ''} · ${state.profile.course} курс${state.profile.group ? ` · группа ${state.profile.group}` : ''}${streamForGroup(state.profile.program, state.profile.group) ? ` · поток ${streamForGroup(state.profile.program, state.profile.group)}` : ''}`; applyAppearance(); document.querySelectorAll('.avatar').forEach(a => { a.textContent = state.personalization.avatarDataUrl ? '' : state.personalization.avatarPreset || '🎓'; a.style.backgroundImage = state.personalization.avatarDataUrl ? `url("${state.personalization.avatarDataUrl}")` : ''; a.style.backgroundSize = 'cover'; a.style.backgroundPosition = 'center'; }); $('syncLabel').textContent = state.message; $('statusDot').className = `${state.status === 'live' ? 'ok' : state.status === 'cache' ? 'cache' : state.status === 'loading' ? 'loading' : 'bad'}`; }
 function renderHome() { const events = getDisplayEvents(); const today = state.focusDate; const weekEvents = events.filter(e => { const d = localDate(e.startAt, state.timezone); return d >= startOfWeek(today) && d <= addDays(startOfWeek(today), 6); }); const upcoming = weekEvents.filter(e => localDate(e.startAt, state.timezone) >= today).slice(0, 5); $('homeContext').textContent = state.profile.group ? `${PROGRAMS.find(p => p.code === state.profile.program)?.title} · ${state.profile.course} курс · группа ${state.profile.group}` : 'Выберите группу'; $('homeStats').innerHTML = [['Занятий сегодня', String(weekEvents.filter(e => localDate(e.startAt, state.timezone) === today).length)], ['На неделе', String(weekEvents.length)], ['Личные события', String(state.personal.length)], ['Источник', state.status === 'live' ? 'LIVE' : state.status === 'cache' ? 'CACHE' : 'OFFLINE']].map(([a, b]) => `<div class="stat-card"><span>${a}</span><b>${b}</b></div>`).join(''); $('homeUpcoming').innerHTML = upcoming.length ? upcoming.map(e => `<article class="next-item"><div><span>${longDateRu(localDate(e.startAt, state.timezone))} · ${localTime(e.startAt, state.timezone)}</span><b>${esc(String(e.title ?? (('subject' in e) ? e.subject : '')))}</b><small>${esc(e.location || 'Без места')}</small></div><button class="btn small" data-open-event="${esc(e.id)}">Открыть</button></article>`).join('') : `<div class="empty-state compact card"><div class="empty-icon">◷</div><h3>Ближайших событий нет</h3><p>Создайте личную встречу или откройте другой период.</p></div>`; }
 function renderSchedule() {
+    state.tasks = readTasks();
     // Empty state is rendered dynamically, so its absence on first render is normal.
     document.getElementById('emptyState')?.remove();
     const allEvents = getDisplayEvents();
-    const range = rangeDates();
+    const range = state.scheduleMode === 'kug' && state.view === 'month' ? monthRangeDates() : rangeDates();
     const events = allEvents.filter(e => { try {
         return localDate(e.startAt, state.timezone) <= range.to && localDate(e.endAt, state.timezone) >= range.from;
     }
@@ -178,25 +187,44 @@ function renderSchedule() {
         return false;
     } });
     state.events = events;
-    $('weekLabel').textContent = state.view === 'month' ? `${formatDateRu(monthStart(state.focusDate))} — ${formatDateRu(monthEnd(state.focusDate))}` : `${formatDateRu(range.from)} — ${formatDateRu(range.to)}`;
+    $('weekLabel').textContent = state.scheduleMode === 'kug' ? `${formatDateRu(monthStart(state.focusDate))} — ${formatDateRu(monthEnd(state.focusDate))}` : state.view === 'month' ? `${formatDateRu(monthStart(state.focusDate))} — ${formatDateRu(monthEnd(state.focusDate))}` : `${formatDateRu(range.from)} — ${formatDateRu(range.to)}`;
     $('weekSubLabel').textContent = `${PROGRAMS.find(p => p.code === state.profile.program)?.shortTitle ?? ''} · ${state.profile.course} курс${state.profile.group ? ` · группа ${state.profile.group}` : ''} · ${state.timezone}`;
-    $('scheduleCount').textContent = `${events.length} событий`;
+    $('scheduleCount').textContent = state.scheduleMode === 'kug' ? `${activeKugPeriods().filter(p => p.start <= range.to && p.end >= range.from).length} периодов КУГ` : `${events.length} событий`;
+    const strip = $('weekStrip');
+    strip.hidden = state.scheduleMode === 'kug';
+    document.querySelectorAll('[data-schedule-mode]').forEach(b => b.classList.toggle('active', b.dataset.scheduleMode === state.scheduleMode));
+    const modeNote = document.getElementById('calendarModeNote');
+    if (modeNote)
+        modeNote.textContent = state.scheduleMode === 'regular' ? 'Показываются обычные занятия и личные события.' : state.scheduleMode === 'kug' ? 'Сетка дней отмечена периодами учебного года: обучение, практика, аттестация и каникулы.' : 'Обычные занятия совмещены с цветными отметками периодов КУГ.';
     document.querySelectorAll('[data-view]').forEach(b => b.classList.toggle('active', b.dataset.view === state.view));
     const dates = range.dates.length ? range.dates : weekDates(startOfWeek(state.focusDate));
-    $('weekStrip').innerHTML = dates.slice(0, 31).map((d, i) => `<button class="day-pill ${d === todayISO(state.timezone) ? 'is-today' : ''}" data-jump-date="${d}"><span>${DAYS[i % 7]}</span><b>${d.slice(8, 10)}</b><em>${events.filter(e => localDate(e.startAt, state.timezone) === d).length}</em></button>`).join('');
-    if (state.status === 'loading') {
+    $('weekStrip').innerHTML = dates.slice(0, 31).map((d, i) => `<button class="day-pill ${d === todayISO(state.timezone) ? 'is-today' : ''}" data-jump-date="${d}"><span>${weekdayLabel(d)}</span><b>${d.slice(8, 10)}</b><em>${events.filter(e => localDate(e.startAt, state.timezone) === d).length}</em></button>`).join('');
+    if (state.scheduleMode === 'kug' && state.kugStatus === 'loading') {
+        $('desktopSchedule').innerHTML = renderSkeleton();
+        $('mobileSchedule').innerHTML = renderMobileSkeleton();
+    }
+    else if (state.scheduleMode === 'kug' && state.kugStatus === 'error') {
+        $('desktopSchedule').innerHTML = '<div class="empty-state card"><h3>КУГ временно недоступен</h3><p>Не удалось загрузить периоды. Повторите запрос.</p><button class="btn primary" data-action="kug-retry">Повторить</button></div>';
+        $('mobileSchedule').innerHTML = '';
+    }
+    else if (state.status === 'loading' && state.scheduleMode !== 'kug') {
         $('desktopSchedule').innerHTML = renderSkeleton();
         $('mobileSchedule').innerHTML = renderMobileSkeleton();
     }
     else {
-        const html = state.view === 'month' ? renderMonth(events) : state.view === 'agenda' ? renderAgenda(events) : state.view === 'list' ? renderList(events) : renderTimeGrid(events, dates);
+        const html = state.scheduleMode === 'kug' ? (state.view === 'agenda' || state.view === 'list' ? renderKugAgenda(range.from, range.to) : renderKugGrid(range.dates)) : state.view === 'month' ? renderMonth(events) : state.view === 'agenda' ? renderAgenda(events) : state.view === 'list' ? renderList(events) : renderTimeGrid(events, dates);
         $('desktopSchedule').innerHTML = html;
-        $('mobileSchedule').innerHTML = state.view === 'month' ? html : renderMobile(events, dates);
+        $('mobileSchedule').innerHTML = state.scheduleMode === 'kug' || state.view === 'month' ? html : renderMobile(events, dates);
     }
     $('dataHealthTitle').textContent = state.status === 'live' ? 'Источник актуален' : state.status === 'cache' ? 'Локальный snapshot' : state.status === 'loading' ? 'Загрузка…' : state.status === 'partial' ? 'Частичные данные' : state.status === 'error' || state.status === 'unavailable' ? 'Источник недоступен' : 'Источник доступен';
     $('dataHealthText').textContent = `${state.message} Часовой пояс интерфейса: ${state.timezone}.`;
     $('sourceLink').href = sourceFor(state.profile.program, state.profile.course);
     $('statusText').textContent = state.status.toUpperCase();
+    if (state.scheduleMode === 'kug') {
+        const el = document.getElementById('emptyState');
+        el?.remove();
+        return;
+    }
     if (state.status !== 'loading' && events.length === 0) {
         const failed = state.status === 'error' || state.status === 'unavailable';
         const el = document.createElement('div');
@@ -210,7 +238,16 @@ function renderSchedule() {
     }
 }
 function renderMobileSkeleton() { return `<div class="mobile-skeleton" aria-label="Загрузка расписания">${Array.from({ length: 4 }, () => '<div class="skeleton-card"></div>').join('')}</div>`; }
-function renderSkeleton() { return `<div class="calendar-skeleton">${Array.from({ length: 7 }, (_, i) => `<div><span></span><i></i><i></i><i></i></div>`).join('')}</div>`; }
+function renderSkeleton() { const count = state.scheduleMode === 'kug' ? 7 : rangeDates().dates.length; return `<div class="calendar-skeleton" style="grid-template-columns:repeat(${count},minmax(0,1fr))">${Array.from({ length: count }, (_, i) => `<div><span></span><i></i><i></i><i></i></div>`).join('')}</div>`; }
+function monthRangeDates() { const from = startOfWeek(monthStart(state.focusDate)); const to = addDays(startOfWeek(monthEnd(state.focusDate)), 6); const dates = []; for (let d = from; d <= to; d = addDays(d, 1))
+    dates.push(d); return { from, to, dates }; }
+function activeKugPeriods() { return (state.kugData?.periods ?? []).filter(p => (!p.program || p.program === state.profile.program) && String(p.course) === String(state.profile.course)); }
+function kugPeriodsFor(date) { return activeKugPeriods().filter(p => p.start <= date && p.end >= date); }
+function kugKindLabel(kind) { return { study: 'Обучение', assessment: 'Аттестация', practice: 'Практика', vacation: 'Каникулы', session: 'Сессия' }[kind] ?? 'Учебный период'; }
+function kugTags(date) { if (state.scheduleMode !== 'combined')
+    return ''; return kugPeriodsFor(date).map(p => `<span class="kug-day-tag kug-${esc(p.kind)}" title="${esc(p.label)}: ${esc(kugDay(p.start))} — ${esc(kugDay(p.end))}">${esc(p.label)}</span>`).join(''); }
+function renderKugGrid(dates) { const month = state.view === 'month'; const columns = month ? 7 : Math.max(1, dates.length); const heads = month ? DAYS : dates.map(weekdayLabel); return `<div class="kug-calendar-grid" style="--kug-columns:${columns}">${heads.map(d => `<div class="month-head">${d}</div>`).join('')}${dates.map(d => { const periods = kugPeriodsFor(d); return `<article class="kug-calendar-cell ${d.slice(0, 7) !== state.focusDate.slice(0, 7) ? 'muted-month' : ''} ${d === todayISO(state.timezone) ? 'today' : ''}"><span class="kug-day-number">${d.slice(8, 10)}</span><div class="kug-calendar-tags">${periods.map(p => `<span class="kug-day-tag kug-${esc(p.kind)}" title="${esc(p.label)} · ${esc(kugDay(p.start))} — ${esc(kugDay(p.end))}">${esc(p.label)}</span>`).join('') || '<span class="kug-no-period">—</span>'}</div></article>`; }).join('')}</div>`; }
+function renderKugAgenda(from, to) { const periods = activeKugPeriods().filter(p => p.start <= to && p.end >= from).sort((a, b) => a.start.localeCompare(b.start)); return `<div class="agenda-list kug-agenda-list">${periods.map(p => `<article class="agenda-item card kug-agenda-period kug-${esc(p.kind)}"><time>${esc(kugDay(p.start))}<br><b>${esc(kugDay(p.end))}</b></time><div><span class="eyebrow">${esc(kugKindLabel(p.kind))}</span><h3>${esc(p.label)}</h3><p>${esc(p.program ?? state.profile.program)} · ${esc(String(p.course))} курс</p></div>${p.sourceUrl ? `<a class="btn small" href="${esc(p.sourceUrl)}" target="_blank" rel="noopener noreferrer">Источник ↗</a>` : ''}</article>`).join('') || '<div class="empty-state card"><h3>Периодов КУГ нет</h3><p>В выбранном диапазоне не найдено периодов.</p></div>'}</div>`; }
 function visibleSegments(events, date) { return events.filter(e => { const s = localDate(e.startAt, state.timezone), end = localDate(e.endAt, state.timezone); return s <= date && end >= date; }); }
 function layoutForDay(list, date) { const day = visibleSegments(list, date); const decorated = day.map(e => { const startDate = localDate(e.startAt, state.timezone), endDate = localDate(e.endAt, state.timezone); const st = startDate === date ? localTime(e.startAt, state.timezone) : '00:00'; const en = endDate === date ? localTime(e.endAt, state.timezone) : '24:00'; return { e, sm: timeMinutes(st), em: timeMinutes(en) }; }).sort((a, b) => a.sm - b.sm || a.em - b.em); const lanes = []; const result = []; for (const item of decorated) {
     let lane = 0;
@@ -224,7 +261,7 @@ function layoutForDay(list, date) { const day = visibleSegments(list, date); con
 } return result.map(x => ({ ...x, total: Math.max(...result.filter(r => r.sm < x.em && r.em > x.sm).map(r => r.lane + 1), x.lane + 1) })); }
 function timeMinutes(v) { if (v === '24:00')
     return 1440; const [h, m] = v.split(':').map(Number); return (h || 0) * 60 + (m || 0); }
-function renderTimeGrid(events, dates) { const start = 420, px = 1.15; const labels = Array.from({ length: 17 }, (_, i) => `${String(7 + i).padStart(2, '0')}:00`); return `<div class="time-grid" style="--day-count:${dates.length}"><div class="time-axis">${labels.map((l, i) => `<span style="top:${i * 60 * px}px">${l}</span>`).join('')}</div><div class="time-days">${dates.map((date, i) => { const dayEvents = visibleSegments(events, date); const allDay = dayEvents.filter(e => e.allDay); const laid = layoutForDay(dayEvents.filter(e => !e.allDay), date); return `<section class="time-day ${date === todayISO(state.timezone) ? 'today' : ''}" data-drop-date="${date}"><header><span>${DAYS[i % 7]}</span><b>${date.slice(8, 10)} ${new Intl.DateTimeFormat('ru-RU', { month: 'short' }).format(new Date(`${date}T12:00:00Z`)).replace('.', '')}</b></header>${allDay.length ? `<div class="all-day-strip">${allDay.map(e => `<button class="all-day-event ${e.kind === 'personal' ? 'personal' : ''}" data-open-event="${esc(e.id)}"><span>Весь день</span><strong>${esc(String(e.title ?? (('subject' in e) ? e.subject : '')))}</strong></button>`).join('')}</div>` : ''}<div class="time-canvas">${Array.from({ length: 17 }, (_, n) => `<i class="hour-line" style="top:${n * 60 * px}px"></i>`).join('')}${laid.map((x) => { const top = Math.max(0, (x.sm - start) * px), height = Math.max(42, (x.em - x.sm) * px); const width = 100 / x.total, left = x.lane * width; return eventHtml(x.e, date, top, height, left, width); }).join('')}${date === todayISO(state.timezone) ? currentTimeLine(px, start) : ''}</div></section>`; }).join('')}</div></div>`; }
+function renderTimeGrid(events, dates) { const start = 420, px = 1.15; const labels = Array.from({ length: 17 }, (_, i) => `${String(7 + i).padStart(2, '0')}:00`); return `<div class="time-grid" style="--day-count:${dates.length}"><div class="time-axis">${labels.map((l, i) => `<span style="top:${i * 60 * px}px">${l}</span>`).join('')}</div><div class="time-days">${dates.map((date, i) => { const dayEvents = visibleSegments(events, date); const allDay = dayEvents.filter(e => e.allDay); const laid = layoutForDay(dayEvents.filter(e => !e.allDay), date); return `<section class="time-day ${date === todayISO(state.timezone) ? 'today' : ''}" data-drop-date="${date}"><header><span>${weekdayLabel(date)}</span><b>${date.slice(8, 10)} ${new Intl.DateTimeFormat('ru-RU', { month: 'short' }).format(new Date(`${date}T12:00:00Z`)).replace('.', '')}</b></header>${kugTags(date) ? `<div class="kug-time-day-tags">${kugTags(date)}</div>` : ''}${allDay.length ? `<div class="all-day-strip">${allDay.map(e => `<button class="all-day-event ${e.kind === 'personal' ? 'personal' : ''}" data-open-event="${esc(e.id)}"><span>Весь день</span><strong>${esc(String(e.title ?? (('subject' in e) ? e.subject : '')))}</strong></button>`).join('')}</div>` : ''}<div class="time-canvas">${Array.from({ length: 17 }, (_, n) => `<i class="hour-line" style="top:${n * 60 * px}px"></i>`).join('')}${laid.map((x) => { const top = Math.max(0, (x.sm - start) * px), height = Math.max(42, (x.em - x.sm) * px); const width = 100 / x.total, left = x.lane * width; return eventHtml(x.e, date, top, height, left, width); }).join('')}${date === todayISO(state.timezone) ? currentTimeLine(px, start) : ''}</div></section>`; }).join('')}</div></div>`; }
 function currentTimeLine(px, start) { const now = new Date(); const tm = new Intl.DateTimeFormat('en-US', { timeZone: state.timezone, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(now).split(':').map(Number); const hh = Number(tm[0] ?? 0), mm = Number(tm[1] ?? 0); const top = ((hh * 60 + mm) - start) * px; if (top < 0 || top > 1100)
     return ''; return `<div class="current-time" style="top:${top}px"><i></i><b>Сейчас</b></div>`; }
 function eventHalfLabel(e) {
@@ -238,18 +275,66 @@ function eventHalfLabel(e) {
 }
 function eventHalfMarkup(e, compact = false) { const half = eventHalfLabel(e); if (!half)
     return ''; const part = half === '1/2' ? 'part-1' : 'part-2'; return `<span class="event-half ${part}${compact ? ' compact' : ''}" aria-label="Часть пары ${half}">${half}</span>`; }
-function eventTitleRow(e, title) { return `<span class="event-title-row">${eventHalfMarkup(e)}<strong>${esc(String(title))}</strong></span>`; }
-function eventHtml(e, date, top, height, left, width) { const isPersonal = e.kind === 'personal'; const title = e.title ?? (('subject' in e) ? e.subject : ''); const st = e.allDay ? 'Весь день' : localDate(e.startAt, state.timezone) === date ? localTime(e.startAt, state.timezone) : '00:00'; const en = e.allDay ? '' : localDate(e.endAt, state.timezone) === date ? localTime(e.endAt, state.timezone) : '24:00'; const status = e.status ?? (isPersonal ? 'planned' : undefined); const draggable = isPersonal ? ' draggable="true"' : ''; return `<article class="calendar-event ${isPersonal ? 'personal' : 'official'} status-${status ?? 'planned'}" data-event-id="${esc(e.id)}" data-event-kind="${e.kind}" data-open-event="${esc(e.id)}" role="button" aria-label="Открыть событие: ${esc(String(title))}"${draggable} tabindex="0" style="top:${top}px;height:${height}px;left:${left}%;width:${width}%;"><div class="event-accent"></div><div class="event-time">${esc(st)}–${esc(en)}</div>${eventTitleRow(e, String(title))}<div class="event-meta">${esc(isPersonal ? (e.category || 'Личное') : (e.type === 'practice' ? 'ПЗ' : e.type === 'lecture' ? 'Лекция' : 'Занятие'))}${e.location ? ` · ${esc(e.location)}` : ''}</div>${status ? `<span class="event-status">${STATUS_LABEL[status]}</span>` : ''}${isPersonal ? '<span class="resize-handle" data-resize-event="true" aria-hidden="true"></span>' : ''}</article>`; }
-function renderMobile(events, dates) { return `<div class="mobile-days">${dates.map((d, i) => `<section class="mobile-day ${d === todayISO(state.timezone) ? 'today' : ''}" data-drop-date="${d}"><header><div><span>${DAYS[i % 7]}</span><h3>${longDateRu(d)}</h3></div><b>${visibleSegments(events, d).length}</b></header><div class="mobile-event-list">${visibleSegments(events, d).map(e => { const st = e.allDay ? 'Весь день' : localDate(e.startAt, state.timezone) === d ? localTime(e.startAt, state.timezone) : '00:00'; const en = e.allDay ? '' : localDate(e.endAt, state.timezone) === d ? localTime(e.endAt, state.timezone) : '24:00'; const title = e.title ?? (('subject' in e) ? e.subject : ''); return `<button class="mobile-event ${e.kind === 'personal' ? 'personal' : ''}" data-open-event="${esc(e.id)}"><span class="mobile-event-time">${e.allDay ? 'Весь день' : `${st}–${en}`}</span><span class="mobile-event-title">${eventHalfMarkup(e, true)}<strong>${esc(String(title))}</strong></span><small>${esc(e.location || '')} ${e.kind === 'personal' ? '· личное' : '· официальное'}</small></button>`; }).join('') || '<div class="day-empty">Свободный день</div>'}</div></section>`).join('')}</div>`; }
+function eventSubject(e) { return String(e.title ?? (('subject' in e) ? e.subject : '')); }
+function subjectColor(e) { return state.personalization.subjectColors[subjectColorKey(eventSubject(e))] || ''; }
+function subjectColorControl(e) { if (e.kind !== 'schedule')
+    return ''; const key = subjectColorKey(eventSubject(e)); const c = subjectColor(e) || '#7892bf'; return `<button type="button" class="subject-color-trigger" data-subject-color-trigger="${esc(key)}" title="Изменить цвет предмета" aria-label="Изменить цвет предмета ${esc(eventSubject(e))}" style="--subject-swatch:${c}">●</button>`; }
+function taskBadge(subject) { const key = subjectColorKey(subject); const n = state.tasks.filter(t => t.status !== 'done' && subjectColorKey(t.subject) === key).length; return n ? `<span class="homework-badge" title="Активных заданий: ${n}">ДЗ ${n}</span>` : ''; }
+function eventTitleRow(e, title) { return `<span class="event-title-row">${eventHalfMarkup(e)}<strong>${esc(String(title))}</strong>${taskBadge(title)}${subjectColorControl(e)}</span>`; }
+function eventHtml(e, date, top, height, left, width) { const isPersonal = e.kind === 'personal'; const title = e.title ?? (('subject' in e) ? e.subject : ''); const st = e.allDay ? 'Весь день' : localDate(e.startAt, state.timezone) === date ? localTime(e.startAt, state.timezone) : '00:00'; const en = e.allDay ? '' : localDate(e.endAt, state.timezone) === date ? localTime(e.endAt, state.timezone) : '24:00'; const status = e.status ?? (isPersonal ? 'planned' : undefined); const draggable = isPersonal ? ' draggable="true"' : ''; return `<article class="calendar-event ${isPersonal ? 'personal' : 'official'} status-${status ?? 'planned'}" data-event-id="${esc(e.id)}" data-event-kind="${e.kind}" data-open-event="${esc(e.id)}" role="button" aria-label="Открыть событие: ${esc(String(title))}"${draggable} tabindex="0" style="top:${top}px;height:${height}px;left:${left}%;width:${width}%;${subjectColor(e) ? `--subject-color:${subjectColor(e)};` : ''}"><div class="event-accent"></div><div class="event-time">${esc(st)}–${esc(en)}</div>${eventTitleRow(e, String(title))}<div class="event-meta">${esc(isPersonal ? (e.category || 'Личное') : (e.type === 'practice' ? 'ПЗ' : e.type === 'lecture' ? 'Лекция' : 'Занятие'))}${e.location ? ` · ${esc(e.location)}` : ''}</div>${status ? `<span class="event-status">${STATUS_LABEL[status]}</span>` : ''}${isPersonal ? '<span class="resize-handle" data-resize-event="true" aria-hidden="true"></span>' : ''}</article>`; }
+function renderMobile(events, dates) { return `<div class="mobile-days">${dates.map((d, i) => `<section class="mobile-day ${d === todayISO(state.timezone) ? 'today' : ''}" data-drop-date="${d}"><header><div><span>${weekdayLabel(d)}</span><h3>${longDateRu(d)}</h3></div><b>${visibleSegments(events, d).length}</b></header>${kugTags(d) ? `<div class="kug-mobile-day-tags">${kugTags(d)}</div>` : ''}<div class="mobile-event-list">${visibleSegments(events, d).map(e => { const st = e.allDay ? 'Весь день' : localDate(e.startAt, state.timezone) === d ? localTime(e.startAt, state.timezone) : '00:00'; const en = e.allDay ? '' : localDate(e.endAt, state.timezone) === d ? localTime(e.endAt, state.timezone) : '24:00'; const title = e.title ?? (('subject' in e) ? e.subject : ''); return `<button class="mobile-event ${e.kind === 'personal' ? 'personal' : 'official'}" data-open-event="${esc(e.id)}" style="${subjectColor(e) ? `--subject-color:${subjectColor(e)};` : ''}"><span class="mobile-event-time">${e.allDay ? 'Весь день' : `${st}–${en}`}</span><span class="mobile-event-title">${eventHalfMarkup(e, true)}<strong>${esc(String(title))}</strong>${taskBadge(String(title))}</span><small>${esc(e.location || '')} ${e.kind === 'personal' ? '· личное' : '· официальное'}</small></button>`; }).join('') || '<div class="day-empty">Свободный день</div>'}</div></section>`).join('')}</div>`; }
 function renderMonth(events) { const from = startOfWeek(monthStart(state.focusDate)); const to = addDays(startOfWeek(monthEnd(state.focusDate)), 6); const dates = []; for (let d = from; d <= to; d = addDays(d, 1))
-    dates.push(d); return `<div class="month-grid">${DAYS.map(d => `<div class="month-head">${d}</div>`).join('')}${dates.map(d => `<button class="month-cell ${d.slice(0, 7) !== state.focusDate.slice(0, 7) ? 'muted-month' : ''} ${d === todayISO(state.timezone) ? 'today' : ''}" data-jump-date="${d}"><span>${d.slice(8, 10)}</span><div>${visibleSegments(events, d).slice(0, 4).map(e => `<em class="month-event ${e.kind === 'personal' ? 'personal' : ''}">${eventHalfMarkup(e, true)}${e.allDay ? 'Весь день' : localTime(e.startAt, state.timezone)} ${esc(String(e.title ?? (('subject' in e) ? e.subject : '')))}</em>`).join('')}</div>${visibleSegments(events, d).length > 4 ? `<small>+${visibleSegments(events, d).length - 4}</small>` : ''}</button>`).join('')}</div>`; }
-function renderAgenda(events) { const dates = rangeDates().dates; return `<div class="agenda-list">${dates.flatMap(d => visibleSegments(events, d).map(e => ({ d, e }))).sort((a, b) => a.e.startAt.localeCompare(b.e.startAt)).map(({ d, e }) => `<article class="agenda-item card" data-open-event="${esc(e.id)}" role="button" tabindex="0"><time>${esc(longDateRu(d))}<br><b>${e.allDay ? 'Весь день' : localTime(e.startAt, state.timezone)}</b></time><div><span class="eyebrow">${e.kind === 'personal' ? 'Личное' : 'Официальное'}</span><h3>${eventHalfMarkup(e, true)}${esc(String(e.title ?? (('subject' in e) ? e.subject : '')))}</h3><p>${esc(e.location || 'Без места')} · ${e.category ? esc(e.category) : e.type}</p></div><div><span class="status-badge">${STATUS_LABEL[e.status ?? 'planned']}</span></div></article>`).join('') || '<div class="empty-state card"><h3>Пустая повестка</h3><p>В выбранном периоде нет событий.</p></div>'}</div>`; }
-function renderList(events) { return `<div class="event-table card"><div class="table-head"><span>Дата</span><span>Время</span><span>Событие</span><span>Тип</span><span>Статус</span></div>${events.map(e => `<div class="table-row" data-open-event="${esc(e.id)}" role="button" tabindex="0"><span>${esc(localDate(e.startAt, state.timezone))}</span><span>${e.allDay ? 'Весь день' : `${esc(localTime(e.startAt, state.timezone))}–${esc(localTime(e.endAt, state.timezone))}`}</span><strong class="list-event-title">${eventHalfMarkup(e, true)}${esc(String(e.title ?? (('subject' in e) ? e.subject : '')))}</strong><span>${e.kind === 'personal' ? 'Личное' : e.type}</span><span>${STATUS_LABEL[e.status ?? 'planned']}</span></div>`).join('') || '<div class="empty-table">Нет событий</div>'}</div>`; }
-function renderTasks() { state.tasks = readTasks(); $('taskCount').textContent = String(state.tasks.filter(x => !x.done).length); $('taskList').innerHTML = state.tasks.length ? state.tasks.map(t => `<article class="task-row ${t.done ? 'done' : ''}"><button class="task-check" data-task-toggle="${esc(t.id)}">${t.done ? '✓' : ''}</button><div class="task-body"><b>${esc(t.subject)}</b><p>${esc(t.text)}</p><small>${t.due ? `Дедлайн: ${esc(t.due)}` : 'Без дедлайна'}</small></div><div class="task-actions"><button class="btn small danger" data-task-delete="${esc(t.id)}">Удалить</button></div></article>`).join('') : `<div class="empty-state card"><div class="empty-icon">✓</div><h3>Задач пока нет</h3><p>Создайте первую задачу для текущей группы.</p><button class="btn primary" data-action="add-task">Создать задачу</button></div>`; }
+    dates.push(d); return `<div class="month-grid">${DAYS.map(d => `<div class="month-head">${d}</div>`).join('')}${dates.map(d => `<button class="month-cell ${d.slice(0, 7) !== state.focusDate.slice(0, 7) ? 'muted-month' : ''} ${d === todayISO(state.timezone) ? 'today' : ''}" data-jump-date="${d}"><span>${d.slice(8, 10)}</span><div class="month-kug-tags">${kugTags(d)}</div><div>${visibleSegments(events, d).slice(0, 4).map(e => `<em class="month-event ${e.kind === 'personal' ? 'personal' : ''}" style="${subjectColor(e) ? `--subject-color:${subjectColor(e)};` : ''}">${eventHalfMarkup(e, true)}${e.allDay ? 'Весь день' : localTime(e.startAt, state.timezone)} ${esc(String(e.title ?? (('subject' in e) ? e.subject : '')))} ${taskBadge(eventSubject(e))}</em>`).join('')}</div>${visibleSegments(events, d).length > 4 ? `<small>+${visibleSegments(events, d).length - 4}</small>` : ''}</button>`).join('')}</div>`; }
+function renderAgenda(events) { const dates = rangeDates().dates; return `<div class="agenda-list">${state.scheduleMode === 'combined' ? dates.map(d => kugTags(d) ? `<div class="kug-agenda-day"><b>${esc(longDateRu(d))}</b>${kugTags(d)}</div>` : '').join('') : ''}${dates.flatMap(d => visibleSegments(events, d).map(e => ({ d, e }))).sort((a, b) => a.e.startAt.localeCompare(b.e.startAt)).map(({ d, e }) => `<article class="agenda-item card" data-open-event="${esc(e.id)}" role="button" tabindex="0" style="${subjectColor(e) ? `--subject-color:${subjectColor(e)};` : ''}"><time>${esc(longDateRu(d))}<br><b>${e.allDay ? 'Весь день' : localTime(e.startAt, state.timezone)}</b></time><div><span class="eyebrow">${e.kind === 'personal' ? 'Личное' : 'Официальное'}</span><h3>${eventHalfMarkup(e, true)}${esc(String(e.title ?? (('subject' in e) ? e.subject : '')))} ${taskBadge(eventSubject(e))}</h3><p>${esc(e.location || 'Без места')} · ${e.category ? esc(e.category) : e.type}</p></div><div><span class="status-badge">${STATUS_LABEL[e.status ?? 'planned']}</span></div></article>`).join('') || '<div class="empty-state card"><h3>Пустая повестка</h3><p>В выбранном периоде нет событий.</p></div>'}</div>`; }
+function renderList(events) { return `<div class="event-table card"><div class="table-head"><span>Дата</span><span>Время</span><span>Событие</span><span>Тип</span><span>Статус</span></div>${events.map(e => `<div class="table-row" data-open-event="${esc(e.id)}" role="button" tabindex="0" style="${subjectColor(e) ? `--subject-color:${subjectColor(e)};` : ''}"><span>${esc(localDate(e.startAt, state.timezone))}${state.scheduleMode === 'combined' && kugTags(localDate(e.startAt, state.timezone)) ? `<small class="list-kug-tags">${kugTags(localDate(e.startAt, state.timezone))}</small>` : ''}</span><span>${e.allDay ? 'Весь день' : `${esc(localTime(e.startAt, state.timezone))}–${esc(localTime(e.endAt, state.timezone))}`}</span><strong class="list-event-title">${eventHalfMarkup(e, true)}${esc(String(e.title ?? (('subject' in e) ? e.subject : '')))}</strong><span>${e.kind === 'personal' ? 'Личное' : e.type}</span><span>${STATUS_LABEL[e.status ?? 'planned']}</span></div>`).join('') || '<div class="empty-table">Нет событий</div>'}</div>`; }
+function taskStatusLabel(status) { return status === 'todo' ? 'К выполнению' : status === 'in_progress' ? 'В процессе' : 'Завершено'; }
+function priorityLabel(priority) { return priority === 'high' ? 'Высокий' : priority === 'low' ? 'Низкий' : 'Средний'; }
+function formatTaskDue(value) { if (!value)
+    return 'Без дедлайна'; const d = new Date(value); return Number.isNaN(d.getTime()) ? value : new Intl.DateTimeFormat('ru-RU', { dateStyle: 'medium', timeStyle: value.includes('T') ? 'short' : undefined }).format(d); }
+function renderTasks() {
+    state.tasks = readTasks();
+    const all = state.tasks.slice();
+    const subjects = Array.from(new Set(all.map(t => t.subject))).sort((a, b) => a.localeCompare(b, 'ru'));
+    const subjectFilter = $('taskSubjectFilter');
+    const keep = state.taskFilterSubject;
+    subjectFilter.innerHTML = '<option value="all">Все предметы</option>' + subjects.map(x => `<option value="${esc(x)}">${esc(x)}</option>`).join('');
+    subjectFilter.value = subjects.includes(keep) ? keep : 'all';
+    const query = state.taskSearch.trim().toLocaleLowerCase('ru-RU');
+    const filtered = all.filter(t => (state.taskFilterStatus === 'all' || (t.status ?? (t.done ? 'done' : 'todo')) === state.taskFilterStatus) && (state.taskFilterSubject === 'all' || t.subject === state.taskFilterSubject) && (!query || `${t.subject} ${t.text} ${t.link ?? ''}`.toLocaleLowerCase('ru-RU').includes(query))).sort((a, b) => { const ad = a.due ? new Date(a.due).getTime() : Number.MAX_SAFE_INTEGER, bd = b.due ? new Date(b.due).getTime() : Number.MAX_SAFE_INTEGER; return ad - bd || b.createdAt.localeCompare(a.createdAt); });
+    $('taskCount').textContent = String(all.filter(x => (x.status ?? (x.done ? 'done' : 'todo')) !== 'done').length);
+    $('taskList').innerHTML = filtered.length ? filtered.map(t => { const status = (t.status ?? (t.done ? 'done' : 'todo')); return `<article class="task-row ${status === 'done' ? 'done' : ''}" data-task-id="${esc(t.id)}" style="--task-subject-color:${state.personalization.subjectColors[subjectColorKey(t.subject)] || 'var(--accent)'}"><button class="task-check" data-task-toggle="${esc(t.id)}" aria-label="Отметить выполненным">${status === 'done' ? '✓' : status === 'in_progress' ? '…' : ''}</button><div class="task-body"><div class="task-title-line"><b>${esc(t.subject)}</b><span class="priority-badge priority-${t.priority ?? 'medium'}">Приоритет: ${priorityLabel(t.priority ?? 'medium').toLowerCase()}</span></div><p>${esc(t.text)}</p><div class="task-meta"><span>${t.due ? `Дедлайн: ${esc(formatTaskDue(t.due))}` : 'Без дедлайна'}</span>${t.link ? `<a href="${esc(t.link)}" target="_blank" rel="noopener noreferrer">Открыть ссылку ↗</a>` : ''}${t.attachmentName ? `<button class="text-link" data-task-attachment="${esc(t.id)}">Файл: ${esc(t.attachmentName)} ↓</button>` : ''}</div><small class="task-created">${esc(state.profile.group || '')} · создано ${esc(formatTaskDue(t.createdAt))}</small></div><div class="task-actions"><label class="task-status-control"><span>Статус</span><select data-task-status="${esc(t.id)}" aria-label="Статус задания ${esc(t.subject)}"><option value="todo" ${status === 'todo' ? 'selected' : ''}>К выполнению</option><option value="in_progress" ${status === 'in_progress' ? 'selected' : ''}>В процессе</option><option value="done" ${status === 'done' ? 'selected' : ''}>Завершено</option></select></label><button class="btn small danger" data-task-delete="${esc(t.id)}">Удалить</button></div></article>`; }).join('') : `<div class="empty-state card"><div class="empty-icon">✓</div><h3>${all.length ? 'Нет заданий по этим фильтрам' : 'Заданий пока нет'}</h3><p>${all.length ? 'Измените статус, предмет или поисковый запрос.' : 'Создайте первое ДЗ по предмету из расписания.'}</p><button class="btn primary" data-action="add-task">＋ Создать ДЗ</button></div>`;
+}
 function renderFaculties() { $('facultyGrid').innerHTML = PROGRAMS.map(p => { const published = p.publishedCourses.length; return `<article class="faculty-card card"><span class="eyebrow">${p.code}</span><h3>${esc(p.title)}</h3><p>${esc(p.faculty)}</p><div class="faculty-tags"><span>1–6 курсы</span><span>${published}/6 опубликовано</span></div><button class="btn small primary" data-pick-program="${p.code}">Открыть расписание</button></article>`; }).join(''); }
-function renderResources() { const grouped = PROGRAMS.flatMap(p => p.scheduleCourses.map(course => ({ p, course, sources: sourcesFor(p.code, course) }))); $('resourceList').innerHTML = grouped.map(({ p, course, sources }) => { const published = sources.filter(s => s.status === 'published' || s.status === 'verified'); const status = !p.publishedCourses.includes(course) ? 'Не опубликовано' : published.length ? 'Источник доступен' : 'Требуется серверный импорт'; return `<article class="resource-card card"><div class="meta"><span class="eyebrow">${p.code} · ${course} курс</span><b>${esc(p.title)}</b><p>${published.length ? published.map(s => esc(s.title)).join(' · ') : 'Официальная страница / parser adapter'}</p></div><div><span class="resource-status">${status}</span><div style="height:6px"></div><a class="btn small" href="${sourceFor(p.code, course)}" target="_blank" rel="noopener noreferrer">Источник ↗</a></div></article>`; }).join(''); }
+function resourceCategoryFor(title) { const s = title.toLocaleLowerCase('ru-RU'); if (/лекц|lecture/.test(s))
+    return 'lecture'; if (/практик|семинар|\bпз\b|practice/.test(s))
+    return 'practice'; if (/лаборатор|lab/.test(s))
+    return 'lab'; if (/учебник|книг|book/.test(s))
+    return 'book'; return 'link'; }
+function resourceCategoryLabel(category) { return { lecture: 'Лекции', practice: 'Практика', lab: 'Лабораторные', book: 'Учебники / книги', link: 'Полезные ссылки' }[category] ?? 'Полезные ссылки'; }
+function getResourceItems() {
+    const official = PROGRAMS.flatMap(p => p.scheduleCourses.flatMap(course => sourcesFor(p.code, course).filter(s => s.status === 'published' || s.status === 'verified').map(s => ({ id: `official:${s.id}`, title: s.title, subject: `${p.shortTitle} · ${course} курс`, category: resourceCategoryFor(s.title), description: s.notes || 'Официальный документ или источник учебного расписания.', url: s.url, tags: [resourceCategoryLabel(resourceCategoryFor(s.title)), 'Официальный'], helpfulness: undefined, type: /\.pdf(?:$|\?)/i.test(s.url) ? 'pdf' : 'link', official: true }))));
+    const personal = state.personalization.materials.map(m => ({ ...m, tags: m.tags ?? [], type: /\.pdf(?:$|\?)/i.test(m.url) ? 'pdf' : 'link', official: false }));
+    return [...official, ...personal];
+}
+function renderResources() {
+    const items = getResourceItems();
+    const subjects = Array.from(new Set(items.map(x => x.subject))).sort((a, b) => a.localeCompare(b, 'ru'));
+    const subjectSel = $('resourceSubjectFilter');
+    const chosen = state.resourceSubject;
+    subjectSel.innerHTML = '<option value="all">Все предметы и курсы</option>' + subjects.map(x => `<option value="${esc(x)}">${esc(x)}</option>`).join('');
+    subjectSel.value = subjects.includes(chosen) ? chosen : 'all';
+    const q = state.resourceSearch.trim().toLocaleLowerCase('ru-RU');
+    const filtered = items.filter(x => (state.resourceSubject === 'all' || x.subject === state.resourceSubject) && (state.resourceCategory === 'all' || x.category === state.resourceCategory) && (state.resourceType === 'all' || x.type === state.resourceType) && (!q || `${x.title} ${x.description} ${x.subject} ${x.category}`.toLocaleLowerCase('ru-RU').includes(q)));
+    const groups = new Map();
+    for (const item of filtered) {
+        const group = groups.get(item.subject) ?? [];
+        group.push(item);
+        groups.set(item.subject, group);
+    }
+    $('resourceList').innerHTML = filtered.length ? Array.from(groups.entries()).map(([subject, rows]) => `<section class="resource-subject-group"><header><div><p class="eyebrow">Предмет / курс</p><h2>${esc(subject)}</h2></div><span class="chip">${rows.length} материалов</span></header><div class="resource-card-grid">${rows.map(item => `<article class="resource-card card" style="--resource-subject-color:${state.personalization.subjectColors[subjectColorKey(item.subject)] || 'var(--accent)'}"><div class="resource-icon ${item.type === 'pdf' ? 'pdf' : 'link'}">${item.type === 'pdf' ? 'PDF' : '↗'}</div><div class="resource-main"><div class="resource-card-tags"><span class="resource-category">${resourceCategoryLabel(item.category)}</span><span class="resource-type">${item.type === 'pdf' ? 'PDF' : 'Ссылка'}</span>${item.official ? '<span class="resource-origin">Официальный источник</span>' : '<span class="resource-origin personal-resource">Мой материал</span>'}${(item.tags ?? []).map(tag => `<span class="resource-tag">${esc(tag)}</span>`).join('')}${item.helpfulness ? `<span class="resource-rating" aria-label="Полезность ${item.helpfulness} из 5">★ ${item.helpfulness}/5</span>` : ''}</div><h3>${esc(item.title)}</h3><p>${esc(item.description)}</p><small>${esc(item.subject)}</small></div><div class="resource-card-actions"><a class="btn small primary" href="${esc(item.url)}" target="_blank" rel="noopener noreferrer">${item.type === 'pdf' ? 'Открыть PDF ↗' : 'Открыть ↗'}</a>${item.type === 'pdf' ? `<a class="btn small" href="${esc(item.url)}" target="_blank" rel="noopener noreferrer" download>Скачать</a>` : ''}${!item.official ? `<button class="btn small danger" data-material-delete="${esc(item.id)}">Удалить</button>` : ''}</div></article>`).join('')}</div></section>`).join('') : `<div class="empty-state card"><div class="empty-icon">▤</div><h3>Материалы не найдены</h3><p>Поменяйте фильтры или добавьте свою ссылку на учебный ресурс.</p><button class="btn primary" data-action="new-material">＋ Добавить материал</button></div>`;
+}
 function kugDay(value) { const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value); return match ? `${match[3]}.${match[2]}.${match[1]}` : value; }
-function kugSourceStatus(status) { return status === 'verified-bootstrap' ? 'Источник проверен' : status === 'source-linked-pending-sync' ? 'Документ найден · данные ожидают синхронизации' : status === 'published' ? 'Опубликовано' : 'Статус источника не подтверждён'; }
+function kugSourceStatus(status) { return status === 'verified-bootstrap' ? 'Базовый график · проверьте актуальный документ' : status === 'source-linked-pending-sync' ? 'Документ найден · данные ожидают синхронизации' : status === 'published' ? 'Опубликовано · источник доступен' : 'Статус источника не подтверждён'; }
 function renderKug() {
     $('kugContext').textContent = `${state.profile.course} курс · ${state.profile.group || 'группа не выбрана'}`;
     const statusEl = $('kugDataStatus');
@@ -268,12 +353,12 @@ function renderKug() {
         return;
     }
     const course = String(state.profile.course);
-    const periods = state.kugData.periods.filter(x => String(x.course) === course).slice().sort((a, b) => a.start.localeCompare(b.start));
-    const sources = state.kugData.sources.filter(x => String(x.course) === course);
+    const periods = state.kugData.periods.filter(x => (!x.program || x.program === state.profile.program) && String(x.course) === course).slice().sort((a, b) => a.start.localeCompare(b.start));
+    const sources = state.kugData.sources.filter(x => (!x.program || x.program === state.profile.program) && String(x.course) === course);
     const updated = state.kugData.generatedAt ? new Intl.DateTimeFormat('ru-RU', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'UTC' }).format(new Date(state.kugData.generatedAt)) : 'дата обновления неизвестна';
     statusEl.innerHTML = `<span class="status-dot ok"></span> Данные источника · обновление ${esc(updated)} · ${periods.length} периодов`;
-    periodsEl.innerHTML = periods.length ? periods.map(x => `<article class="kug-period"><div class="kug-period-mark">${x.kind === 'assessment' ? 'А' : 'У'}</div><div class="kug-period-main"><b>${esc(x.label || 'Учебный период')}</b><span>${esc(kugDay(x.start))} — ${esc(kugDay(x.end))}${x.semester ? ` · семестр ${x.semester}` : ''}</span></div>${x.sourceUrl ? `<a class="btn small" href="${esc(x.sourceUrl)}" target="_blank" rel="noopener noreferrer">Источник ↗</a>` : ''}</article>`).join('') : '<div class="empty-state compact"><h3>Периоды не опубликованы</h3><p>В доступном официальном источнике пока нет подтверждённых периодов для выбранного курса. Проверьте PDF по ссылке справа.</p></div>';
-    sourcesEl.innerHTML = sources.length ? sources.map(x => `<article class="kug-source"><div><b>${esc(x.title)}</b><small>${esc(kugSourceStatus(x.status))} · периодов в данных: ${x.periods}</small></div><a class="btn small" href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">Открыть PDF ↗</a></article>`).join('') : '<div class="empty-state compact"><h3>Источник не найден</h3><p>Для выбранного курса не найден отдельный PDF в текущем snapshot.</p><a class="btn" href="https://education.almazovcentre.ru/about_institute/programm/specialist_programme/student/" target="_blank" rel="noopener noreferrer">Все официальные документы ↗</a></div>';
+    periodsEl.innerHTML = periods.length ? periods.map(x => `<article class="kug-period kug-${esc(x.kind)}"><div class="kug-period-mark">${x.kind === 'assessment' ? 'А' : x.kind === 'vacation' ? 'К' : x.kind === 'practice' ? 'П' : 'У'}</div><div class="kug-period-main"><b>${esc(x.label || 'Учебный период')}</b><span>${esc(kugDay(x.start))} — ${esc(kugDay(x.end))}${x.semester ? ` · семестр ${x.semester}` : ''}</span></div>${x.sourceUrl ? `<a class="btn small" href="${esc(x.sourceUrl)}" target="_blank" rel="noopener noreferrer">Источник ↗</a>` : ''}</article>`).join('') : '<div class="empty-state compact"><h3>Периоды не опубликованы</h3><p>В доступном официальном источнике пока нет подтверждённых периодов для выбранного курса. Проверьте PDF по ссылке справа.</p></div>';
+    sourcesEl.innerHTML = sources.length ? sources.map(x => `<article class="kug-source"><div><b>${esc(x.title)}</b><small>${esc(kugSourceStatus(x.status))} · периодов в данных: ${x.periods}</small></div><a class="btn small" href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">${x.status === 'verified-bootstrap' ? 'Все документы ↗' : 'Открыть источник ↗'}</a></article>`).join('') : '<div class="empty-state compact"><h3>Источник не найден</h3><p>Для выбранного курса не найден отдельный PDF в текущем snapshot.</p><a class="btn" href="https://education.almazovcentre.ru/about_institute/programm/specialist_programme/student/" target="_blank" rel="noopener noreferrer">Все официальные документы ↗</a></div>';
 }
 async function loadKugData() {
     state.kugStatus = 'loading';
@@ -294,13 +379,27 @@ async function loadKugData() {
     renderKug();
 }
 function renderFaq(filter = '') { const q = filter.trim().toLowerCase(); const items = FAQ.filter(x => (state.faqCategory === 'Все' || x.category === state.faqCategory) && (`${x.question} ${x.answer}`).toLowerCase().includes(q)); $('faqCategories').innerHTML = ['Все', ...Array.from(new Set(FAQ.map(x => x.category)))].map(c => `<button class="chip-button ${c === state.faqCategory ? 'active' : ''}" data-faq-category="${esc(c)}">${esc(c)}</button>`).join(''); $('faqPopular').innerHTML = FAQ.filter(x => x.popular).slice(0, 4).map(x => `<button class="faq-popular" data-faq-open="${esc(x.id)}"><b>${esc(x.question)}</b><small>${esc(x.category)}</small></button>`).join(''); $('faqList').innerHTML = items.length ? items.map(x => `<details id="faq-${esc(x.id)}"><summary>${esc(x.question)}<span>+</span></summary><p>${esc(x.answer)}</p></details>`).join('') : `<div class="empty-state compact card"><h3>Ничего не найдено</h3><p>Попробуйте изменить запрос или категорию.</p><button class="btn" data-page="support">Обратиться в поддержку</button></div>`; }
-function renderSettings() { const tz = $('settingsTimezone'); if (tz) {
-    const common = ['Europe/Zurich', 'Europe/Moscow', 'Europe/London', 'Europe/Berlin', 'Asia/Tokyo', 'America/New_York', 'America/Los_Angeles', 'UTC'];
-    tz.innerHTML = Array.from(new Set([...common, state.timezone])).map(z => `<option value="${z}">${z}</option>`).join('');
-    tz.value = state.timezone;
-} const theme = $('settingsTheme'); if (theme)
-    theme.value = themeMode(); }
-function renderProfilePage() { const p = PROGRAMS.find(x => x.code === state.profile.program); $('profileSummary').innerHTML = `<div class="profile-large"><div class="avatar large">A</div><div><h2>Профиль студента</h2><p>${esc(p?.title ?? '')} · ${state.profile.course} курс · группа ${esc(state.profile.group || 'не выбрана')}</p><small>Часовой пояс календаря: ${esc(state.timezone)}</small></div></div><div class="profile-grid"><div class="card profile-stat"><span>Программа</span><b>${esc(p?.shortTitle ?? state.profile.program)}</b></div><div class="card profile-stat"><span>Группа</span><b>${esc(state.profile.group || '—')}</b></div><div class="card profile-stat"><span>Источник</span><b>${state.status.toUpperCase()}</b></div></div>`; }
+function renderSettings() {
+    const tz = $('settingsTimezone');
+    if (tz) {
+        const common = ['Europe/Zurich', 'Europe/Moscow', 'Europe/London', 'Europe/Berlin', 'Asia/Tokyo', 'America/New_York', 'America/Los_Angeles', 'UTC'];
+        tz.innerHTML = Array.from(new Set([...common, state.timezone])).map(z => `<option value="${esc(z)}">${esc(z)}</option>`).join('');
+        tz.value = state.timezone;
+    }
+    const theme = $('settingsTheme');
+    if (theme)
+        theme.value = themeMode();
+    const colors = $('subjectColorSettings');
+    if (colors) {
+        const subjects = Array.from(new Set(state.official.filter(e => eventAppliesToGroup(e, { ...state.profile, stream: streamForGroup(state.profile.program, state.profile.group) })).map(e => e.subject))).sort((a, b) => a.localeCompare(b, 'ru'));
+        colors.innerHTML = subjects.length ? subjects.map(subject => { const key = subjectColorKey(subject), value = state.personalization.subjectColors[key] || '#7892bf'; return `<label class="subject-setting-row"><span><i style="background:${value}"></i><b>${esc(subject)}</b></span><input type="color" data-subject-setting="${esc(key)}" value="${value}" aria-label="Цвет предмета ${esc(subject)}"></label>`; }).join('') : '<p class="muted">Загрузите расписание выбранной группы, чтобы настроить цвета предметов.</p>';
+    }
+}
+function renderProfilePage() {
+    const p = PROGRAMS.find(x => x.code === state.profile.program);
+    const avatar = state.personalization.avatarDataUrl ? `<div class="avatar large" style="background-image:url('${state.personalization.avatarDataUrl}');background-size:cover;background-position:center"></div>` : `<div class="avatar large">${esc(state.personalization.avatarPreset || '🎓')}</div>`;
+    $('profileSummary').innerHTML = `<div class="profile-large">${avatar}<div><h2>${esc(state.personalization.displayName || 'Профиль студента')}</h2><p>${esc(p?.title ?? '')} · ${state.profile.course} курс · группа ${esc(state.profile.group || 'не выбрана')}</p><small>Часовой пояс календаря: ${esc(state.timezone)} · Акцент: ${state.personalization.accentColor}</small></div><button class="btn primary" data-action="profile">Редактировать</button></div><div class="profile-grid"><div class="card profile-stat"><span>Программа</span><b>${esc(p?.shortTitle ?? state.profile.program)}</b></div><div class="card profile-stat"><span>Группа</span><b>${esc(state.profile.group || '—')}</b></div><div class="card profile-stat"><span>Активные ДЗ</span><b>${readTasks().filter(t => (t.status ?? 'todo') !== 'done').length}</b></div><div class="card profile-stat"><span>Источник расписания</span><b>${state.status.toUpperCase()}</b></div></div>`;
+}
 async function loadSupport() { if (state.supportStatus === 'loading')
     return; state.supportStatus = 'loading'; renderSupport(); try {
     state.ticketList = await listTickets();
@@ -342,23 +441,120 @@ function closeModal(id) { const modal = document.getElementById(id); if (!modal)
     return; modal.classList.remove('open'); modal.setAttribute('aria-hidden', 'true'); if (!document.querySelector('.modal-backdrop.open'))
     document.body.classList.remove('modal-open'); }
 function closeAllModals() { document.querySelectorAll('.modal-backdrop.open').forEach(modal => { modal.classList.remove('open'); modal.setAttribute('aria-hidden', 'true'); }); document.body.classList.remove('modal-open'); }
-function loadAppearance() { try {
-    const raw = JSON.parse(localStorage.getItem('almazov.appearance') ?? 'null');
-    const valid = (v, fallback) => typeof v === 'string' && /^#[0-9a-fA-F]{6}$/.test(v) ? v : fallback;
-    state.double1 = valid(raw?.double1, state.double1);
-    state.double2 = valid(raw?.double2, state.double2);
-}
-catch { } }
-function applyAppearance() { document.documentElement.style.setProperty('--double1', state.double1); document.documentElement.style.setProperty('--double2', state.double2); }
-function saveAppearance() { localStorage.setItem('almazov.appearance', JSON.stringify({ double1: state.double1, double2: state.double2 })); applyAppearance(); }
+function loadAppearance() { state.personalization = readPersonalization(); state.double1 = state.personalization.double1; state.double2 = state.personalization.double2; }
+function luminance(hex) { const values = hex.replace('#', '').match(/.{2}/g)?.map(v => parseInt(v, 16) / 255).map(v => v <= .04045 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4)) ?? [0, 0, 0]; return .2126 * values[0] + .7152 * values[1] + .0722 * values[2]; }
+function applyAppearance() { state.personalization = readPersonalization(); const accent = state.personalization.accentColor; document.documentElement.style.setProperty('--accent', accent); document.documentElement.style.setProperty('--accent-hover', accent); document.documentElement.style.setProperty('--focus', accent); document.documentElement.style.setProperty('--accent-foreground', luminance(accent) > .42 ? '#111827' : '#ffffff'); document.documentElement.style.setProperty('--double1', state.personalization.double1 || state.double1); document.documentElement.style.setProperty('--double2', state.personalization.double2 || state.double2); }
+function saveAppearance() { state.personalization = updatePersonalization({ double1: state.double1, double2: state.double2 }); applyAppearance(); }
 function renderProfileOptions() { const ps = $('programSelect'), cs = $('courseSelect'), gs = $('groupSelect'); ps.innerHTML = PROGRAMS.map(p => `<option value="${p.code}">${esc(p.title)} · ${p.code}</option>`).join(''); cs.innerHTML = [1, 2, 3, 4, 5, 6].map(c => `<option value="${c}">${c} курс</option>`).join(''); gs.innerHTML = groupOptions(state.profile.program, state.profile.course).map(g => g ? `<option value="${esc(g)}">${esc(g)}</option>` : `<option value="">— группы не опубликованы —</option>`).join(''); ps.value = state.profile.program; cs.value = String(state.profile.course); gs.value = state.profile.group; fillModalOptions(state.profile.program, state.profile.course, state.profile.group); }
 function fillModalOptions(program, course, group) { const p = $('modalProgram'), c = $('modalCourse'), g = $('modalGroup'); p.innerHTML = PROGRAMS.map(x => `<option value="${x.code}">${esc(x.title)}</option>`).join(''); c.innerHTML = [1, 2, 3, 4, 5, 6].map(x => `<option value="${x}">${x} курс</option>`).join(''); g.innerHTML = groupOptions(program, course).map(x => `<option value="${esc(x)}">${esc(x || '—')}</option>`).join(''); p.value = program; c.value = String(course); g.value = group; }
-async function saveProfile() { const p = $('modalProgram').value, c = Number($('modalCourse').value), g = $('modalGroup').value; state.profile = { program: p, course: c, group: g }; ensureProfile(); localStorage.setItem('almazov.profile', JSON.stringify(state.profile)); saveAppearance(); closeModal('profileModal'); state.week = mondayOf(state.focusDate); state.focusDate = state.week; clearScheduleMemory(); render(); await reloadEvents(); render(); }
-function openTask() { $('taskSubject').value = ''; $('taskText').value = ''; $('taskDate').value = ''; $('taskNotice').textContent = ''; openModal('taskModal'); }
-function saveTask() { const subject = $('taskSubject').value.trim(), text = $('taskText').value.trim(); if (!subject || !text) {
-    $('taskNotice').textContent = 'Заполните предмет и задание.';
+function openProfileModal() {
+    state.personalization = readPersonalization();
+    state.avatarPresetDraft = state.personalization.avatarPreset;
+    state.avatarDataDraft = state.personalization.avatarDataUrl;
+    fillModalOptions(state.profile.program, state.profile.course, state.profile.group);
+    const name = $('profileNickname');
+    name.value = state.personalization.displayName;
+    $('profileAccent').value = state.personalization.accentColor;
+    $('avatarPreview').textContent = state.personalization.avatarDataUrl ? '' : state.personalization.avatarPreset;
+    $('avatarPreview').style.backgroundImage = state.personalization.avatarDataUrl ? `url("${state.personalization.avatarDataUrl}")` : '';
+    const tz = $('modalTimezone');
+    const common = ['Europe/Zurich', 'Europe/Moscow', 'Europe/London', 'Europe/Berlin', 'Asia/Tokyo', 'America/New_York', 'UTC'];
+    tz.innerHTML = Array.from(new Set([...common, state.timezone])).map(z => `<option value="${esc(z)}">${esc(z)}</option>`).join('');
+    tz.value = state.timezone;
+    openModal('profileModal');
+}
+async function saveProfile() {
+    const nickname = $('profileNickname').value.trim();
+    if (nickname && !/^[\p{L}\p{N}_. -]{2,36}$/u.test(nickname)) {
+        toast('Имя должно содержать 2–36 букв, цифр, пробелов, точек, дефисов или подчёркиваний.', 'error');
+        return;
+    }
+    const p = $('modalProgram').value, c = Number($('modalCourse').value), g = $('modalGroup').value;
+    state.profile = { program: p, course: c, group: g };
+    ensureProfile();
+    localStorage.setItem('almazov.profile', JSON.stringify(state.profile));
+    setAcademicProfile(state.profile);
+    setTimezone($('modalTimezone').value);
+    state.personalization = updatePersonalization({ displayName: nickname, accentColor: $('profileAccent').value, avatarPreset: state.avatarPresetDraft || state.personalization.avatarPreset, avatarDataUrl: state.avatarDataDraft || '' });
+    saveAppearance();
+    closeModal('profileModal');
+    state.week = mondayOf(state.focusDate);
+    clearScheduleMemory();
+    render();
+    await reloadEvents();
+    render();
+}
+async function cropAvatar(file) { if (file.size > 8 * 1024 * 1024)
+    throw new Error('Изображение должно быть меньше 8 МБ.'); if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type))
+    throw new Error('Поддерживаются JPG, PNG и WebP.'); const url = URL.createObjectURL(file); try {
+    const img = new Image();
+    img.src = url;
+    await new Promise((resolve, reject) => { img.onload = () => resolve(); img.onerror = () => reject(new Error('Не удалось открыть изображение.')); });
+    const size = Math.min(img.naturalWidth, img.naturalHeight);
+    if (!size)
+        throw new Error('Изображение пустое.');
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 256;
+    const ctx = canvas.getContext('2d');
+    if (!ctx)
+        throw new Error('Кадрирование недоступно в этом браузере.');
+    ctx.drawImage(img, (img.naturalWidth - size) / 2, (img.naturalHeight - size) / 2, size, size, 0, 0, 256, 256);
+    return canvas.toDataURL('image/webp', 0.82);
+}
+finally {
+    URL.revokeObjectURL(url);
+} }
+function prepareTaskSubjectOptions() { const subjects = Array.from(new Set([...state.official.map(e => e.subject), ...readTasks().map(t => t.subject)].filter(Boolean))).sort((a, b) => a.localeCompare(b, 'ru')); $('taskSubjectOptions').innerHTML = subjects.map(x => `<option value="${esc(x)}"></option>`).join(''); }
+function openTask() { $('taskSubject').value = ''; $('taskText').value = ''; $('taskDate').value = ''; $('taskPriority').value = 'medium'; $('taskLink').value = ''; $('taskAttachment').value = ''; $('taskNotice').textContent = ''; prepareTaskSubjectOptions(); openModal('taskModal'); }
+function fileAsDataUrl(file) { return new Promise((resolve, reject) => { const reader = new FileReader(); reader.onerror = () => reject(new Error('Не удалось прочитать файл.')); reader.onload = () => typeof reader.result === 'string' ? resolve(reader.result) : reject(new Error('Неверный формат файла.')); reader.readAsDataURL(file); }); }
+async function saveTask() {
+    const subject = $('taskSubject').value.trim(), text = $('taskText').value.trim(), link = $('taskLink').value.trim(), file = ($('taskAttachment').files ?? [])[0];
+    if (!subject || !text) {
+        $('taskNotice').textContent = 'Выберите предмет и заполните текст задания.';
+        return;
+    }
+    if (link && !/^https?:\/\//i.test(link)) {
+        $('taskNotice').textContent = 'Ссылка должна начинаться с http:// или https://.';
+        return;
+    }
+    if (file && file.size > 850 * 1024) {
+        $('taskNotice').textContent = 'Файл больше 850 КБ. Добавьте ссылку на крупный файл вместо загрузки.';
+        return;
+    }
+    try {
+        const attachmentData = file ? await fileAsDataUrl(file) : undefined;
+        const task = { id: crypto.randomUUID(), subject, text, due: $('taskDate').value || undefined, done: false, status: 'todo', priority: $('taskPriority').value, link: link || undefined, attachmentName: file?.name, attachmentData, ...state.profile, createdAt: new Date().toISOString() };
+        addTask(task);
+        state.tasks = readTasks();
+        closeModal('taskModal');
+        renderTasks();
+        renderSchedule();
+        toast('Домашнее задание сохранено');
+    }
+    catch (error) {
+        $('taskNotice').textContent = error instanceof Error ? error.message : 'Не удалось сохранить задание.';
+    }
+}
+function openMaterial() {
+    const sel = $('materialSubject');
+    const subjects = Array.from(new Set([...state.official.map(e => e.subject), ...PROGRAMS.flatMap(p => p.scheduleCourses.map(c => `${p.shortTitle} · ${c} курс`)), ...state.personalization.materials.map(m => m.subject)].filter(Boolean))).sort((a, b) => a.localeCompare(b, 'ru'));
+    sel.innerHTML = subjects.map(x => `<option value="${esc(x)}">${esc(x)}</option>`).join('');
+    sel.value = `${PROGRAMS.find(p => p.code === state.profile.program)?.shortTitle ?? 'ЛД'} · ${state.profile.course} курс`;
+    for (const id of ['materialTitle', 'materialUrl', 'materialDescription', 'materialTags'])
+        $(id).value = '';
+    $('materialCategory').value = 'link';
+    $('materialHelpfulness').value = '';
+    $('materialNotice').textContent = '';
+    openModal('materialModal');
+}
+function saveMaterial() { const title = $('materialTitle').value.trim(), subject = $('materialSubject').value, category = $('materialCategory').value, url = $('materialUrl').value.trim(), description = $('materialDescription').value.trim(), tags = $('materialTags').value.split(',').map(x => x.trim()).filter(Boolean).slice(0, 8).map(x => x.slice(0, 32)), rating = Number($('materialHelpfulness').value); if (title.length < 2) {
+    $('materialNotice').textContent = 'Введите название материала.';
     return;
-} addTask({ id: crypto.randomUUID(), subject, text, due: $('taskDate').value || undefined, done: false, ...state.profile, createdAt: new Date().toISOString() }); closeModal('taskModal'); renderTasks(); }
+} if (!/^https?:\/\//i.test(url)) {
+    $('materialNotice').textContent = 'Укажите корректный URL, начинающийся с http:// или https://.';
+    return;
+} const material = { id: crypto.randomUUID(), title, subject, category, description, url, tags, helpfulness: rating >= 1 && rating <= 5 ? rating : undefined, createdAt: new Date().toISOString() }; state.personalization = updatePersonalization({ materials: [...state.personalization.materials, material] }); closeModal('materialModal'); renderResources(); toast('Материал добавлен в базу знаний'); }
 function readEventForm() { const title = $('eventTitle').value.trim(), start = $('eventStart').value, end = $('eventEnd').value, tz = $('eventTimezone').value; if (!title) {
     setEventNotice('Введите название события.');
     return null;
@@ -536,12 +732,49 @@ function bind() {
                 closeModal(backdrop.id);
             return;
         }
-        const target = origin?.closest('[data-action],[data-page],[data-view],[data-pick-program],[data-task-delete],[data-task-toggle],[data-jump-date],[data-open-event],[data-ticket],[data-faq-category],[data-faq-open]');
+        const target = origin?.closest('[data-action],[data-page],[data-view],[data-schedule-mode],[data-pick-program],[data-task-delete],[data-task-toggle],[data-task-status],[data-task-attachment],[data-jump-date],[data-open-event],[data-ticket],[data-faq-category],[data-faq-open],[data-subject-color-trigger],[data-avatar-preset],[data-material-delete]');
         if (!target)
             return;
         const action = target.dataset.action;
         if (target.dataset.page) {
             nav(target.dataset.page);
+            return;
+        }
+        if (target.dataset.scheduleMode) {
+            state.scheduleMode = target.dataset.scheduleMode;
+            if (state.scheduleMode === 'kug')
+                state.view = 'month';
+            renderSchedule();
+            renderSettings();
+            return;
+        }
+        if (target.dataset.subjectColorTrigger) {
+            const key = target.dataset.subjectColorTrigger;
+            const input = document.createElement('input');
+            input.type = 'color';
+            input.value = state.personalization.subjectColors[key] || '#7892bf';
+            input.setAttribute('aria-label', 'Цвет предмета');
+            input.style.position = 'fixed';
+            input.style.left = '-10000px';
+            input.addEventListener('input', () => { const colors = { ...readPersonalization().subjectColors, [key]: input.value }; state.personalization = updatePersonalization({ subjectColors: colors }); renderSchedule(); renderSettings(); });
+            input.addEventListener('change', () => input.remove());
+            document.body.appendChild(input);
+            input.click();
+            return;
+        }
+        if (target.dataset.avatarPreset) {
+            state.avatarPresetDraft = target.dataset.avatarPreset;
+            state.avatarDataDraft = '';
+            const preview = $('avatarPreview');
+            preview.textContent = state.avatarPresetDraft;
+            preview.style.backgroundImage = '';
+            return;
+        }
+        if (target.dataset.materialDelete) {
+            const id = target.dataset.materialDelete;
+            state.personalization = updatePersonalization({ materials: state.personalization.materials.filter(m => m.id !== id) });
+            renderResources();
+            toast('Материал удалён');
             return;
         }
         if (target.dataset.view) {
@@ -630,7 +863,7 @@ function bind() {
             return;
         }
         if (action === 'profile') {
-            openModal('profileModal');
+            openProfileModal();
             return;
         }
         if (action === 'save-profile') {
@@ -646,7 +879,24 @@ function bind() {
             return;
         }
         if (action === 'save-task') {
-            saveTask();
+            await saveTask();
+            return;
+        }
+        if (action === 'new-material') {
+            openMaterial();
+            return;
+        }
+        if (action === 'save-material') {
+            saveMaterial();
+            return;
+        }
+        if (action === 'reset-task-filters') {
+            state.taskSearch = '';
+            state.taskFilterStatus = 'all';
+            state.taskFilterSubject = 'all';
+            $('taskSearch').value = '';
+            $('taskStatusFilter').value = 'all';
+            renderTasks();
             return;
         }
         if (action === 'share-week') {
@@ -710,6 +960,7 @@ function bind() {
             state.profile.course = 1;
             state.profile.group = groupsFor(state.profile.program, 1)[0] ?? '';
             localStorage.setItem('almazov.profile', JSON.stringify(state.profile));
+            setAcademicProfile(state.profile);
             state.focusDate = todayISO(state.timezone);
             state.week = mondayOf(state.focusDate);
             clearScheduleMemory();
@@ -720,14 +971,28 @@ function bind() {
         }
         if (target.dataset.taskDelete) {
             removeTask(target.dataset.taskDelete);
+            state.tasks = readTasks();
             renderTasks();
+            renderSchedule();
             return;
         }
         if (target.dataset.taskToggle) {
             const tt = readTasks().find(x => x.id === target.dataset.taskToggle);
             if (tt)
-                updateTask(tt.id, { done: !tt.done });
+                updateTask(tt.id, { status: (tt.status ?? (tt.done ? 'done' : 'todo')) === 'done' ? 'todo' : 'done' });
+            state.tasks = readTasks();
             renderTasks();
+            renderSchedule();
+            return;
+        }
+        if (target.dataset.taskAttachment) {
+            const tt = readTasks().find(x => x.id === target.dataset.taskAttachment);
+            if (tt?.attachmentData) {
+                const a = document.createElement('a');
+                a.href = tt.attachmentData;
+                a.download = tt.attachmentName || 'homework-attachment';
+                a.click();
+            }
             return;
         }
         if (target.dataset.jumpDate) {
@@ -766,6 +1031,12 @@ function bind() {
     } if (t.id === 'faqSearch') {
         state.faqQuery = t.value;
         renderFaq(t.value);
+    } if (t.id === 'taskSearch') {
+        state.taskSearch = t.value;
+        renderTasks();
+    } if (t.id === 'resourceSearch') {
+        state.resourceSearch = t.value;
+        renderResources();
     } if (t.id === 'double1') {
         state.double1 = t.value;
         saveAppearance();
@@ -775,9 +1046,42 @@ function bind() {
     } });
     ['programSelect', 'courseSelect', 'groupSelect'].forEach(id => $(id).addEventListener('change', async () => { if (id === 'programSelect' || id === 'courseSelect')
         renderProfileOptions(); applySelectProfile(); }));
+    $('modalProgram').addEventListener('change', () => { const p = $('modalProgram').value; const c = Number($('modalCourse').value); const old = $('modalGroup').value; const g = $('modalGroup'); g.innerHTML = groupOptions(p, c).map(x => `<option value="${esc(x)}">${esc(x || '—')}</option>`).join(''); g.value = groupOptions(p, c).includes(old) ? old : groupOptions(p, c)[0] ?? ''; });
+    $('modalCourse').addEventListener('change', () => { const p = $('modalProgram').value; const c = Number($('modalCourse').value); const g = $('modalGroup'); g.innerHTML = groupOptions(p, c).map(x => `<option value="${esc(x)}">${esc(x || '—')}</option>`).join(''); g.value = groupOptions(p, c)[0] ?? ''; });
     document.querySelectorAll('#typeFilter [data-type]').forEach(b => b.addEventListener('click', () => { state.type = b.dataset.type ?? 'all'; document.querySelectorAll('#typeFilter [data-type]').forEach(x => x.classList.remove('active')); b.classList.add('active'); renderSchedule(); }));
     $('statusFilter').addEventListener('change', e => { state.statusFilter = e.target.value; renderSchedule(); });
     $('categoryFilter').addEventListener('change', e => { state.categoryFilter = e.target.value; renderSchedule(); });
+    $('taskStatusFilter').addEventListener('change', e => { state.taskFilterStatus = e.target.value; renderTasks(); });
+    $('taskSubjectFilter').addEventListener('change', e => { state.taskFilterSubject = e.target.value; renderTasks(); });
+    $('resourceSubjectFilter').addEventListener('change', e => { state.resourceSubject = e.target.value; renderResources(); });
+    $('resourceCategoryFilter').addEventListener('change', e => { state.resourceCategory = e.target.value; renderResources(); });
+    $('resourceTypeFilter').addEventListener('change', e => { state.resourceType = e.target.value; renderResources(); });
+    document.addEventListener('change', e => { const target = e.target; if (!(target instanceof HTMLInputElement || target instanceof HTMLSelectElement))
+        return; if (target.dataset.taskStatus) {
+        const id = target.dataset.taskStatus;
+        updateTask(id, { status: target.value });
+        state.tasks = readTasks();
+        renderTasks();
+        renderSchedule();
+    } if (target.dataset.subjectSetting) {
+        const colors = { ...readPersonalization().subjectColors, [target.dataset.subjectSetting]: target.value };
+        state.personalization = updatePersonalization({ subjectColors: colors });
+        renderSchedule();
+        renderSettings();
+    } });
+    $('avatarUpload').addEventListener('change', async () => { const input = $('avatarUpload'); const file = input.files?.[0]; if (!file)
+        return; try {
+        state.avatarDataDraft = await cropAvatar(file);
+        state.avatarPresetDraft = '';
+        const preview = $('avatarPreview');
+        preview.textContent = '';
+        preview.style.backgroundImage = `url("${state.avatarDataDraft}")`;
+        preview.style.backgroundSize = 'cover';
+        preview.style.backgroundPosition = 'center';
+    }
+    catch (error) {
+        toast(error instanceof Error ? error.message : 'Не удалось обработать аватар', 'error');
+    } });
     ['eventStart', 'eventEnd', 'eventTimezone'].forEach(id => $(id).addEventListener('change', () => { const tz = $('eventTimezone').value; if (id === 'eventTimezone') {
         const s = $('eventStart'), en = $('eventEnd');
         if (s.value && en.value) { /* values remain in selected zone by design */ }
@@ -823,7 +1127,7 @@ function bind() {
         toast(error instanceof Error ? error.message : 'Не удалось изменить длительность', 'error');
     } }; document.addEventListener('pointermove', move); document.addEventListener('pointerup', up, { once: true }); });
 }
-async function applySelectProfile() { const p = $('programSelect'), c = $('courseSelect'), g = $('groupSelect'); state.profile = { program: p.value, course: Number(c.value), group: g.value || '' }; ensureProfile(); localStorage.setItem('almazov.profile', JSON.stringify(state.profile)); state.focusDate = todayISO(state.timezone); state.week = mondayOf(state.focusDate); state.events = []; state.status = 'loading'; clearScheduleMemory(); render(); await reloadEvents(); render(); }
+async function applySelectProfile() { const p = $('programSelect'), c = $('courseSelect'), g = $('groupSelect'); state.profile = { program: p.value, course: Number(c.value), group: g.value || '' }; ensureProfile(); localStorage.setItem('almazov.profile', JSON.stringify(state.profile)); setAcademicProfile(state.profile); state.focusDate = todayISO(state.timezone); state.week = mondayOf(state.focusDate); state.events = []; state.status = 'loading'; clearScheduleMemory(); render(); await reloadEvents(); render(); }
 async function shareLink() { const url = new URL(location.href); url.search = ''; url.searchParams.set('program', state.profile.program); url.searchParams.set('course', String(state.profile.course)); if (state.profile.group)
     url.searchParams.set('group', state.profile.group); try {
     await navigator.clipboard.writeText(url.toString());

@@ -1,13 +1,6 @@
-const KEY = 'almazov.tasks.v2';
-export function readTasks() { try {
-    const raw = localStorage.getItem(KEY);
-    const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed : [];
-}
-catch {
-    return [];
-} }
-export function writeTasks(tasks) { localStorage.setItem(KEY, JSON.stringify(tasks)); }
-export function addTask(task) { const tasks = readTasks(); tasks.push(task); writeTasks(tasks); }
-export function updateTask(id, patch) { writeTasks(readTasks().map(t => t.id === id ? { ...t, ...patch } : t)); }
+import { readPersonalization, updatePersonalization } from './personalizationStore.js?v=90bfa026bc22b4d4';
+export function readTasks() { return readPersonalization().tasks.map(t => ({ ...t, status: t.status ?? (t.done ? 'done' : 'todo'), done: (t.status ?? (t.done ? 'done' : 'todo')) === 'done' })); }
+export function writeTasks(tasks) { updatePersonalization({ tasks: tasks.map(t => ({ ...t, status: (t.status ?? (t.done ? 'done' : 'todo')), priority: t.priority ?? 'medium', done: (t.status ?? (t.done ? 'done' : 'todo')) === 'done' })) }); }
+export function addTask(task) { const tasks = readTasks(); const enriched = { ...task, status: ('status' in task ? task.status : task.done ? 'done' : 'todo') ?? 'todo', priority: ('priority' in task ? task.priority : undefined) ?? 'medium', done: ('status' in task ? task.status : task.done ? 'done' : 'todo') === 'done' }; writeTasks([...tasks, enriched]); }
+export function updateTask(id, patch) { writeTasks(readTasks().map(t => t.id === id ? { ...t, ...patch, done: (patch.status ?? t.status) === 'done' } : t)); }
 export function removeTask(id) { writeTasks(readTasks().filter(t => t.id !== id)); }

@@ -1,8 +1,8 @@
 {
-  "version": "2.3.3",
-  "uiVersion": "2.1.0",
+  "version": "2.4.0",
+  "uiVersion": "2.2.0",
   "engineVersion": "4.6.3",
-  "release": "SCHEDULE-DEPLOY-RACE-DOUBLE-PARTS-TIMEOUT-FIX",
+  "release": "PROFILE-HOMEWORK-KUG-SATURDAY-RESPONSIVE",
   "released": "2026-10-09",
-  "buildId": "8b54ecbe24579506"
+  "buildId": "90bfa026bc22b4d4"
 }

@@ -1,4 +1,4 @@
-# Almazov Schedule Hub 2.3.3
+# Almazov Schedule Hub 2.4.0
 
 Production-oriented full-stack schedule service for the Institute of Medical Education of the Almazov National Medical Research Centre.
 
