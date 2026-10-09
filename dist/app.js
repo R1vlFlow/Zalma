@@ -1,17 +1,19 @@
-import { PROGRAMS, sourceFor, sourcesFor } from './data/catalog.js?v=90bfa026bc22b4d4';
-import { groupsFor, streamForGroup } from './data/roster.js?v=90bfa026bc22b4d4';
-import { mondayOf, weekDates, formatDateRu, longDateRu, addDays, todayISO } from './core/date.js?v=90bfa026bc22b4d4';
-import { eventAppliesToGroup } from './core/filter.js?v=90bfa026bc22b4d4';
-import { loadSchedule, clearScheduleMemory } from './services/scheduleService.js?v=90bfa026bc22b4d4';
-import { addTask, readTasks, removeTask, updateTask } from './services/taskService.js?v=90bfa026bc22b4d4';
-import { readPersonalization, updatePersonalization, setAcademicProfile, subjectColorKey } from './services/personalizationStore.js?v=90bfa026bc22b4d4';
-import { applyTheme, cycleTheme, initTheme, themeMode } from './ui/theme.js?v=90bfa026bc22b4d4';
-import { FAQ } from './ui/faq.js?v=90bfa026bc22b4d4';
-import { createPersonalEvent, deletePersonalEvent, listPersonalEvents, updatePersonalEvent } from './services/eventService.js?v=90bfa026bc22b4d4';
-import { fileToAttachment } from './services/supportService.js?v=90bfa026bc22b4d4';
-import { createTicket, listTickets, getTicket, addTicketMessage } from './services/supportService.js?v=90bfa026bc22b4d4';
-import { localDate, localDateTimeToUtc, localTime, userTimeZone, localDateTimeInput } from './core/time.js?v=90bfa026bc22b4d4';
-import { scheduleToCalendarEvent } from './core/calendar.js?v=90bfa026bc22b4d4';
+import { PROGRAMS, sourceFor, sourcesFor } from './data/catalog.js?v=cac1dffbc9239c02';
+import { groupsFor, streamForGroup } from './data/roster.js?v=cac1dffbc9239c02';
+import { mondayOf, weekDates, formatDateRu, longDateRu, addDays, todayISO } from './core/date.js?v=cac1dffbc9239c02';
+import { eventAppliesToGroup } from './core/filter.js?v=cac1dffbc9239c02';
+import { loadSchedule, clearScheduleMemory } from './services/scheduleService.js?v=cac1dffbc9239c02';
+import { addTask, readTasks, removeTask, updateTask } from './services/taskService.js?v=cac1dffbc9239c02';
+import { readPersonalization, updatePersonalization, setAcademicProfile, subjectColorKey } from './services/personalizationStore.js?v=cac1dffbc9239c02';
+import { applyTheme, cycleTheme, initTheme, themeMode } from './ui/theme.js?v=cac1dffbc9239c02';
+import { FAQ } from './ui/faq.js?v=cac1dffbc9239c02';
+import { createPersonalEvent, deletePersonalEvent, listPersonalEvents, updatePersonalEvent } from './services/eventService.js?v=cac1dffbc9239c02';
+import { fileToAttachment } from './services/supportService.js?v=cac1dffbc9239c02';
+import { createTicket, listTickets, getTicket, addTicketMessage } from './services/supportService.js?v=cac1dffbc9239c02';
+import { localDate, localDateTimeToUtc, localTime, userTimeZone, localDateTimeInput } from './core/time.js?v=cac1dffbc9239c02';
+import { scheduleToCalendarEvent } from './core/calendar.js?v=cac1dffbc9239c02';
+import { enhanceControls, refreshControls } from './ui/customControls.js?v=cac1dffbc9239c02';
+import { deleteFileMaterial, getFileMaterial, listFileMaterials, materialScope, saveFileMaterial, MAX_MATERIAL_FILE_SIZE } from './services/materialStore.js?v=cac1dffbc9239c02';
 const DAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 const STATUS_LABEL = { planned: 'Запланировано', confirmed: 'Подтверждено', in_progress: 'В процессе', completed: 'Завершено', cancelled: 'Отменено' };
 const VIEW_LABEL = { day: 'День', workweek: 'Рабочая неделя', week: 'Неделя', month: 'Месяц', agenda: 'Agenda', list: 'Список' };
@@ -19,7 +21,7 @@ const DEFAULT_PROFILE = { program: '31.05.01', course: 1, group: '123' };
 const personalization = readPersonalization();
 const initial = readInitialProfile();
 let reloadSequence = 0;
-const state = { profile: initial, week: mondayOf(todayISO(userTimeZone())), focusDate: todayISO(userTimeZone()), events: [], official: [], personal: [], status: 'loading', message: 'Подготавливаем расписание…', search: '', type: 'all', statusFilter: 'all', categoryFilter: 'all', page: 'schedule', tasks: readTasks(), theme: themeMode(), faqQuery: '', faqCategory: 'Все', view: 'week', scheduleMode: 'regular', timezone: readTimezone(), double1: personalization.double1, double2: personalization.double2, taskSearch: '', taskFilterStatus: 'all', taskFilterSubject: 'all', resourceSearch: '', resourceSubject: 'all', resourceCategory: 'all', resourceType: 'all', personalization, avatarPresetDraft: personalization.avatarPreset, avatarDataDraft: personalization.avatarDataUrl, editingId: '', draft: false, undo: null, ticketList: [], ticketSelected: '', supportStatus: 'idle', kugData: null, kugStatus: 'loading' };
+const state = { profile: initial, week: mondayOf(todayISO(userTimeZone())), focusDate: todayISO(userTimeZone()), events: [], official: [], personal: [], status: 'loading', message: 'Подготавливаем расписание…', search: '', type: 'all', statusFilter: 'all', categoryFilter: 'all', page: 'schedule', tasks: readTasks(), theme: themeMode(), faqQuery: '', faqCategory: 'Все', view: 'week', scheduleMode: 'regular', timezone: readTimezone(), double1: personalization.double1, double2: personalization.double2, taskSearch: '', taskFilterStatus: 'all', taskFilterSubject: 'all', resourceSearch: '', resourceSubject: 'all', resourceCategory: 'all', resourceType: 'all', personalization, avatarPresetDraft: personalization.avatarPreset, avatarDataDraft: personalization.avatarDataUrl, fileMaterials: [], homePersonal: [], editingId: '', draft: false, undo: null, ticketList: [], ticketSelected: '', supportStatus: 'idle', kugData: null, kugStatus: 'loading' };
 function $(id) { const el = document.getElementById(id); if (!el)
     throw new Error(`Missing #${id}`); return el; }
 function esc(v) { return String(v).replace(/[&<>'"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#039;', '"': '&quot;' }[c])); }
@@ -143,8 +145,9 @@ async function reloadEvents() {
     renderShell();
     renderSchedule();
 }
-export async function boot() { initTheme(); loadAppearance(); applyAppearance(); ensureProfile(); renderShell(); bind(); render(); void loadKugData(); await reloadEvents(); render(); }
-function render() { renderShell(); renderProfileOptions(); renderSchedule(); renderTasks(); renderFaculties(); renderResources(); renderKug(); renderFaq(state.faqQuery); renderHome(); renderSupport(); renderSettings(); renderProfilePage(); }
+export async function boot() { initTheme(); loadAppearance(); applyAppearance(); ensureProfile(); enhanceControls(); renderShell(); bind(); render(); void loadKugData(); await reloadEvents(); await refreshHomePersonal(); await refreshUploadedMaterials(); render(); window.setInterval(() => { if (state.page === 'home')
+    renderHome(); }, 30000); }
+function render() { renderShell(); renderProfileOptions(); renderSchedule(); renderTasks(); renderFaculties(); renderResources(); renderKug(); renderFaq(state.faqQuery); renderHome(); renderSupport(); renderSettings(); renderProfilePage(); refreshControls(); }
 function nav(page) {
     const destination = document.getElementById(`page-${page}`);
     if (!destination?.classList.contains('page')) {
@@ -163,17 +166,55 @@ function nav(page) {
         renderTasks();
     if (page === 'faq')
         renderFaq(state.faqQuery);
-    if (page === 'home')
+    if (page === 'home') {
         renderHome();
+        void refreshHomePersonal();
+    }
+    if (page === 'resources') {
+        renderResources();
+        void refreshUploadedMaterials();
+    }
     if (page === 'support')
         loadSupport();
     if (page === 'settings')
         renderSettings();
     if (page === 'profilePage')
         renderProfilePage();
+    refreshControls();
 }
 function renderShell() { state.personalization = readPersonalization(); const p = PROGRAMS.find(x => x.code === state.profile.program); $('profileName').textContent = state.personalization.displayName || (state.profile.group ? `Группа ${state.profile.group}` : p?.shortTitle ?? 'Профиль'); $('profileMeta').textContent = `${p?.title ?? ''} · ${state.profile.course} курс${state.profile.group ? ` · группа ${state.profile.group}` : ''}${streamForGroup(state.profile.program, state.profile.group) ? ` · поток ${streamForGroup(state.profile.program, state.profile.group)}` : ''}`; applyAppearance(); document.querySelectorAll('.avatar').forEach(a => { a.textContent = state.personalization.avatarDataUrl ? '' : state.personalization.avatarPreset || '🎓'; a.style.backgroundImage = state.personalization.avatarDataUrl ? `url("${state.personalization.avatarDataUrl}")` : ''; a.style.backgroundSize = 'cover'; a.style.backgroundPosition = 'center'; }); $('syncLabel').textContent = state.message; $('statusDot').className = `${state.status === 'live' ? 'ok' : state.status === 'cache' ? 'cache' : state.status === 'loading' ? 'loading' : 'bad'}`; }
-function renderHome() { const events = getDisplayEvents(); const today = state.focusDate; const weekEvents = events.filter(e => { const d = localDate(e.startAt, state.timezone); return d >= startOfWeek(today) && d <= addDays(startOfWeek(today), 6); }); const upcoming = weekEvents.filter(e => localDate(e.startAt, state.timezone) >= today).slice(0, 5); $('homeContext').textContent = state.profile.group ? `${PROGRAMS.find(p => p.code === state.profile.program)?.title} · ${state.profile.course} курс · группа ${state.profile.group}` : 'Выберите группу'; $('homeStats').innerHTML = [['Занятий сегодня', String(weekEvents.filter(e => localDate(e.startAt, state.timezone) === today).length)], ['На неделе', String(weekEvents.length)], ['Личные события', String(state.personal.length)], ['Источник', state.status === 'live' ? 'LIVE' : state.status === 'cache' ? 'CACHE' : 'OFFLINE']].map(([a, b]) => `<div class="stat-card"><span>${a}</span><b>${b}</b></div>`).join(''); $('homeUpcoming').innerHTML = upcoming.length ? upcoming.map(e => `<article class="next-item"><div><span>${longDateRu(localDate(e.startAt, state.timezone))} · ${localTime(e.startAt, state.timezone)}</span><b>${esc(String(e.title ?? (('subject' in e) ? e.subject : '')))}</b><small>${esc(e.location || 'Без места')}</small></div><button class="btn small" data-open-event="${esc(e.id)}">Открыть</button></article>`).join('') : `<div class="empty-state compact card"><div class="empty-icon">◷</div><h3>Ближайших событий нет</h3><p>Создайте личную встречу или откройте другой период.</p></div>`; }
+function calendarPersonal(e) { return { id: e.id, kind: 'personal', title: e.title, description: e.description ?? '', category: e.category, status: e.status, startAt: e.startAt, endAt: e.endAt, timeZone: e.timeZone, allDay: e.allDay, location: e.location ?? '', meetingUrl: e.meetingUrl, attendees: e.attendees, recurrence: e.recurrence, seriesId: e.seriesId, readOnly: false }; }
+async function refreshHomePersonal() { try {
+    const today = todayISO(state.timezone);
+    state.homePersonal = await listPersonalEvents(localMidnightUtc(today), localMidnightUtc(addDays(today, 1)));
+}
+catch {
+    state.homePersonal = [];
+} if (state.page === 'home')
+    renderHome(); }
+function countdownLabel(milliseconds) { const minutes = Math.max(0, Math.floor(Math.abs(milliseconds) / 60000)); const days = Math.floor(minutes / 1440), hours = Math.floor((minutes % 1440) / 60), mins = minutes % 60; if (days)
+    return `${days} д ${hours} ч`; if (hours)
+    return `${hours} ч ${mins} мин`; return `${mins} мин`; }
+function renderHome() {
+    const today = todayISO(state.timezone), now = Date.now();
+    const official = state.official.filter(e => eventAppliesToGroup(e, { ...state.profile, stream: streamForGroup(state.profile.program, state.profile.group) })).map(e => scheduleToCalendarEvent(e, state.timezone));
+    const events = [...official, ...state.homePersonal.map(calendarPersonal)].sort((a, b) => a.startAt.localeCompare(b.startAt));
+    const weekEvents = events.filter(e => { const d = localDate(e.startAt, state.timezone); return d >= startOfWeek(today) && d <= addDays(startOfWeek(today), 6); });
+    const todayEvents = events.filter(e => localDate(e.startAt, state.timezone) === today || localDate(e.endAt, state.timezone) === today);
+    const todayClasses = todayEvents.filter(e => e.kind === 'schedule');
+    const active = todayClasses.find(e => Date.parse(e.startAt) <= now && Date.parse(e.endAt) > now);
+    // Use the entire official snapshot, not only today's range, so the hero still shows tomorrow's next class.
+    const next = events.filter(e => e.kind === 'schedule' && Date.parse(e.startAt) > now).sort((a, b) => a.startAt.localeCompare(b.startAt))[0];
+    const focus = active ?? next;
+    const focusTitle = focus ? String(focus.title ?? (('subject' in focus) ? focus.subject : '')) : '';
+    $('homeContext').textContent = state.profile.group ? `${PROGRAMS.find(p => p.code === state.profile.program)?.title} · ${state.profile.course} курс · группа ${state.profile.group}` : 'Выберите группу';
+    $('homeStats').innerHTML = [['Занятий сегодня', String(todayEvents.length)], ['На неделе', String(weekEvents.length)], ['Активных ДЗ', String(state.tasks.filter(t => (t.status ?? (t.done ? 'done' : 'todo')) !== 'done').length)], ['Источник', state.status === 'live' ? 'LIVE' : state.status === 'cache' ? 'CACHE' : state.status === 'partial' ? 'PARTIAL' : 'OFFLINE']].map(([a, b]) => `<div class="stat-card"><span>${a}</span><b>${b}</b></div>`).join('');
+    $('homeHero').innerHTML = focus ? `<div class="home-hero-copy"><span class="eyebrow">${active ? 'Сейчас идёт пара' : 'Следующая пара'}</span><h2>${esc(focusTitle)}</h2><p>${esc(focus.location || 'Аудитория не указана')} · ${esc(focus.kind === 'schedule' ? (focus.teacher || 'Преподаватель не указан') : 'Личное событие')}</p><div class="home-hero-chips"><span>${esc(focus.kind === 'schedule' ? String(focus.type ?? 'Занятие') : 'Личное')}</span><span>${esc(localTime(focus.startAt, state.timezone))}–${esc(localTime(focus.endAt, state.timezone))}</span><span>${esc(state.timezone)}</span></div></div><div class="home-countdown"><span>${active ? 'До конца' : 'До начала'}</span><strong id="homeCountdownValue">${countdownLabel((active ? Date.parse(focus.endAt) : Date.parse(focus.startAt)) - now)}</strong><small>${esc(longDateRu(focus ? localDate(focus.startAt, state.timezone) : today))}</small></div>` : `<div class="home-hero-copy"><span class="eyebrow">Сегодня</span><h2>Занятий больше нет</h2><p>В расписании не найдено будущих пар на сегодня.</p></div><div class="home-countdown"><span>Свободное время</span><strong>—</strong><small>${esc(longDateRu(today))}</small></div>`;
+    $('homeTodayTimeline').innerHTML = todayEvents.length ? todayEvents.map(e => `<article class="home-timeline-item"><span class="home-timeline-time">${e.allDay ? 'Весь день' : esc(localTime(e.startAt, state.timezone))}</span><div class="home-timeline-content"><b>${esc(String(e.title ?? (('subject' in e) ? e.subject : '')))}</b><small>${esc(e.location || 'Место не указано')}${e.kind === 'schedule' && e.teacher ? ` · ${esc(e.teacher)}` : ''}</small></div><div class="home-timeline-actions"><button class="btn small ghost" data-open-event="${esc(e.id)}">Открыть</button>${e.kind === 'schedule' ? `<button class="btn small" data-homework-from-event="${esc(e.id)}">Записать ДЗ</button>` : ''}</div></article>`).join('') : `<div class="empty-state compact"><p>На сегодня занятий нет или источник пока не содержит данных.</p><button class="btn" data-page="schedule">Открыть расписание</button></div>`;
+    const dueTasks = state.tasks.filter(t => (t.status ?? (t.done ? 'done' : 'todo')) !== 'done' && t.due && Number.isFinite(Date.parse(t.due))).sort((a, b) => Date.parse(a.due) - Date.parse(b.due)).slice(0, 3);
+    $('homeDeadlines').innerHTML = dueTasks.length ? dueTasks.map(t => { const late = Date.parse(t.due) < now; return `<article class="home-deadline ${late ? 'overdue' : ''}"><span class="home-deadline-mark">${late ? '!' : '◷'}</span><div><b>${esc(t.subject)}</b><p>${esc(t.text)}</p><small>${late ? 'Просрочено' : 'Сдать'} · ${esc(formatTaskDue(t.due))}</small></div><span class="priority-badge priority-${t.priority ?? 'medium'}">${priorityLabel(t.priority ?? 'medium')}</span></article>`; }).join('') : `<div class="empty-state compact"><p>Нет невыполненных заданий с установленным дедлайном.</p><button class="btn" data-action="add-task">＋ Добавить ДЗ</button></div>`;
+    $('homeUpcoming').innerHTML = weekEvents.filter(e => localDate(e.startAt, state.timezone) >= today).slice(0, 5).map(e => `<article class="next-item"><div><span>${longDateRu(localDate(e.startAt, state.timezone))} · ${localTime(e.startAt, state.timezone)}</span><b>${esc(String(e.title ?? (('subject' in e) ? e.subject : '')))}</b><small>${esc(e.location || 'Без места')}</small></div><button class="btn small" data-open-event="${esc(e.id)}">Открыть</button></article>`).join('') || `<div class="empty-state compact card"><p>Ближайших событий на неделе нет.</p></div>`;
+}
 function renderSchedule() {
     state.tasks = readTasks();
     // Empty state is rendered dynamically, so its absence on first render is normal.
@@ -281,12 +322,12 @@ function subjectColorControl(e) { if (e.kind !== 'schedule')
     return ''; const key = subjectColorKey(eventSubject(e)); const c = subjectColor(e) || '#7892bf'; return `<button type="button" class="subject-color-trigger" data-subject-color-trigger="${esc(key)}" title="Изменить цвет предмета" aria-label="Изменить цвет предмета ${esc(eventSubject(e))}" style="--subject-swatch:${c}">●</button>`; }
 function taskBadge(subject) { const key = subjectColorKey(subject); const n = state.tasks.filter(t => t.status !== 'done' && subjectColorKey(t.subject) === key).length; return n ? `<span class="homework-badge" title="Активных заданий: ${n}">ДЗ ${n}</span>` : ''; }
 function eventTitleRow(e, title) { return `<span class="event-title-row">${eventHalfMarkup(e)}<strong>${esc(String(title))}</strong>${taskBadge(title)}${subjectColorControl(e)}</span>`; }
-function eventHtml(e, date, top, height, left, width) { const isPersonal = e.kind === 'personal'; const title = e.title ?? (('subject' in e) ? e.subject : ''); const st = e.allDay ? 'Весь день' : localDate(e.startAt, state.timezone) === date ? localTime(e.startAt, state.timezone) : '00:00'; const en = e.allDay ? '' : localDate(e.endAt, state.timezone) === date ? localTime(e.endAt, state.timezone) : '24:00'; const status = e.status ?? (isPersonal ? 'planned' : undefined); const draggable = isPersonal ? ' draggable="true"' : ''; return `<article class="calendar-event ${isPersonal ? 'personal' : 'official'} status-${status ?? 'planned'}" data-event-id="${esc(e.id)}" data-event-kind="${e.kind}" data-open-event="${esc(e.id)}" role="button" aria-label="Открыть событие: ${esc(String(title))}"${draggable} tabindex="0" style="top:${top}px;height:${height}px;left:${left}%;width:${width}%;${subjectColor(e) ? `--subject-color:${subjectColor(e)};` : ''}"><div class="event-accent"></div><div class="event-time">${esc(st)}–${esc(en)}</div>${eventTitleRow(e, String(title))}<div class="event-meta">${esc(isPersonal ? (e.category || 'Личное') : (e.type === 'practice' ? 'ПЗ' : e.type === 'lecture' ? 'Лекция' : 'Занятие'))}${e.location ? ` · ${esc(e.location)}` : ''}</div>${status ? `<span class="event-status">${STATUS_LABEL[status]}</span>` : ''}${isPersonal ? '<span class="resize-handle" data-resize-event="true" aria-hidden="true"></span>' : ''}</article>`; }
-function renderMobile(events, dates) { return `<div class="mobile-days">${dates.map((d, i) => `<section class="mobile-day ${d === todayISO(state.timezone) ? 'today' : ''}" data-drop-date="${d}"><header><div><span>${weekdayLabel(d)}</span><h3>${longDateRu(d)}</h3></div><b>${visibleSegments(events, d).length}</b></header>${kugTags(d) ? `<div class="kug-mobile-day-tags">${kugTags(d)}</div>` : ''}<div class="mobile-event-list">${visibleSegments(events, d).map(e => { const st = e.allDay ? 'Весь день' : localDate(e.startAt, state.timezone) === d ? localTime(e.startAt, state.timezone) : '00:00'; const en = e.allDay ? '' : localDate(e.endAt, state.timezone) === d ? localTime(e.endAt, state.timezone) : '24:00'; const title = e.title ?? (('subject' in e) ? e.subject : ''); return `<button class="mobile-event ${e.kind === 'personal' ? 'personal' : 'official'}" data-open-event="${esc(e.id)}" style="${subjectColor(e) ? `--subject-color:${subjectColor(e)};` : ''}"><span class="mobile-event-time">${e.allDay ? 'Весь день' : `${st}–${en}`}</span><span class="mobile-event-title">${eventHalfMarkup(e, true)}<strong>${esc(String(title))}</strong>${taskBadge(String(title))}</span><small>${esc(e.location || '')} ${e.kind === 'personal' ? '· личное' : '· официальное'}</small></button>`; }).join('') || '<div class="day-empty">Свободный день</div>'}</div></section>`).join('')}</div>`; }
+function eventHtml(e, date, top, height, left, width) { const isPersonal = e.kind === 'personal'; const title = e.title ?? (('subject' in e) ? e.subject : ''); const st = e.allDay ? 'Весь день' : localDate(e.startAt, state.timezone) === date ? localTime(e.startAt, state.timezone) : '00:00'; const en = e.allDay ? '' : localDate(e.endAt, state.timezone) === date ? localTime(e.endAt, state.timezone) : '24:00'; const status = e.status ?? (isPersonal ? 'planned' : undefined); const draggable = isPersonal ? ' draggable="true"' : ''; return `<article class="calendar-event ${isPersonal ? 'personal' : 'official'} status-${status ?? 'planned'}" data-event-id="${esc(e.id)}" data-event-kind="${e.kind}" data-open-event="${esc(e.id)}" role="button" aria-label="Открыть событие: ${esc(String(title))}"${draggable} tabindex="0" style="top:${top}px;height:${height}px;left:${left}%;width:${width}%;${subjectColor(e) ? `--subject-color:${subjectColor(e)};` : ''}"><div class="event-accent"></div><div class="event-time">${esc(st)}–${esc(en)}</div>${eventTitleRow(e, String(title))}<div class="event-meta">${esc(isPersonal ? (e.category || 'Личное') : (e.type === 'practice' ? 'ПЗ' : e.type === 'lecture' ? 'Лекция' : 'Занятие'))}${e.location ? ` · ${esc(e.location)}` : ''}</div>${!isPersonal ? `<button type="button" class="event-homework-link" data-homework-from-event="${esc(e.id)}">＋ Записать ДЗ</button>` : ''}${status ? `<span class="event-status">${STATUS_LABEL[status]}</span>` : ''}${isPersonal ? '<span class="resize-handle" data-resize-event="true" aria-hidden="true"></span>' : ''}</article>`; }
+function renderMobile(events, dates) { return `<div class="mobile-days">${dates.map(d => `<section class="mobile-day ${d === todayISO(state.timezone) ? 'today' : ''}" data-drop-date="${d}"><header><div><span>${weekdayLabel(d)}</span><h3>${longDateRu(d)}</h3></div><b>${visibleSegments(events, d).length}</b></header>${kugTags(d) ? `<div class="kug-mobile-day-tags">${kugTags(d)}</div>` : ''}<div class="mobile-event-list">${visibleSegments(events, d).map(e => { const st = e.allDay ? 'Весь день' : localDate(e.startAt, state.timezone) === d ? localTime(e.startAt, state.timezone) : '00:00'; const en = e.allDay ? '' : localDate(e.endAt, state.timezone) === d ? localTime(e.endAt, state.timezone) : '24:00'; const title = e.title ?? (('subject' in e) ? e.subject : ''); return `<div class="mobile-event-wrap"><button class="mobile-event ${e.kind === 'personal' ? 'personal' : 'official'}" data-open-event="${esc(e.id)}" style="${subjectColor(e) ? `--subject-color:${subjectColor(e)};` : ''}"><span class="mobile-event-time">${e.allDay ? 'Весь день' : `${st}–${en}`}</span><span class="mobile-event-title">${eventHalfMarkup(e, true)}<strong>${esc(String(title))}</strong>${taskBadge(String(title))}</span><small>${esc(e.location || '')} ${e.kind === 'personal' ? '· личное' : '· официальное'}</small></button>${e.kind === 'schedule' ? `<button type="button" class="mobile-homework-link" data-homework-from-event="${esc(e.id)}">＋ Записать ДЗ</button>` : ''}</div>`; }).join('') || '<div class="day-empty">Свободный день</div>'}</div></section>`).join('')}</div>`; }
 function renderMonth(events) { const from = startOfWeek(monthStart(state.focusDate)); const to = addDays(startOfWeek(monthEnd(state.focusDate)), 6); const dates = []; for (let d = from; d <= to; d = addDays(d, 1))
     dates.push(d); return `<div class="month-grid">${DAYS.map(d => `<div class="month-head">${d}</div>`).join('')}${dates.map(d => `<button class="month-cell ${d.slice(0, 7) !== state.focusDate.slice(0, 7) ? 'muted-month' : ''} ${d === todayISO(state.timezone) ? 'today' : ''}" data-jump-date="${d}"><span>${d.slice(8, 10)}</span><div class="month-kug-tags">${kugTags(d)}</div><div>${visibleSegments(events, d).slice(0, 4).map(e => `<em class="month-event ${e.kind === 'personal' ? 'personal' : ''}" style="${subjectColor(e) ? `--subject-color:${subjectColor(e)};` : ''}">${eventHalfMarkup(e, true)}${e.allDay ? 'Весь день' : localTime(e.startAt, state.timezone)} ${esc(String(e.title ?? (('subject' in e) ? e.subject : '')))} ${taskBadge(eventSubject(e))}</em>`).join('')}</div>${visibleSegments(events, d).length > 4 ? `<small>+${visibleSegments(events, d).length - 4}</small>` : ''}</button>`).join('')}</div>`; }
-function renderAgenda(events) { const dates = rangeDates().dates; return `<div class="agenda-list">${state.scheduleMode === 'combined' ? dates.map(d => kugTags(d) ? `<div class="kug-agenda-day"><b>${esc(longDateRu(d))}</b>${kugTags(d)}</div>` : '').join('') : ''}${dates.flatMap(d => visibleSegments(events, d).map(e => ({ d, e }))).sort((a, b) => a.e.startAt.localeCompare(b.e.startAt)).map(({ d, e }) => `<article class="agenda-item card" data-open-event="${esc(e.id)}" role="button" tabindex="0" style="${subjectColor(e) ? `--subject-color:${subjectColor(e)};` : ''}"><time>${esc(longDateRu(d))}<br><b>${e.allDay ? 'Весь день' : localTime(e.startAt, state.timezone)}</b></time><div><span class="eyebrow">${e.kind === 'personal' ? 'Личное' : 'Официальное'}</span><h3>${eventHalfMarkup(e, true)}${esc(String(e.title ?? (('subject' in e) ? e.subject : '')))} ${taskBadge(eventSubject(e))}</h3><p>${esc(e.location || 'Без места')} · ${e.category ? esc(e.category) : e.type}</p></div><div><span class="status-badge">${STATUS_LABEL[e.status ?? 'planned']}</span></div></article>`).join('') || '<div class="empty-state card"><h3>Пустая повестка</h3><p>В выбранном периоде нет событий.</p></div>'}</div>`; }
-function renderList(events) { return `<div class="event-table card"><div class="table-head"><span>Дата</span><span>Время</span><span>Событие</span><span>Тип</span><span>Статус</span></div>${events.map(e => `<div class="table-row" data-open-event="${esc(e.id)}" role="button" tabindex="0" style="${subjectColor(e) ? `--subject-color:${subjectColor(e)};` : ''}"><span>${esc(localDate(e.startAt, state.timezone))}${state.scheduleMode === 'combined' && kugTags(localDate(e.startAt, state.timezone)) ? `<small class="list-kug-tags">${kugTags(localDate(e.startAt, state.timezone))}</small>` : ''}</span><span>${e.allDay ? 'Весь день' : `${esc(localTime(e.startAt, state.timezone))}–${esc(localTime(e.endAt, state.timezone))}`}</span><strong class="list-event-title">${eventHalfMarkup(e, true)}${esc(String(e.title ?? (('subject' in e) ? e.subject : '')))}</strong><span>${e.kind === 'personal' ? 'Личное' : e.type}</span><span>${STATUS_LABEL[e.status ?? 'planned']}</span></div>`).join('') || '<div class="empty-table">Нет событий</div>'}</div>`; }
+function renderAgenda(events) { const dates = rangeDates().dates; return `<div class="agenda-list">${state.scheduleMode === 'combined' ? dates.map(d => kugTags(d) ? `<div class="kug-agenda-day"><b>${esc(longDateRu(d))}</b>${kugTags(d)}</div>` : '').join('') : ''}${dates.flatMap(d => visibleSegments(events, d).map(e => ({ d, e }))).sort((a, b) => a.e.startAt.localeCompare(b.e.startAt)).map(({ d, e }) => `<article class="agenda-item card" data-open-event="${esc(e.id)}" role="button" tabindex="0" style="${subjectColor(e) ? `--subject-color:${subjectColor(e)};` : ''}"><time>${esc(longDateRu(d))}<br><b>${e.allDay ? 'Весь день' : localTime(e.startAt, state.timezone)}</b></time><div><span class="eyebrow">${e.kind === 'personal' ? 'Личное' : 'Официальное'}</span><h3>${eventHalfMarkup(e, true)}${esc(String(e.title ?? (('subject' in e) ? e.subject : '')))} ${taskBadge(eventSubject(e))}</h3><p>${esc(e.location || 'Без места')} · ${e.category ? esc(e.category) : e.type}</p>${e.kind === 'schedule' ? `<button class="btn small event-homework-link" data-homework-from-event="${esc(e.id)}">＋ Записать ДЗ</button>` : ''}</div><div><span class="status-badge">${STATUS_LABEL[e.status ?? 'planned']}</span></div></article>`).join('') || '<div class="empty-state card"><h3>Пустая повестка</h3><p>В выбранном периоде нет событий.</p></div>'}</div>`; }
+function renderList(events) { return `<div class="event-table card"><div class="table-head"><span>Дата</span><span>Время</span><span>Событие</span><span>Тип</span><span>Статус</span></div>${events.map(e => `<div class="table-row" data-open-event="${esc(e.id)}" role="button" tabindex="0" style="${subjectColor(e) ? `--subject-color:${subjectColor(e)};` : ''}"><span>${esc(localDate(e.startAt, state.timezone))}${state.scheduleMode === 'combined' && kugTags(localDate(e.startAt, state.timezone)) ? `<small class="list-kug-tags">${kugTags(localDate(e.startAt, state.timezone))}</small>` : ''}</span><span>${e.allDay ? 'Весь день' : `${esc(localTime(e.startAt, state.timezone))}–${esc(localTime(e.endAt, state.timezone))}`}</span><strong class="list-event-title">${eventHalfMarkup(e, true)}${esc(String(e.title ?? (('subject' in e) ? e.subject : '')))}${e.kind === 'schedule' ? `<button type="button" class="event-homework-link" data-homework-from-event="${esc(e.id)}">＋ ДЗ</button>` : ''}</strong><span>${e.kind === 'personal' ? 'Личное' : e.type}</span><span>${STATUS_LABEL[e.status ?? 'planned']}</span></div>`).join('') || '<div class="empty-table">Нет событий</div>'}</div>`; }
 function taskStatusLabel(status) { return status === 'todo' ? 'К выполнению' : status === 'in_progress' ? 'В процессе' : 'Завершено'; }
 function priorityLabel(priority) { return priority === 'high' ? 'Высокий' : priority === 'low' ? 'Низкий' : 'Средний'; }
 function formatTaskDue(value) { if (!value)
@@ -306,15 +347,35 @@ function renderTasks() {
 }
 function renderFaculties() { $('facultyGrid').innerHTML = PROGRAMS.map(p => { const published = p.publishedCourses.length; return `<article class="faculty-card card"><span class="eyebrow">${p.code}</span><h3>${esc(p.title)}</h3><p>${esc(p.faculty)}</p><div class="faculty-tags"><span>1–6 курсы</span><span>${published}/6 опубликовано</span></div><button class="btn small primary" data-pick-program="${p.code}">Открыть расписание</button></article>`; }).join(''); }
 function resourceCategoryFor(title) { const s = title.toLocaleLowerCase('ru-RU'); if (/лекц|lecture/.test(s))
-    return 'lecture'; if (/практик|семинар|\bпз\b|practice/.test(s))
+    return 'lecture'; if (/практик|семинар|\bpз\b|practice/.test(s))
     return 'practice'; if (/лаборатор|lab/.test(s))
     return 'lab'; if (/учебник|книг|book/.test(s))
     return 'book'; return 'link'; }
 function resourceCategoryLabel(category) { return { lecture: 'Лекции', practice: 'Практика', lab: 'Лабораторные', book: 'Учебники / книги', link: 'Полезные ссылки' }[category] ?? 'Полезные ссылки'; }
+function resourceTypeFromName(name, url = '') { const n = (name || url).toLowerCase().split(/[?#]/)[0] ?? ''; if (/\.pdf$/.test(n))
+    return 'pdf'; if (/\.docx?$/.test(n))
+    return 'docx'; if (/\.xlsx?$/.test(n))
+    return 'xlsx'; if (/\.pptx?$/.test(n))
+    return 'pptx'; if (/\.zip$/.test(n))
+    return 'zip'; if (/\.(?:jpg|jpeg|png)$/.test(n))
+    return 'image'; return 'link'; }
+function resourceTypeLabel(type) { return { pdf: 'PDF', docx: 'DOCX', xlsx: 'XLSX', pptx: 'PPTX', zip: 'ZIP', image: 'JPG / PNG', link: 'Ссылка' }[type] ?? type.toUpperCase(); }
+async function refreshUploadedMaterials() { try {
+    state.fileMaterials = await listFileMaterials(materialScope(state.profile.program, state.profile.course, state.profile.group));
+    if (navigator.storage?.persist)
+        void navigator.storage.persist().catch(() => false);
+}
+catch (error) {
+    state.fileMaterials = [];
+    console.warn('IndexedDB materials unavailable', error);
+} if (state.page === 'resources')
+    renderResources(); }
+function subjectChoices() { return Array.from(new Set([...state.official.map(e => e.subject), ...readTasks().map(t => t.subject), ...state.personalization.materials.map(m => m.subject), ...state.fileMaterials.map(m => m.subject), ...PROGRAMS.flatMap(p => p.scheduleCourses.map(c => `${p.shortTitle} · ${c} курс`))].filter(Boolean))).sort((a, b) => a.localeCompare(b, 'ru')); }
 function getResourceItems() {
-    const official = PROGRAMS.flatMap(p => p.scheduleCourses.flatMap(course => sourcesFor(p.code, course).filter(s => s.status === 'published' || s.status === 'verified').map(s => ({ id: `official:${s.id}`, title: s.title, subject: `${p.shortTitle} · ${course} курс`, category: resourceCategoryFor(s.title), description: s.notes || 'Официальный документ или источник учебного расписания.', url: s.url, tags: [resourceCategoryLabel(resourceCategoryFor(s.title)), 'Официальный'], helpfulness: undefined, type: /\.pdf(?:$|\?)/i.test(s.url) ? 'pdf' : 'link', official: true }))));
-    const personal = state.personalization.materials.map(m => ({ ...m, tags: m.tags ?? [], type: /\.pdf(?:$|\?)/i.test(m.url) ? 'pdf' : 'link', official: false }));
-    return [...official, ...personal];
+    const official = PROGRAMS.flatMap(p => p.scheduleCourses.flatMap(course => sourcesFor(p.code, course).filter(s => s.status === 'published' || s.status === 'verified').map(s => ({ id: `official:${s.id}`, title: s.title, subject: `${p.shortTitle} · ${course} курс`, category: resourceCategoryFor(s.title), description: s.notes || 'Официальный документ или источник учебного расписания.', url: s.url, tags: [resourceCategoryLabel(resourceCategoryFor(s.title)), 'Официальный'], helpfulness: undefined, type: resourceTypeFromName('', s.url), official: true, fileMaterial: false }))));
+    const personal = state.personalization.materials.map(m => ({ ...m, tags: m.tags ?? [], type: resourceTypeFromName('', m.url), official: false, fileMaterial: false }));
+    const uploaded = state.fileMaterials.map(m => ({ id: m.id, title: m.title, subject: m.subject, category: m.category, description: m.description, url: '', tags: m.tags, type: resourceTypeFromName(m.fileName), official: false, fileMaterial: true, fileName: m.fileName, size: m.size, createdAt: m.createdAt }));
+    return [...official, ...personal, ...uploaded];
 }
 function renderResources() {
     const items = getResourceItems();
@@ -324,15 +385,19 @@ function renderResources() {
     subjectSel.innerHTML = '<option value="all">Все предметы и курсы</option>' + subjects.map(x => `<option value="${esc(x)}">${esc(x)}</option>`).join('');
     subjectSel.value = subjects.includes(chosen) ? chosen : 'all';
     const q = state.resourceSearch.trim().toLocaleLowerCase('ru-RU');
-    const filtered = items.filter(x => (state.resourceSubject === 'all' || x.subject === state.resourceSubject) && (state.resourceCategory === 'all' || x.category === state.resourceCategory) && (state.resourceType === 'all' || x.type === state.resourceType) && (!q || `${x.title} ${x.description} ${x.subject} ${x.category}`.toLocaleLowerCase('ru-RU').includes(q)));
+    const filtered = items.filter(x => (state.resourceSubject === 'all' || x.subject === state.resourceSubject) && (state.resourceCategory === 'all' || x.category === state.resourceCategory) && (state.resourceType === 'all' || x.type === state.resourceType) && (!q || `${x.title} ${x.description} ${x.subject} ${x.category} ${(x.tags ?? []).join(' ')} ${x.fileName ?? ''}`.toLocaleLowerCase('ru-RU').includes(q)));
     const groups = new Map();
     for (const item of filtered) {
         const group = groups.get(item.subject) ?? [];
         group.push(item);
         groups.set(item.subject, group);
     }
-    $('resourceList').innerHTML = filtered.length ? Array.from(groups.entries()).map(([subject, rows]) => `<section class="resource-subject-group"><header><div><p class="eyebrow">Предмет / курс</p><h2>${esc(subject)}</h2></div><span class="chip">${rows.length} материалов</span></header><div class="resource-card-grid">${rows.map(item => `<article class="resource-card card" style="--resource-subject-color:${state.personalization.subjectColors[subjectColorKey(item.subject)] || 'var(--accent)'}"><div class="resource-icon ${item.type === 'pdf' ? 'pdf' : 'link'}">${item.type === 'pdf' ? 'PDF' : '↗'}</div><div class="resource-main"><div class="resource-card-tags"><span class="resource-category">${resourceCategoryLabel(item.category)}</span><span class="resource-type">${item.type === 'pdf' ? 'PDF' : 'Ссылка'}</span>${item.official ? '<span class="resource-origin">Официальный источник</span>' : '<span class="resource-origin personal-resource">Мой материал</span>'}${(item.tags ?? []).map(tag => `<span class="resource-tag">${esc(tag)}</span>`).join('')}${item.helpfulness ? `<span class="resource-rating" aria-label="Полезность ${item.helpfulness} из 5">★ ${item.helpfulness}/5</span>` : ''}</div><h3>${esc(item.title)}</h3><p>${esc(item.description)}</p><small>${esc(item.subject)}</small></div><div class="resource-card-actions"><a class="btn small primary" href="${esc(item.url)}" target="_blank" rel="noopener noreferrer">${item.type === 'pdf' ? 'Открыть PDF ↗' : 'Открыть ↗'}</a>${item.type === 'pdf' ? `<a class="btn small" href="${esc(item.url)}" target="_blank" rel="noopener noreferrer" download>Скачать</a>` : ''}${!item.official ? `<button class="btn small danger" data-material-delete="${esc(item.id)}">Удалить</button>` : ''}</div></article>`).join('')}</div></section>`).join('') : `<div class="empty-state card"><div class="empty-icon">▤</div><h3>Материалы не найдены</h3><p>Поменяйте фильтры или добавьте свою ссылку на учебный ресурс.</p><button class="btn primary" data-action="new-material">＋ Добавить материал</button></div>`;
+    $('resourceList').innerHTML = filtered.length ? Array.from(groups.entries()).map(([subject, rows]) => `<section class="resource-subject-group"><header><div><p class="eyebrow">Предмет / курс</p><h2>${esc(subject)}</h2></div><span class="chip">${rows.length} материалов</span></header><div class="resource-card-grid">${rows.map(item => `<article class="resource-card card ${item.fileMaterial ? 'uploaded-resource' : ''}" style="--resource-subject-color:${state.personalization.subjectColors[subjectColorKey(item.subject)] || 'var(--accent)'}"><div class="resource-icon ${item.type === 'pdf' ? 'pdf' : item.fileMaterial ? 'file' : 'link'}">${esc(resourceTypeLabel(item.type))}</div><div class="resource-main"><div class="resource-card-tags"><span class="resource-category">${resourceCategoryLabel(item.category)}</span><span class="resource-type">${esc(resourceTypeLabel(item.type))}</span>${item.official ? '<span class="resource-origin">Официальный источник</span>' : item.fileMaterial ? '<span class="resource-origin personal-resource">Файл на устройстве</span>' : '<span class="resource-origin personal-resource">Моя ссылка</span>'}${(item.tags ?? []).map(tag => `<span class="resource-tag">${esc(tag)}</span>`).join('')}${item.helpfulness ? `<span class="resource-rating" aria-label="Полезность ${item.helpfulness} из 5">★ ${item.helpfulness}/5</span>` : ''}</div><h3>${esc(item.title)}</h3><p>${esc(item.description || 'Описание не добавлено.')}</p><small>${esc(item.fileName ? `${item.fileName} · ${formatBytes(item.size ?? 0)}` : item.subject)}</small></div><div class="resource-card-actions">${item.fileMaterial ? `<button class="btn small primary" data-material-download="${esc(item.id)}">Скачать ↓</button><button class="btn small" data-material-open="${esc(item.id)}">Открыть ↗</button><button class="btn small danger" data-material-delete="${esc(item.id)}">Удалить</button>` : `<a class="btn small primary" href="${esc(item.url)}" target="_blank" rel="noopener noreferrer">${item.type === 'pdf' ? 'Открыть PDF ↗' : 'Открыть ↗'}</a>${item.type === 'pdf' ? `<a class="btn small" href="${esc(item.url)}" target="_blank" rel="noopener noreferrer" download>Скачать</a>` : ''}${!item.official ? `<button class="btn small danger" data-material-delete="${esc(item.id)}">Удалить</button>` : ''}`}</div></article>`).join('')}</div></section>`).join('') : `<div class="empty-state card"><div class="empty-icon">▤</div><h3>Материалы не найдены</h3><p>Поменяйте фильтры, добавьте ссылку или загрузите файл в локальную базу знаний.</p><div class="empty-actions"><button class="btn" data-action="new-material">＋ Добавить ссылку</button><button class="btn primary" data-action="upload-material">⇧ Загрузить материал</button></div></div>`;
+    refreshControls();
 }
+function formatBytes(bytes) { if (bytes < 1024)
+    return `${bytes} Б`; if (bytes < 1024 * 1024)
+    return `${(bytes / 1024).toFixed(0)} КБ`; return `${(bytes / (1024 * 1024)).toFixed(1)} МБ`; }
 function kugDay(value) { const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value); return match ? `${match[3]}.${match[2]}.${match[1]}` : value; }
 function kugSourceStatus(status) { return status === 'verified-bootstrap' ? 'Базовый график · проверьте актуальный документ' : status === 'source-linked-pending-sync' ? 'Документ найден · данные ожидают синхронизации' : status === 'published' ? 'Опубликовано · источник доступен' : 'Статус источника не подтверждён'; }
 function renderKug() {
@@ -436,7 +501,7 @@ else {
 } }
 function ticketStatusLabel(s) { return { new: 'Новое', in_progress: 'В работе', waiting_user: 'Ожидает ответа', resolved: 'Решено', closed: 'Закрыто' }[s] ?? s; }
 function renderSkeletonCards(n) { return `<div class="skeleton-stack">${Array.from({ length: n }, () => '<div class="skeleton-card"></div>').join('')}</div>`; }
-function openModal(id) { const modal = $(id); closeAllModals(); modal.classList.add('open'); modal.setAttribute('aria-hidden', 'false'); document.body.classList.add('modal-open'); const focus = modal.querySelector('button,select,input,textarea'); focus?.focus(); }
+function openModal(id) { const modal = $(id); closeAllModals(); refreshControls(); modal.classList.add('open'); modal.setAttribute('aria-hidden', 'false'); document.body.classList.add('modal-open'); const focus = modal.querySelector('.ui-select-trigger,.ui-date-trigger,button:not([disabled]),input:not([type=hidden]),textarea'); focus?.focus(); }
 function closeModal(id) { const modal = document.getElementById(id); if (!modal)
     return; modal.classList.remove('open'); modal.setAttribute('aria-hidden', 'true'); if (!document.querySelector('.modal-backdrop.open'))
     document.body.classList.remove('modal-open'); }
@@ -482,6 +547,8 @@ async function saveProfile() {
     clearScheduleMemory();
     render();
     await reloadEvents();
+    await refreshUploadedMaterials();
+    await refreshHomePersonal();
     render();
 }
 async function cropAvatar(file) { if (file.size > 8 * 1024 * 1024)
@@ -506,7 +573,9 @@ finally {
     URL.revokeObjectURL(url);
 } }
 function prepareTaskSubjectOptions() { const subjects = Array.from(new Set([...state.official.map(e => e.subject), ...readTasks().map(t => t.subject)].filter(Boolean))).sort((a, b) => a.localeCompare(b, 'ru')); $('taskSubjectOptions').innerHTML = subjects.map(x => `<option value="${esc(x)}"></option>`).join(''); }
-function openTask() { $('taskSubject').value = ''; $('taskText').value = ''; $('taskDate').value = ''; $('taskPriority').value = 'medium'; $('taskLink').value = ''; $('taskAttachment').value = ''; $('taskNotice').textContent = ''; prepareTaskSubjectOptions(); openModal('taskModal'); }
+function openTask(subjectPrefill = '', duePrefill = '') { $('taskSubject').value = subjectPrefill; $('taskText').value = ''; $('taskDate').value = duePrefill; $('taskPriority').value = 'medium'; $('taskLink').value = ''; $('taskAttachment').value = ''; $('taskNotice').textContent = subjectPrefill ? (duePrefill ? `Предмет выбран автоматически. Дедлайн подставлен по следующему занятию: ${formatTaskDue(duePrefill)}.` : 'Предмет выбран автоматически. Следующее занятие не найдено — задайте дедлайн вручную.') : ''; $('taskModalTitle').textContent = subjectPrefill ? `Записать ДЗ · ${subjectPrefill}` : 'Новое задание'; prepareTaskSubjectOptions(); refreshControls(); openModal('taskModal'); }
+function openTaskFromEvent(id) { const clicked = state.events.find(e => e.id === id) || getDisplayEvents().find(e => e.id === id); if (!clicked || clicked.kind !== 'schedule')
+    return; const subject = eventSubject(clicked), now = Date.now(), threshold = Math.max(now, Date.parse(clicked.startAt) + 1000); const next = getDisplayEvents().filter(e => e.kind === 'schedule' && subjectColorKey(eventSubject(e)) === subjectColorKey(subject) && Date.parse(e.startAt) >= threshold).sort((a, b) => a.startAt.localeCompare(b.startAt))[0]; openTask(subject, next ? localDateTimeInput(next.startAt, state.timezone) : ''); }
 function fileAsDataUrl(file) { return new Promise((resolve, reject) => { const reader = new FileReader(); reader.onerror = () => reject(new Error('Не удалось прочитать файл.')); reader.onload = () => typeof reader.result === 'string' ? resolve(reader.result) : reject(new Error('Неверный формат файла.')); reader.readAsDataURL(file); }); }
 async function saveTask() {
     const subject = $('taskSubject').value.trim(), text = $('taskText').value.trim(), link = $('taskLink').value.trim(), file = ($('taskAttachment').files ?? [])[0];
@@ -555,6 +624,70 @@ function saveMaterial() { const title = $('materialTitle').value.trim(), subject
     $('materialNotice').textContent = 'Укажите корректный URL, начинающийся с http:// или https://.';
     return;
 } const material = { id: crypto.randomUUID(), title, subject, category, description, url, tags, helpfulness: rating >= 1 && rating <= 5 ? rating : undefined, createdAt: new Date().toISOString() }; state.personalization = updatePersonalization({ materials: [...state.personalization.materials, material] }); closeModal('materialModal'); renderResources(); toast('Материал добавлен в базу знаний'); }
+function openMaterialUpload() {
+    const sel = $('fileMaterialSubject');
+    sel.innerHTML = subjectChoices().map(x => `<option value="${esc(x)}">${esc(x)}</option>`).join('');
+    const current = `${PROGRAMS.find(p => p.code === state.profile.program)?.shortTitle ?? 'ЛД'} · ${state.profile.course} курс`;
+    sel.value = subjectChoices().includes(current) ? current : subjectChoices()[0] ?? '';
+    for (const id of ['fileMaterialTitle', 'fileMaterialDescription', 'fileMaterialTags'])
+        $(id).value = '';
+    $('fileMaterialCategory').value = 'lecture';
+    $('fileMaterialInput').value = '';
+    $('fileMaterialSelected').textContent = 'Файл не выбран.';
+    $('fileMaterialNotice').textContent = '';
+    openModal('materialUploadModal');
+}
+function updateSelectedFile(file) { const input = $('fileMaterialInput'); if (file && (!file.name.includes('.') || !/^.{1,240}$/.test(file.name))) {
+    $('fileMaterialNotice').textContent = 'Проверьте имя файла.';
+    return;
+} if (file && file.size > MAX_MATERIAL_FILE_SIZE) {
+    $('fileMaterialNotice').textContent = 'Файл больше 25 МБ. Выберите файл меньшего размера.';
+    input.value = '';
+    return;
+} if (file) {
+    $('fileMaterialSelected').textContent = `${file.name} · ${formatBytes(file.size)}`;
+    const title = $('fileMaterialTitle');
+    if (!title.value.trim())
+        title.value = file.name.replace(/\.[^.]+$/, '');
+    $('fileMaterialNotice').textContent = '';
+} }
+async function saveUploadedMaterial() { const file = ($('fileMaterialInput').files ?? [])[0]; const title = $('fileMaterialTitle').value.trim(); const subject = $('fileMaterialSubject').value; const category = $('fileMaterialCategory').value; const description = $('fileMaterialDescription').value.trim(); const tags = $('fileMaterialTags').value.split(',').map(x => x.trim()).filter(Boolean).slice(0, 12); if (!file) {
+    $('fileMaterialNotice').textContent = 'Выберите файл или перетащите его в область загрузки.';
+    return;
+} if (title.length < 2 || !subject) {
+    $('fileMaterialNotice').textContent = 'Укажите название и предмет.';
+    return;
+} try {
+    await saveFileMaterial({ file, title, subject, category, description, tags, program: state.profile.program, course: state.profile.course, group: state.profile.group, scope: materialScope(state.profile.program, state.profile.course, state.profile.group) });
+    closeModal('materialUploadModal');
+    await refreshUploadedMaterials();
+    renderResources();
+    toast('Материал сохранён в IndexedDB этого устройства.');
+}
+catch (error) {
+    $('fileMaterialNotice').textContent = error instanceof Error ? error.message : 'Не удалось сохранить файл.';
+} }
+async function downloadUploadedMaterial(id, open = false) { try {
+    const item = await getFileMaterial(id);
+    if (!item)
+        throw new Error('Файл не найден в локальном хранилище.');
+    const url = URL.createObjectURL(item.blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    if (!open)
+        anchor.download = item.fileName;
+    else
+        anchor.removeAttribute('download');
+    anchor.target = open ? '_blank' : '_self';
+    anchor.rel = 'noopener noreferrer';
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
+catch (error) {
+    toast(error instanceof Error ? error.message : 'Не удалось открыть файл.', 'error');
+} }
 function readEventForm() { const title = $('eventTitle').value.trim(), start = $('eventStart').value, end = $('eventEnd').value, tz = $('eventTimezone').value; if (!title) {
     setEventNotice('Введите название события.');
     return null;
@@ -704,7 +837,7 @@ function openEventById(id) { const e = state.events.find(x => x.id === id); if (
 else {
     openEventDetail(e);
 } }
-function openEventDetail(e) { $('detailTitle').textContent = String(e.title ?? (('subject' in e) ? e.subject : '')); $('detailBody').innerHTML = `<div class="detail-grid"><span>Дата</span><b>${esc(longDateRu(localDate(e.startAt, state.timezone)))}</b><span>Время</span><b>${esc(e.allDay ? 'Весь день' : `${localTime(e.startAt, state.timezone)}–${localTime(e.endAt, state.timezone)}`)}</b><span>Часовой пояс</span><b>${esc(state.timezone)}</b><span>Тип</span><b>${esc(e.kind === 'personal' ? 'Личное' : String(e.type ?? 'Занятие'))}</b><span>Место</span><b>${esc(e.location || '—')}</b><span>Статус</span><b>${esc(STATUS_LABEL[e.status ?? 'planned'])}</b><span>Описание</span><p>${esc(e.description || '—')}</p></div>${e.kind === 'personal' ? '<div class="detail-actions"><button class="btn primary" data-action="edit-opened">Изменить</button><button class="btn danger" data-action="delete-opened">Удалить</button></div>' : ''}`; state.editingId = e.kind === 'personal' ? e.id : ''; openModal('eventDetailModal'); }
+function openEventDetail(e) { $('detailTitle').textContent = String(e.title ?? (('subject' in e) ? e.subject : '')); $('detailBody').innerHTML = `<div class="detail-grid"><span>Дата</span><b>${esc(longDateRu(localDate(e.startAt, state.timezone)))}</b><span>Время</span><b>${esc(e.allDay ? 'Весь день' : `${localTime(e.startAt, state.timezone)}–${localTime(e.endAt, state.timezone)}`)}</b><span>Часовой пояс</span><b>${esc(state.timezone)}</b><span>Тип</span><b>${esc(e.kind === 'personal' ? 'Личное' : String(e.type ?? 'Занятие'))}</b><span>Место</span><b>${esc(e.location || '—')}</b><span>Статус</span><b>${esc(STATUS_LABEL[e.status ?? 'planned'])}</b><span>Описание</span><p>${esc(e.description || '—')}</p></div>${e.kind === 'personal' ? '<div class="detail-actions"><button class="btn primary" data-action="edit-opened">Изменить</button><button class="btn danger" data-action="delete-opened">Удалить</button></div>' : `<div class="detail-actions"><button class="btn primary" data-homework-from-event="${esc(e.id)}">＋ Записать ДЗ</button></div>`}`; state.editingId = e.kind === 'personal' ? e.id : ''; openModal('eventDetailModal'); }
 async function handleSupportSubmit(form) { const subject = $('ticketSubject').value.trim(), description = $('ticketDescription').value.trim(); if (subject.length < 3 || description.length < 5) {
     $('ticketNotice').textContent = 'Заполните тему и подробное описание.';
     return;
@@ -732,12 +865,24 @@ function bind() {
                 closeModal(backdrop.id);
             return;
         }
-        const target = origin?.closest('[data-action],[data-page],[data-view],[data-schedule-mode],[data-pick-program],[data-task-delete],[data-task-toggle],[data-task-status],[data-task-attachment],[data-jump-date],[data-open-event],[data-ticket],[data-faq-category],[data-faq-open],[data-subject-color-trigger],[data-avatar-preset],[data-material-delete]');
+        const target = origin?.closest('[data-action],[data-page],[data-view],[data-schedule-mode],[data-pick-program],[data-task-delete],[data-task-toggle],[data-task-status],[data-task-attachment],[data-jump-date],[data-open-event],[data-homework-from-event],[data-ticket],[data-faq-category],[data-faq-open],[data-subject-color-trigger],[data-avatar-preset],[data-material-delete],[data-material-open],[data-material-download]');
         if (!target)
             return;
         const action = target.dataset.action;
         if (target.dataset.page) {
             nav(target.dataset.page);
+            return;
+        }
+        if (target.dataset.homeworkFromEvent) {
+            openTaskFromEvent(target.dataset.homeworkFromEvent);
+            return;
+        }
+        if (target.dataset.materialDownload) {
+            void downloadUploadedMaterial(target.dataset.materialDownload, false);
+            return;
+        }
+        if (target.dataset.materialOpen) {
+            void downloadUploadedMaterial(target.dataset.materialOpen, true);
             return;
         }
         if (target.dataset.scheduleMode) {
@@ -772,9 +917,22 @@ function bind() {
         }
         if (target.dataset.materialDelete) {
             const id = target.dataset.materialDelete;
-            state.personalization = updatePersonalization({ materials: state.personalization.materials.filter(m => m.id !== id) });
-            renderResources();
-            toast('Материал удалён');
+            if (id.startsWith('file-')) {
+                try {
+                    await deleteFileMaterial(id);
+                    state.fileMaterials = state.fileMaterials.filter(m => m.id !== id);
+                    renderResources();
+                    toast('Файл удалён из локальной базы');
+                }
+                catch (error) {
+                    toast(error instanceof Error ? error.message : 'Не удалось удалить файл', 'error');
+                }
+            }
+            else {
+                state.personalization = updatePersonalization({ materials: state.personalization.materials.filter(m => m.id !== id) });
+                renderResources();
+                toast('Ссылка удалена');
+            }
             return;
         }
         if (target.dataset.view) {
@@ -806,6 +964,14 @@ function bind() {
         }
         if (action === 'kug-retry') {
             void loadKugData();
+            return;
+        }
+        if (action === 'upload-material') {
+            openMaterialUpload();
+            return;
+        }
+        if (action === 'save-uploaded-material') {
+            void saveUploadedMaterial();
             return;
         }
         if (action === 'toggle-menu') {
@@ -1007,6 +1173,13 @@ function bind() {
             return;
         }
     });
+    const uploadInput = $('fileMaterialInput');
+    uploadInput.addEventListener('change', () => updateSelectedFile(uploadInput.files?.[0]));
+    const dropZone = $('materialDropZone');
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+    dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('drag-over'); const file = e.dataTransfer?.files?.[0]; if (!file)
+        return; const transfer = new DataTransfer(); transfer.items.add(file); uploadInput.files = transfer.files; updateSelectedFile(file); });
     document.addEventListener('submit', async (e) => { if (e.target instanceof HTMLFormElement) {
         if (e.target.id === 'ticketForm') {
             e.preventDefault();
@@ -1127,7 +1300,7 @@ function bind() {
         toast(error instanceof Error ? error.message : 'Не удалось изменить длительность', 'error');
     } }; document.addEventListener('pointermove', move); document.addEventListener('pointerup', up, { once: true }); });
 }
-async function applySelectProfile() { const p = $('programSelect'), c = $('courseSelect'), g = $('groupSelect'); state.profile = { program: p.value, course: Number(c.value), group: g.value || '' }; ensureProfile(); localStorage.setItem('almazov.profile', JSON.stringify(state.profile)); setAcademicProfile(state.profile); state.focusDate = todayISO(state.timezone); state.week = mondayOf(state.focusDate); state.events = []; state.status = 'loading'; clearScheduleMemory(); render(); await reloadEvents(); render(); }
+async function applySelectProfile() { const p = $('programSelect'), c = $('courseSelect'), g = $('groupSelect'); state.profile = { program: p.value, course: Number(c.value), group: g.value || '' }; ensureProfile(); localStorage.setItem('almazov.profile', JSON.stringify(state.profile)); setAcademicProfile(state.profile); state.focusDate = todayISO(state.timezone); state.week = mondayOf(state.focusDate); state.events = []; state.status = 'loading'; clearScheduleMemory(); render(); await reloadEvents(); await refreshUploadedMaterials(); await refreshHomePersonal(); render(); }
 async function shareLink() { const url = new URL(location.href); url.search = ''; url.searchParams.set('program', state.profile.program); url.searchParams.set('course', String(state.profile.course)); if (state.profile.group)
     url.searchParams.set('group', state.profile.group); try {
     await navigator.clipboard.writeText(url.toString());
