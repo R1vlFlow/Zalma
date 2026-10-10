@@ -75,17 +75,19 @@ def is_org_subject(value):
     return bool(ORG_SUBJECT_RE.search(text))
 
 
-def merge_org_consecutive_events(events):
-    """Merge two ORG slots into one visible lesson when the source split them.
+def merge_consecutive_identical_events(events):
+    """Merge adjacent source slots with identical lesson identity into one session.
 
-    Matching is deliberately strict: same group, stream, week/date/day, subject,
-    event kind and location; the second slot must follow the first within a
-    normal break (0–20 min). Unrelated groups, rooms, or dates are never merged.
+    Identity includes program/course/group/stream/date or week geometry, subject,
+    room, teacher, type, and source. Only ordinary lesson-sized slots separated
+    by a break of 0–20 minutes are eligible. ORG merges retain a dedicated
+    provenance flag; other merged subjects receive ``mergedConsecutive`` so the
+    frontend does not split the unified session a second time.
     """
     def identity(e):
         values=[]
         for key in ('program','course','group','stream','weekNumber','weekStart','weekday',
-                    'date','type','subject','location','teacher','sourceUrl'):
+                    'date','type','subject','location','teacher','sourceUrl','half'):
             value=e.get(key) or ''
             if key=='subject':
                 value='__ORG__' if is_org_subject(value) else norm(value).casefold()
@@ -93,46 +95,54 @@ def merge_org_consecutive_events(events):
                 value=norm(value).casefold() if key in {'location','teacher','type'} else value
             values.append(str(value))
         return tuple(values)
-    ordered=sorted((dict(e) for e in events), key=lambda e:(
-        identity(e),
-        _clock_minutes(e.get('start','00:00')) if re.fullmatch(r'\d{1,2}:\d{2}',str(e.get('start',''))) else 0,
-        _clock_minutes(e.get('end','00:00')) if re.fullmatch(r'\d{1,2}:\d{2}',str(e.get('end',''))) else 0,
-    ))
-    out=[]; i=0; merged=0
+    def minutes(e,key):
+        value=str(e.get(key,''))
+        return _clock_minutes(value) if re.fullmatch(r'\d{1,2}:\d{2}',value) else None
+    ordered=sorted((dict(e) for e in events), key=lambda e:(identity(e),minutes(e,'start') if minutes(e,'start') is not None else 0,minutes(e,'end') if minutes(e,'end') is not None else 0))
+    out=[]; i=0; merged_count=0; org_count=0
     while i < len(ordered):
         first=ordered[i]
-        if (i+1 < len(ordered) and is_org_subject(first.get('subject'))
-                and not first.get('orgMerged')):
+        merged_item=None
+        if i+1 < len(ordered) and not first.get('orgMerged') and not first.get('mergedConsecutive'):
             second=ordered[i+1]
             try:
-                a1=_clock_minutes(first['start']); b1=_clock_minutes(first['end'])
-                a2=_clock_minutes(second['start']); b2=_clock_minutes(second['end'])
+                a1,b1=minutes(first,'start'),minutes(first,'end')
+                a2,b2=minutes(second,'start'),minutes(second,'end')
+                if None in (a1,b1,a2,b2): raise ValueError('missing clock')
+                d1,d2=b1-a1,b2-a2
                 gap=a2-b1
                 same=(identity(first)==identity(second)
-                      and first.get('group') not in (None,'','ALL')
-                      and not second.get('orgMerged')
-                      and 45 <= b1-a1 <= 130
-                      and 45 <= b2-a2 <= 130
-                      and 0 <= gap <= 20
-                      and b2>a2)
-            except Exception:
-                same=False
-            if same:
-                item=dict(first)
-                item['end']=second['end']
-                item['orgMerged']=True
-                item['double']=True
-                item['durationMinutes']=b2-a1
-                item['doubleMergeReason']='ORG consecutive slots'
-                # The merged UI event is a single long block, not a 1/2 or 2/2 part.
-                for key in ('doubleIndex','doubleOf'):
-                    item.pop(key,None)
-                out.append(item); merged+=1; i+=2; continue
+                      and d1>0 and d2>0
+                      and 45 <= d1 <= 130 and 45 <= d2 <= 130
+                      and 0 <= gap <= 20 and b2>a2)
+                if same:
+                    merged_item=dict(first)
+                    merged_item['end']=second['end']
+                    merged_item['double']=True
+                    merged_item['durationMinutes']=b2-a1
+                    for key in ('doubleIndex','doubleOf','doublePart'):
+                        merged_item.pop(key,None)
+                    if is_org_subject(first.get('subject')):
+                        merged_item['orgMerged']=True
+                        merged_item['doubleMergeReason']='ORG consecutive slots'
+                        org_count+=1
+                    else:
+                        merged_item['mergedConsecutive']=True
+                        merged_item['doubleMergeReason']='identical consecutive slots'
+                    merged_count+=1
+            except (KeyError,TypeError,ValueError):
+                merged_item=None
+        if merged_item is not None:
+            out.append(merged_item); i+=2; continue
         out.append(first); i+=1
-    if merged:
-        print(f'PARSER_ORG_MERGE merged_pairs={merged}',file=sys.stderr)
+    if merged_count:
+        print(f'PARSER_DOUBLE_MERGE merged_pairs={merged_count} org_pairs={org_count}',file=sys.stderr)
     return out
 
+
+def merge_org_consecutive_events(events):
+    """Backward-compatible alias for the generalized identical-slot merger."""
+    return merge_consecutive_identical_events(events)
 
 def expand_double_lesson_events(events):
     """Split known long blocks, except ORG which must stay one continuous card."""
@@ -1307,7 +1317,7 @@ def session():
     s=requests.Session()
     retry=requests.adapters.Retry(total=4,connect=4,read=4,backoff_factor=1.2,status_forcelist=(429,500,502,503,504),allowed_methods=frozenset(['GET']))
     s.mount('https://',requests.adapters.HTTPAdapter(max_retries=retry,pool_connections=20,pool_maxsize=20))
-    s.headers.update({'User-Agent':'Almazov-Student-Schedule-Sync/4.7.0-rc.1','Accept':'text/html,application/pdf,*/*'})
+    s.headers.update({'User-Agent':'Almazov-Student-Schedule-Sync/4.8.0-rc.1','Accept':'text/html,application/pdf,*/*'})
     return s
 
 def classify_pdf(text, url, hinted_course=None, hinted_stream=None, hinted_kind=None):
@@ -1709,7 +1719,7 @@ def main():
     for cc in courses.values():
         before=len(cc['events'])
         expanded=expand_double_lesson_events(cc['events'])
-        merged=merge_org_consecutive_events(expanded)
+        merged=merge_consecutive_identical_events(expanded)
         cc['events']=merged
         split_total += max(0,len(expanded)-before)
         org_total += sum(1 for e in merged if e.get('orgMerged'))

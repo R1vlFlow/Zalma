@@ -19,8 +19,8 @@ const [pkg, manifest, runtime, html, boot, telemetry, capacitor, androidWorkflow
 
 await check('RC version is marked pre-release', () => assert.match(pkg.version, /-rc\./));
 await check('Schedule engine version is aligned with sync workflow', () => {
-  assert.match(engineVersionFile, /^Almazov Student schedule engine: 4\.7\.0-rc\.1/m);
-  assert.match(syncWorkflow, /SCHEDULE_ENGINE_VERSION: '4\.7\.0-rc\.1'/);
+  assert.match(engineVersionFile, /^Almazov Student schedule engine: 4\.8\.0-rc\.1/m);
+  assert.match(syncWorkflow, /SCHEDULE_ENGINE_VERSION: '4\.8\.0-rc\.1'/);
   assert.match(syncWorkflow, /verify_engine_version\.py/);
 });
 await check('PWA manifest uses standalone and project-relative scope', () => {

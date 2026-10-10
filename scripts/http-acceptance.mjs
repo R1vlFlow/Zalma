@@ -16,7 +16,7 @@ try{
   const schedule4=await request('/api/schedule?program=31.05.01&course=4');
   assert.equal(schedule4.res.status,200);assert.ok(schedule4.body.events.length>500);
   const e424=schedule4.body.events.filter(e=>e.group==='424'&&e.date==='2026-10-05'&&e.subject==='Эндокринология');
-  assert.deepEqual(e424.map(e=>[e.start,e.end,e.doublePart,e.type]),[['13:30','15:05',1,'practice'],['15:20','16:55',2,'practice']]);
+  assert.deepEqual(e424.map(e=>[e.start,e.end,e.doublePart,e.type,e.mergedConsecutive]),[['13:30','16:55',undefined,'practice',true]]);
   const schedule6=await request('/api/schedule?program=31.05.01&course=6');
   const groups6=new Set(schedule6.body.events.filter(e=>['617','618'].includes(e.group)).map(e=>e.group));
   assert.deepEqual([...groups6].sort(),['617','618']);
