@@ -1,8 +1,8 @@
 {
-  "version": "2.7.0-rc.1",
-  "uiVersion": "2.7.0-rc.1",
-  "engineVersion": "4.8.0-rc.1",
-  "release": "MASTER-CARD-TIMETABLE-GENERIC-DOUBLE-MERGE-RELEASE-CANDIDATE",
+  "version": "2.8.0-rc.2",
+  "uiVersion": "2.8.0-rc.2",
+  "engineVersion": "4.9.0-rc.1",
+  "release": "MULTIFACULTY-INGESTION-CONTENT-VERIFIED-MERGE-CACHE-BUSTING-RC",
   "released": "2026-10-10",
   "releaseChannel": "rc"
 }

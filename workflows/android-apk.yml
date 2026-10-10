@@ -17,14 +17,14 @@ on:
       release_tag:
         description: 'GitHub Release tag for the APK asset'
         required: true
-        default: 'v2.7.0-rc.1'
+        default: 'v2.8.0-rc.2'
         type: string
 
 permissions:
   contents: write
 
 concurrency:
-  group: android-apk-${{ inputs.release_tag || 'v2.7.0-rc.1' }}
+  group: android-apk-${{ inputs.release_tag || 'v2.8.0-rc.2' }}
   cancel-in-progress: false
 
 jobs:
@@ -32,7 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 40
     env:
-      RELEASE_TAG: ${{ inputs.release_tag || 'v2.7.0-rc.1' }}
+      RELEASE_TAG: ${{ inputs.release_tag || 'v2.8.0-rc.2' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

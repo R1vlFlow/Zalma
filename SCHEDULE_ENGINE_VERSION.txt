@@ -1,3 +1,4 @@
-Almazov Student schedule engine: 4.8.0-rc.1
-Universal matrix parser: v8
-Double-lessons: identity-safe consecutive-slot merge; explicit subgroup halves remain distinct
+Almazov Student schedule engine: 4.9.0-rc.1
+Universal multi-faculty ingestion: v9
+Double-lessons: content-verified contiguous merge; explicit subgroup halves remain distinct
+Cache: build fingerprint + schedule-only invalidation; JSON/manifest no-store

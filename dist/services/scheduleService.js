@@ -1,8 +1,10 @@
-import { LIVE_LD_JSON, PROGRAMS, sourceFor, sourcesFor } from '../data/catalog.js?v=d2156d5018346a2e';
-import { validateScheduleIndex, normalizeLiveEvents } from '../core/validate.js?v=d2156d5018346a2e';
-import { saveCache, readCache } from './cache.js?v=d2156d5018346a2e';
+import { LIVE_LD_JSON, PROGRAMS, sourceFor, sourcesFor } from '../data/catalog.js?v=de91438696863cbb';
+import { validateScheduleIndex, normalizeLiveEvents } from '../core/validate.js?v=de91438696863cbb';
+import { saveCache, readCache } from './cache.js?v=de91438696863cbb';
 const API_BASE = './api/schedule';
 const memory = new Map();
+if (typeof window !== 'undefined')
+    window.addEventListener('schedule-cache-invalidated', () => memory.clear());
 export async function loadSchedule(program, course) {
     const key = `${program}:${course}`;
     const cachedResult = memory.get(key);
@@ -14,6 +16,17 @@ export async function loadSchedule(program, course) {
             const payload = await api.json();
             const status = ['partial', 'cache', 'unavailable', 'error', 'live'].includes(payload.status ?? '') ? payload.status : 'live';
             const result = { status, events: Array.isArray(payload.events) ? payload.events : [], generatedAt: payload.generatedAt, sourceUrl: payload.sourceUrl, sourceName: payload.sourceName, issues: Array.isArray(payload.issues) ? payload.issues : [], message: payload.message ?? 'Расписание получено от сервера.' };
+            if (result.events.length > 0) {
+                memory.set(key, result);
+                return result;
+            }
+            // An old API may still return an empty/unavailable payload after a data
+            // deployment. Prefer a non-empty build-stamped static snapshot if present.
+            const staticResult = await loadStaticSnapshot(program, course);
+            if (staticResult && (staticResult.events.length > 0 || staticResult.status === 'unavailable')) {
+                memory.set(key, staticResult);
+                return staticResult;
+            }
             memory.set(key, result);
             return result;
         }
@@ -40,14 +53,29 @@ export async function loadSchedule(program, course) {
 }
 async function loadStaticSnapshot(program, course) {
     try {
-        const res = await fetch(`./data/schedules/${encodeURIComponent(program)}/${course}.json`, { cache: 'no-store', signal: AbortSignal.timeout(5000) });
+        const baseUrl = typeof document !== 'undefined' ? document.baseURI : 'https://example.invalid/';
+        const url = new URL(`./data/schedules/${encodeURIComponent(program)}/${course}.json`, baseUrl);
+        const buildId = typeof document !== 'undefined' ? document.documentElement.dataset.buildId : undefined;
+        if (buildId)
+            url.searchParams.set('v', buildId);
+        const res = await fetch(url.toString(), { cache: 'no-store', signal: AbortSignal.timeout(5000) });
         if (!res.ok)
             return null;
         const payload = await res.json();
-        if (!Array.isArray(payload.events) || payload.events.length === 0)
+        if (!Array.isArray(payload.events))
             return null;
-        const status = (payload.status === 'partial' ? 'partial' : 'live');
-        return { status, events: payload.events, generatedAt: payload.generatedAt, sourceUrl: payload.sourceUrl, sourceName: payload.sourceName, issues: Array.isArray(payload.issues) ? payload.issues : [], message: payload.message ?? `Static snapshot · ${payload.events.length} событий` };
+        if (payload.events.length === 0) {
+            if (payload.status === 'unpublished' || payload.status === 'unavailable')
+                return { status: 'unavailable', events: [], generatedAt: payload.generatedAt, sourceUrl: payload.sourceUrl, sourceName: payload.sourceName, issues: Array.isArray(payload.issues) ? payload.issues : [], message: payload.message ?? 'Официальный источник пока не публикует расписание для выбранного курса.' };
+            return null;
+        }
+        const status = (payload.status === 'partial' || payload.status === 'cache' ? 'cache' === payload.status ? 'cache' : 'partial' : 'live');
+        const stale = payload.generatedAt && Date.now() - Date.parse(payload.generatedAt) > 7 * 24 * 60 * 60 * 1000;
+        const finalStatus = stale ? 'cache' : status;
+        const issues = Array.isArray(payload.issues) ? [...payload.issues] : [];
+        if (stale)
+            issues.push('SCHEDULE_SNAPSHOT_STALE');
+        return { status: finalStatus, events: payload.events, generatedAt: payload.generatedAt, sourceUrl: payload.sourceUrl, sourceName: payload.sourceName, issues, message: payload.message ?? `${stale ? 'Последний сохранённый snapshot' : 'Static snapshot'} · ${payload.events.length} событий` };
     }
     catch {
         return null;

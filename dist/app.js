@@ -1,19 +1,20 @@
-import { PROGRAMS, sourceFor, sourcesFor } from './data/catalog.js?v=d2156d5018346a2e';
-import { groupsFor, streamForGroup } from './data/roster.js?v=d2156d5018346a2e';
-import { mondayOf, weekDates, formatDateRu, longDateRu, addDays, todayISO } from './core/date.js?v=d2156d5018346a2e';
-import { eventAppliesToGroup } from './core/filter.js?v=d2156d5018346a2e';
-import { loadSchedule, clearScheduleMemory } from './services/scheduleService.js?v=d2156d5018346a2e';
-import { addTask, readTasks, removeTask, updateTask } from './services/taskService.js?v=d2156d5018346a2e';
-import { readPersonalization, updatePersonalization, setAcademicProfile, subjectColorKey } from './services/personalizationStore.js?v=d2156d5018346a2e';
-import { applyTheme, cycleTheme, initTheme, themeMode } from './ui/theme.js?v=d2156d5018346a2e';
-import { FAQ } from './ui/faq.js?v=d2156d5018346a2e';
-import { createPersonalEvent, deletePersonalEvent, listPersonalEvents, updatePersonalEvent } from './services/eventService.js?v=d2156d5018346a2e';
-import { fileToAttachment } from './services/supportService.js?v=d2156d5018346a2e';
-import { createTicket, listTickets, getTicket, addTicketMessage } from './services/supportService.js?v=d2156d5018346a2e';
-import { localDate, localDateTimeToUtc, localTime, userTimeZone, localDateTimeInput } from './core/time.js?v=d2156d5018346a2e';
-import { scheduleToCalendarEvent } from './core/calendar.js?v=d2156d5018346a2e';
-import { enhanceControls, refreshControls } from './ui/customControls.js?v=d2156d5018346a2e';
-import { deleteFileMaterial, getFileMaterial, listFileMaterials, materialScope, saveFileMaterial, MAX_MATERIAL_FILE_SIZE } from './services/materialStore.js?v=d2156d5018346a2e';
+import { PROGRAMS, sourceFor, sourcesFor } from './data/catalog.js?v=de91438696863cbb';
+import { groupsFor, streamForGroup } from './data/roster.js?v=de91438696863cbb';
+import { mondayOf, weekDates, formatDateRu, longDateRu, addDays, todayISO } from './core/date.js?v=de91438696863cbb';
+import { eventAppliesToGroup } from './core/filter.js?v=de91438696863cbb';
+import { loadSchedule, clearScheduleMemory } from './services/scheduleService.js?v=de91438696863cbb';
+import { addTask, readTasks, removeTask, updateTask } from './services/taskService.js?v=de91438696863cbb';
+import { readPersonalization, updatePersonalization, setAcademicProfile, subjectColorKey } from './services/personalizationStore.js?v=de91438696863cbb';
+import { applyTheme, cycleTheme, initTheme, themeMode } from './ui/theme.js?v=de91438696863cbb';
+import { FAQ } from './ui/faq.js?v=de91438696863cbb';
+import { createPersonalEvent, deletePersonalEvent, listPersonalEvents, updatePersonalEvent } from './services/eventService.js?v=de91438696863cbb';
+import { fileToAttachment } from './services/supportService.js?v=de91438696863cbb';
+import { createTicket, listTickets, getTicket, addTicketMessage } from './services/supportService.js?v=de91438696863cbb';
+import { localDate, localDateTimeToUtc, localTime, userTimeZone, localDateTimeInput } from './core/time.js?v=de91438696863cbb';
+import { scheduleToCalendarEvent } from './core/calendar.js?v=de91438696863cbb';
+import { enhanceControls, refreshControls } from './ui/customControls.js?v=de91438696863cbb';
+import { deleteFileMaterial, getFileMaterial, listFileMaterials, materialScope, saveFileMaterial, MAX_MATERIAL_FILE_SIZE } from './services/materialStore.js?v=de91438696863cbb';
+import { ensureScheduleCacheVersion } from './services/cache.js?v=de91438696863cbb';
 const DAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 const STATUS_LABEL = { planned: 'Запланировано', confirmed: 'Подтверждено', in_progress: 'В процессе', completed: 'Завершено', cancelled: 'Отменено' };
 const VIEW_LABEL = { day: 'День', workweek: 'Рабочая неделя', week: 'Неделя', month: 'Месяц', agenda: 'Agenda', list: 'Список' };
@@ -145,7 +146,7 @@ async function reloadEvents() {
     renderShell();
     renderSchedule();
 }
-export async function boot() { initTheme(); loadAppearance(); applyAppearance(); ensureProfile(); enhanceControls(); renderShell(); bind(); render(); void loadKugData(); await reloadEvents(); await refreshHomePersonal(); await refreshUploadedMaterials(); render(); window.setInterval(() => { if (state.page === 'home')
+export async function boot() { await ensureScheduleCacheVersion(document.documentElement.dataset.buildId ?? 'dev'); initTheme(); loadAppearance(); applyAppearance(); ensureProfile(); enhanceControls(); renderShell(); bind(); render(); void loadKugData(); await reloadEvents(); await refreshHomePersonal(); await refreshUploadedMaterials(); render(); window.setInterval(() => { if (state.page === 'home')
     renderHome(); }, 30000); }
 function render() { renderShell(); renderProfileOptions(); renderSchedule(); renderTasks(); renderFaculties(); renderResources(); renderKug(); renderFaq(state.faqQuery); renderHome(); renderSupport(); renderSettings(); renderProfilePage(); refreshControls(); }
 function nav(page) {
