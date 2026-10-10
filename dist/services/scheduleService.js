@@ -1,6 +1,6 @@
-import { LIVE_LD_JSON, PROGRAMS, sourceFor, sourcesFor } from '../data/catalog.js?v=de91438696863cbb';
-import { validateScheduleIndex, normalizeLiveEvents } from '../core/validate.js?v=de91438696863cbb';
-import { saveCache, readCache } from './cache.js?v=de91438696863cbb';
+import { LIVE_LD_JSON, PROGRAMS, sourceFor, sourcesFor } from '../data/catalog.js?v=2d9a28b1af854a53';
+import { validateScheduleIndex, normalizeLiveEvents, normalizeWeeklyBlocks } from '../core/validate.js?v=2d9a28b1af854a53';
+import { saveCache, readCache } from './cache.js?v=2d9a28b1af854a53';
 const API_BASE = './api/schedule';
 const memory = new Map();
 if (typeof window !== 'undefined')
@@ -15,8 +15,8 @@ export async function loadSchedule(program, course) {
         if (api.ok) {
             const payload = await api.json();
             const status = ['partial', 'cache', 'unavailable', 'error', 'live'].includes(payload.status ?? '') ? payload.status : 'live';
-            const result = { status, events: Array.isArray(payload.events) ? payload.events : [], generatedAt: payload.generatedAt, sourceUrl: payload.sourceUrl, sourceName: payload.sourceName, issues: Array.isArray(payload.issues) ? payload.issues : [], message: payload.message ?? 'Расписание получено от сервера.' };
-            if (result.events.length > 0) {
+            const result = { status, events: Array.isArray(payload.events) ? payload.events : [], weeklyBlocks: Array.isArray(payload.weeklyBlocks) ? payload.weeklyBlocks : [], generatedAt: payload.generatedAt, sourceUrl: payload.sourceUrl, sourceName: payload.sourceName, issues: Array.isArray(payload.issues) ? payload.issues : [], message: payload.message ?? 'Расписание получено от сервера.' };
+            if (result.events.length > 0 || (result.weeklyBlocks?.length ?? 0) > 0) {
                 memory.set(key, result);
                 return result;
             }
@@ -64,9 +64,9 @@ async function loadStaticSnapshot(program, course) {
         const payload = await res.json();
         if (!Array.isArray(payload.events))
             return null;
-        if (payload.events.length === 0) {
+        if (payload.events.length === 0 && (payload.weeklyBlocks?.length ?? 0) === 0) {
             if (payload.status === 'unpublished' || payload.status === 'unavailable')
-                return { status: 'unavailable', events: [], generatedAt: payload.generatedAt, sourceUrl: payload.sourceUrl, sourceName: payload.sourceName, issues: Array.isArray(payload.issues) ? payload.issues : [], message: payload.message ?? 'Официальный источник пока не публикует расписание для выбранного курса.' };
+                return { status: 'unavailable', events: [], weeklyBlocks: Array.isArray(payload.weeklyBlocks) ? payload.weeklyBlocks : [], generatedAt: payload.generatedAt, sourceUrl: payload.sourceUrl, sourceName: payload.sourceName, issues: Array.isArray(payload.issues) ? payload.issues : [], message: payload.message ?? 'Официальный источник пока не публикует расписание для выбранного курса.' };
             return null;
         }
         const status = (payload.status === 'partial' || payload.status === 'cache' ? 'cache' === payload.status ? 'cache' : 'partial' : 'live');
@@ -75,7 +75,7 @@ async function loadStaticSnapshot(program, course) {
         const issues = Array.isArray(payload.issues) ? [...payload.issues] : [];
         if (stale)
             issues.push('SCHEDULE_SNAPSHOT_STALE');
-        return { status: finalStatus, events: payload.events, generatedAt: payload.generatedAt, sourceUrl: payload.sourceUrl, sourceName: payload.sourceName, issues, message: payload.message ?? `${stale ? 'Последний сохранённый snapshot' : 'Static snapshot'} · ${payload.events.length} событий` };
+        return { status: finalStatus, events: payload.events, weeklyBlocks: Array.isArray(payload.weeklyBlocks) ? payload.weeklyBlocks : [], generatedAt: payload.generatedAt, sourceUrl: payload.sourceUrl, sourceName: payload.sourceName, issues, message: payload.message ?? `${stale ? 'Последний сохранённый snapshot' : 'Static snapshot'} · ${payload.events.length} событий` };
     }
     catch {
         return null;
@@ -91,7 +91,8 @@ async function loadLdRemote(program, course, key) {
         if (!validation.ok)
             throw new Error(validation.issues.filter(i => i.level === 'error').map(i => i.message).join('; '));
         const events = normalizeLiveEvents(payload).filter(e => e.program === program && e.course === course);
-        const result = { status: 'live', events, generatedAt: payload.generatedAt, sourceUrl: LIVE_LD_JSON, sourceName: 'official-schedules.json', issues: validation.issues.map(i => i.message), message: `Live snapshot ${formatInstant(payload.generatedAt)} · ${events.length} событий` };
+        const weeklyBlocks = normalizeWeeklyBlocks(payload, program, course);
+        const result = { status: 'live', events, weeklyBlocks, generatedAt: payload.generatedAt, sourceUrl: LIVE_LD_JSON, sourceName: 'official-schedules.json', issues: validation.issues.map(i => i.message), message: `Live snapshot ${formatInstant(payload.generatedAt)} · ${events.length} событий` };
         await saveCache(`raw:${program}`, payload);
         memory.set(key, result);
         return result;
@@ -101,7 +102,8 @@ async function loadLdRemote(program, course, key) {
         const payload = raw?.payload ?? raw;
         if (payload) {
             const events = normalizeLiveEvents(payload).filter(e => e.program === program && e.course === course);
-            const result = { status: 'cache', events, generatedAt: payload.generatedAt, sourceUrl: LIVE_LD_JSON, sourceName: 'last verified snapshot', issues: [], message: `Сеть недоступна. Показан последний проверенный snapshot · ${events.length} событий` };
+            const weeklyBlocks = normalizeWeeklyBlocks(payload, program, course);
+            const result = { status: 'cache', events, weeklyBlocks, generatedAt: payload.generatedAt, sourceUrl: LIVE_LD_JSON, sourceName: 'last verified snapshot', issues: [], message: `Сеть недоступна. Показан последний проверенный snapshot · ${events.length} событий` };
             memory.set(key, result);
             return result;
         }

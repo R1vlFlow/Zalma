@@ -1,10 +1,11 @@
 {
-  "version": "2.8.0-rc.2",
-  "uiVersion": "2.8.0-rc.2",
+  "version": "2.8.0-rc.4",
+  "uiVersion": "2.8.0-rc.4",
   "engineVersion": "4.9.0-rc.1",
-  "release": "MULTIFACULTY-INGESTION-CONTENT-VERIFIED-MERGE-CACHE-BUSTING-RC",
+  "release": "OFFICIAL-PDF-RECOVERY-WEEK-MAP-STRICT-RELEASE-GATE-RC",
   "released": "2026-10-10",
   "releaseChannel": "rc",
-  "buildId": "de91438696863cbb",
+  "releaseStatus": "BLOCKED_FOR_PRODUCTION_UNTIL_LIVE_SYNC_GATE_PASSES",
+  "buildId": "2d9a28b1af854a53",
   "minified": false
 }

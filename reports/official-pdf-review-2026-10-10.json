@@ -1,0 +1,275 @@
+{
+  "schemaVersion": 1,
+  "reviewedAt": "2026-10-10",
+  "institution": "НМИЦ им. В.А. Алмазова — Институт медицинского образования",
+  "studentHub": "https://education.almazovcentre.ru/about_institute/programm/specialist_programme/student/",
+  "reviewChannel": "Official PDF titles/text extraction and rendered pages reviewed via the official site web reader on 2026-10-10. Direct container fetch failed DNS; this is not a byte-level live sync.",
+  "sha256Policy": "Original PDF bytes are required for SHA-256 attestation. sha256 fields intentionally remain null. Web-rendered previews and page text do not count as PDF byte verification.",
+  "documents": [
+    {
+      "id": "academic-week-calendar-2026-2027",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/08/grafik-uchebnyh-nedel-2026-2027-uch.-god-1.pdf",
+      "pageCount": 1,
+      "heading": "График учебных недель 2026-2027 учебный год",
+      "webReviewed": true,
+      "localRawBytesDownloaded": false,
+      "sha256": null,
+      "parsedWeekCount": 22,
+      "anomalies": [
+        {
+          "code": "HOLIDAY_DATE_YEAR_CONFLICT",
+          "sourceText": "31.12.2027",
+          "description": "Conflicting holiday label retained as published; not silently corrected."
+        }
+      ],
+      "coverage": "week ranges reviewed; bytes unverified"
+    },
+    {
+      "id": "LD-2B-practice",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/2k_ld_b-26-27-na-sajt.pdf",
+      "pageCount": 5,
+      "heading": "2 курс, поток Б, Лечебный факультет, специальность 31.05.01",
+      "webReviewed": true,
+      "localRawBytesDownloaded": false,
+      "sha256": null,
+      "headerGroups": [
+        "217",
+        "218",
+        "219",
+        "220",
+        "221",
+        "222",
+        "223",
+        "224",
+        "225",
+        "226",
+        "227",
+        "228",
+        "229"
+      ],
+      "localParsedEvents": 12,
+      "coverage": "partial",
+      "notes": [
+        "Daily weekday grid. PDF text and screenshots show many assignments beyond local parsed events. Parser now recalculates group column indexes per page.",
+        "Must be fully re-ingested on network runner and compared against all 13 group columns before release."
+      ],
+      "expectedGroupCount": 13,
+      "localGroupCoverage": 2
+    },
+    {
+      "id": "LD-4A-practice",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/10/4k_ld_a-26-27-na-sajt.pdf",
+      "pageCount": 1,
+      "heading": "4 курс, поток А",
+      "webReviewed": true,
+      "localRawBytesDownloaded": false,
+      "sha256": null,
+      "localFixturePath": "tests/fixtures/4k_ld_a_stream_header_2026_2027.pdf",
+      "localFixtureSha256": "013a0639f986600667924f07753b01f10dca52136dbdffec4f910372b075bf0f",
+      "parsedLocalWeeklyAssignments": 250,
+      "groups": [
+        "401",
+        "402",
+        "403",
+        "404",
+        "405",
+        "406",
+        "407",
+        "408",
+        "409",
+        "410",
+        "411",
+        "412"
+      ],
+      "dateLabelConflictYears": [
+        2025
+      ],
+      "coverage": "all groups represented as weekly blocks; source hash pending"
+    },
+    {
+      "id": "LD-4B-practice",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/4k_ld_b-26-27-na-sajt.pdf",
+      "pageCount": 1,
+      "heading": "4 курс, поток Б",
+      "webReviewed": true,
+      "localRawBytesDownloaded": false,
+      "sha256": null,
+      "localFixturePath": "tests/fixtures/4k_ld_b_2026_2027.pdf",
+      "localFixtureSha256": "4fd099ad304aed4bae0ceee3823a50696fe77f17cf1604da3aaeffb54fd5ba1a",
+      "parsedLocalWeeklyAssignments": 248,
+      "groups": [
+        "413",
+        "414",
+        "415",
+        "416",
+        "417",
+        "418",
+        "419",
+        "420",
+        "421",
+        "422",
+        "423",
+        "424"
+      ],
+      "dateLabelConflictYears": [
+        2025
+      ],
+      "coverage": "all groups represented as weekly blocks; source hash pending"
+    },
+    {
+      "id": "LD-5A-practice",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/5k_ld_a-26-27-na-sajt.pdf",
+      "pageCount": 1,
+      "heading": "5 курс, поток А, Лечебный факультет",
+      "webReviewed": true,
+      "localRawBytesDownloaded": false,
+      "sha256": null,
+      "headerGroups": [
+        "501",
+        "502",
+        "503",
+        "504",
+        "505",
+        "506",
+        "507",
+        "508",
+        "509",
+        "510",
+        "511",
+        "512"
+      ],
+      "weekColumns": 15,
+      "dateLabelConflictYears": [
+        2025
+      ],
+      "localParsedEvents": 0,
+      "coverage": "missing",
+      "expectedGroupCount": 12,
+      "localGroupCoverage": 0
+    },
+    {
+      "id": "LD-5B-practice",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/5k_ld_b-26-27-na-sajt.pdf",
+      "pageCount": 1,
+      "heading": "5 курс, поток Б",
+      "webReviewed": true,
+      "localRawBytesDownloaded": false,
+      "sha256": null,
+      "localFixturePath": "tests/fixtures/5k_ld_b_2026_2027.pdf",
+      "localFixtureSha256": "2ff239c5e6cee65b7aa4cedddfc1ccab7a3b20db079c56376d583b44cca0f078",
+      "parsedLocalWeeklyAssignments": 194,
+      "groups": [
+        "513",
+        "514",
+        "515",
+        "516",
+        "517",
+        "518",
+        "519",
+        "520",
+        "521",
+        "522"
+      ],
+      "dateLabelConflictYears": [
+        2025
+      ],
+      "coverage": "all groups represented as weekly blocks; source hash pending"
+    },
+    {
+      "id": "LD-6-practice",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/6k_ld-26-27-na-sajt-1.pdf",
+      "pageCount": 2,
+      "heading": "6 курс, Лечебный факультет, специальность 31.05.01",
+      "webReviewed": true,
+      "localRawBytesDownloaded": false,
+      "sha256": null,
+      "headerGroups": [
+        "601",
+        "602",
+        "603",
+        "604",
+        "605",
+        "606",
+        "607",
+        "608",
+        "609",
+        "610",
+        "611",
+        "612",
+        "613",
+        "614",
+        "615",
+        "616",
+        "617",
+        "618"
+      ],
+      "weekColumns": 16,
+      "dateLabelConflictYears": [
+        2025
+      ],
+      "localFixturePath": "tests/fixtures/6k_ld_2026_2027.pdf",
+      "localFixtureSha256": "c8608c9b66daee1e633151de04d1a4cff42b4925e205512ca6cf0e5a285fa520",
+      "localParsedEvents": 0,
+      "coverage": "quarantined-corrupt-local-fixture",
+      "expectedGroupCount": 18,
+      "localGroupCoverage": 0
+    }
+  ],
+  "strictResult": {
+    "status": "BLOCKED_FOR_PRODUCTION",
+    "reason": "official bytes/hash not confirmed, incomplete group coverage (LD 2B/5A/6 and others), specialist recovery events not live-verified, minified build not produced"
+  },
+  "importantRule": "A local fixture SHA-256 identifies only the fixture file. It must never be substituted for the official remote PDF SHA-256.",
+  "weekAlignmentAnalysis": {
+    "status": "reviewed-in-official-web-render; raw-bytes-unverified",
+    "matrixWeekOffset": 1,
+    "policy": "For practice rotation matrix PDFs, matrix week N maps directly to academic calendar week N. Preserve matrixWeekNumber and calendarWeekNumber separately. Never infer a weekday or concrete date from a matrix column. The 2025 date labels are quarantined until official bytes are verified.",
+    "evidence": [
+      {
+        "document": "LD-5A-practice",
+        "matrixWeek1Label": "07.09.25 - 12.09.25",
+        "officialCalendarWeek2": "2026-09-07 to 2026-09-12"
+      },
+      {
+        "document": "LD-6-practice",
+        "matrixWeek1Label": "07.09.25 - 12.09.25",
+        "officialCalendarWeek2": "2026-09-07 to 2026-09-12"
+      }
+    ],
+    "blockingNotes": [
+      "The published matrix embeds stale dates from 2025 while the title says 2026/2027.",
+      "5A PDF shows 15 week columns but only a partial/stale date header; raw bytes and column header interpretation need live revalidation.",
+      "6th-course PDF shows 16 week columns but its date row contains stale year labels for early columns; raw bytes and all column date labels must be revalidated."
+    ]
+  },
+  "lastVisualReview": {
+    "officialHub": "https://education.almazovcentre.ru/about_institute/programm/specialist_programme/student/",
+    "reviewedAt": "2026-10-10",
+    "method": "Official PDF text extraction plus rendered-page visual inspection through web reader; not an origin-byte download.",
+    "result": "BLOCKED_FOR_PRODUCTION"
+  },
+  "releaseStatus": "BLOCKED_FOR_PRODUCTION",
+  "lastContainerSyncAttempt": {
+    "command": "npm run sync:official",
+    "result": "failed-before-discovery",
+    "failure": "DNS NameResolutionError: education.almazovcentre.ru",
+    "rawBytesDownloaded": false,
+    "verifiedSha256Count": 0,
+    "zeroErrorGate": false,
+    "currentLocalGateErrors": 230
+  },
+  "matrixWeekMappingPolicy": "Matrix week N maps directly to official academic calendar week N (offset 0). The single date in matrix week 1 is 03.09.2025 and falls within official week 1 bounds 01.09.2026-05.09.2026; the week 2 label 07.09.2025-12.09.2025 matches the bounds of official week 2. Embedded 2025 dates remain quarantined and are not used as event dates.",
+  "latestLiveSyncAttempt": {
+    "attemptedAt": "2026-10-10T21:01:08.401208+00:00",
+    "command": "npm run sync:official",
+    "status": "failed",
+    "failedStage": "official-hub-discovery",
+    "networkFailure": true,
+    "rawPdfBytesDownloaded": false,
+    "officialPdfSha256Verified": 0,
+    "localSnapshotChanged": false,
+    "strictGateStatus": "BLOCKED_FOR_PRODUCTION",
+    "strictGateErrors": 230
+  },
+  "productionEligible": false
+}

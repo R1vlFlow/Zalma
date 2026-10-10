@@ -7,7 +7,7 @@ const INITIAL = {
     academicProfile: { program: '31.05.01', course: 1, group: '123' },
     displayName: '', avatarPreset: '🎓', avatarDataUrl: '', accentColor: '#315fce',
     theme: 'system', timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Moscow',
-    double1: '#315fce', double2: '#1f9073', subjectColors: {}, tasks: [], materials: []
+    double1: '#315fce', double2: '#1f9073', subjectColors: {}, subjectGradients: {}, tasks: [], materials: []
 };
 let cache = null;
 const color = (v, fallback) => typeof v === 'string' && /^#[\da-f]{6}$/i.test(v) ? v : fallback;
@@ -40,7 +40,7 @@ function normalizeMaterial(value) {
 }
 function normalize(raw) {
     if (!plain(raw))
-        return { ...INITIAL, academicProfile: { ...INITIAL.academicProfile }, subjectColors: {}, tasks: [], materials: [] };
+        return { ...INITIAL, academicProfile: { ...INITIAL.academicProfile }, subjectColors: {}, subjectGradients: {}, tasks: [], materials: [] };
     const ap = plain(raw.academicProfile) ? raw.academicProfile : {};
     const theme = raw.theme === 'light' || raw.theme === 'dark' || raw.theme === 'system' ? raw.theme : INITIAL.theme;
     const taskRaw = Array.isArray(raw.tasks) ? raw.tasks : [];
@@ -52,6 +52,14 @@ function normalize(raw) {
             const normalizedKey = subjectColorKey(key);
             if (c && normalizedKey)
                 colors[normalizedKey] = c;
+        }
+    const allowedGradients = new Set(['ocean', 'violet', 'sunset', 'forest', 'citrus', 'berry']);
+    const gradients = {};
+    if (plain(raw.subjectGradients))
+        for (const [key, value] of Object.entries(raw.subjectGradients)) {
+            const normalizedKey = subjectColorKey(key);
+            if (normalizedKey && typeof value === 'string' && allowedGradients.has(value))
+                gradients[normalizedKey] = value;
         }
     const normalizedTasks = taskRaw.map(normalizeTask).filter((x) => x !== null);
     const normalizedMaterials = materialRaw.map(normalizeMaterial).filter((x) => x !== null);
@@ -79,11 +87,11 @@ function normalize(raw) {
         accentColor: color(raw.accentColor, INITIAL.accentColor), theme,
         timezone: typeof raw.timezone === 'string' && raw.timezone.length < 80 ? raw.timezone : INITIAL.timezone,
         double1: color(raw.double1, INITIAL.double1), double2: color(raw.double2, INITIAL.double2),
-        subjectColors: colors, tasks: normalizedTasks, materials: normalizedMaterials
+        subjectColors: colors, subjectGradients: gradients, tasks: normalizedTasks, materials: normalizedMaterials
     };
 }
 function migrateLegacy() {
-    const base = { ...INITIAL, academicProfile: { ...INITIAL.academicProfile }, subjectColors: {}, tasks: [], materials: [] };
+    const base = { ...INITIAL, academicProfile: { ...INITIAL.academicProfile }, subjectColors: {}, subjectGradients: {}, tasks: [], materials: [] };
     try {
         const profile = JSON.parse(localStorage.getItem('almazov.profile') ?? 'null');
         if (plain(profile)) {

@@ -1,0 +1,16 @@
+{
+  "status": "local-recovery-only",
+  "mappedWeeklyBlocks": 692,
+  "byCourseStream": {
+    "4/A": 250,
+    "4/B": 248,
+    "5/B": 194
+  },
+  "unmapped": [],
+  "calendarStatus": "web-text-reviewed-byte-unverified",
+  "calendarSha256": null,
+  "matrixWeekOffset": 0,
+  "alignmentEvidence": "matrix week 1 has a one-day 03.09.2025 label within official week 1 (01–05.09.2026); matrix week 2 labels 07.09.2025–12.09.2025 matching official week 2 (07–12.09.2026)",
+  "productionEligible": false,
+  "note": "Week ranges are reviewed from official PDF text, not binary-hash verified. Blocks remain undated and must not imply a weekday."
+}

@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "attemptedAt": "2026-10-10T21:01:08.401208+00:00",
+  "status": "failed",
+  "stage": "official-hub-discovery",
+  "networkFailure": true,
+  "exceptionType": "ConnectionError",
+  "error": "HTTPSConnectionPool(host='education.almazovcentre.ru', port=443): Max retries exceeded with url: /about_institute/programm/specialist_programme/student/ (Caused by NameResolutionError(\"HTTPSConnection(host='education.almazovcentre.ru', port=443): Failed to resolve 'education.almazovcentre.ru' ([Errno -3] Temporary failure in name resolution)\"))",
+  "officialSource": "https://education.almazovcentre.ru/about_institute/programm/specialist_programme/student/",
+  "rawPdfBytesDownloaded": false,
+  "officialPdfSha256Verified": 0,
+  "snapshotFilesReplaced": false,
+  "publicationAllowed": false,
+  "recoveryPolicy": "keep-last-known-snapshot; never promote cached data to live-verified"
+}
