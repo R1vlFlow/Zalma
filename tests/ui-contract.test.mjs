@@ -69,11 +69,11 @@ test('responsive and accessibility contract is present',()=>{
  assert.match(html,/aria-live="polite"/);
 });
 
-test('built static schedule contains normalized 4K double parts',async()=>{
+test('built static schedule exposes normalized continuous 4K double block',async()=>{
  const snapshot=JSON.parse(await readFile(new URL('../dist/data/schedules/31.05.01/4.json',import.meta.url),'utf8'));
  assert.ok(snapshot.events.length>500);
  const rows=snapshot.events.filter(e=>e.group==='424'&&e.date==='2026-10-05'&&e.subject==='Эндокринология');
- assert.deepEqual(rows.map(e=>[e.start,e.end,e.doublePart,e.type]),[['13:30','15:05',1,'practice'],['15:20','16:55',2,'practice']]);
+ assert.deepEqual(rows.map(e=>[e.start,e.end,e.doublePart,e.type,e.mergedConsecutive]),[['13:30','16:55',undefined,'practice',true]]);
 });
 
 
@@ -82,12 +82,12 @@ test('double lesson labels render in every calendar view',()=>{
  assert.match(app,/if\(e\.doublePart===1\)return '1\/2'/);
  assert.match(app,/if\(e\.doublePart===2\)return '2\/2'/);
  assert.match(app,/function eventHalfMarkup\(/);
- for(const fn of ['eventHtml','renderMobile','renderMonth','renderAgenda','renderList']){
+ for(const fn of ['renderCardSchedule','renderMobile','renderMonth','renderAgenda','renderList']){
    const start=app.indexOf(`function ${fn}(`);
    assert.notEqual(start,-1,`missing ${fn}`);
    const next=app.indexOf('\nfunction ',start+10);
    const body=app.slice(start,next<0?undefined:next);
-   assert.match(body,fn==='eventHtml'?/eventTitleRow\(/:/eventHalfMarkup\(/,`${fn} omits split-part labels`);
+   assert.match(body,/eventHalfMarkup\(/,`${fn} omits split-part labels`);
  }
  assert.match(css,/\.event-half\.part-2/);
  assert.match(app,/reloadSequence/);
@@ -98,4 +98,13 @@ test('network loading has bounded timeouts',async()=>{
  const eventService=await readFile(new URL('../src/services/eventService.ts',import.meta.url),'utf8');
  assert.match(scheduleService,/AbortSignal\.timeout\(/);
  assert.match(eventService,/AbortSignal\.timeout\(/);
+});
+
+test('day/week schedule uses compact cards instead of the legacy vertical time grid',()=>{
+ assert.match(app,/function renderCardSchedule\(/);
+ assert.match(app,/renderList\(events\):renderCardSchedule\(events,dates\)/);
+ assert.doesNotMatch(app,/function renderTimeGrid\(/);
+ assert.doesNotMatch(app,/function currentTimeLine\(/);
+ assert.match(css,/\.schedule-card-grid/);
+ assert.match(app,/class=\"schedule-event-head\"><span class=\"event-time\">/);
 });

@@ -20,7 +20,7 @@ class MemoryStorage {
 
 test('Phase 2 build metadata and support Telegram link are defined', () => {
   const v = JSON.parse(version);
-  assert.equal(v.version, '2.6.0-rc.1');
+  assert.equal(v.version, '2.7.0-rc.1');
   assert.match(html, /https:\/\/t\.me\/R1vlFlow_GY/);
   assert.match(html, /@R1vlFlow_GY/);
 });

@@ -34,10 +34,21 @@ test('backend API schedule normalization preserves merged ORG as one continuous 
   assert.equal(events[0].doublePart, undefined);
 });
 
-test('non-ORG blocks retain the existing split into 1/2 and 2/2', () => {
-  const other = { ...org, id: 'biology-long', subject: 'Биология', orgMerged: false, doubleMergeReason: undefined };
+test('automatic consolidation preserves the source subgroup half marker', () => {
+  const halfOrg = { ...org, id: 'org-half', half: '1/2' };
+  const input = { ...payload, courses: { '1': { specialty: '31.05.01', groups: ['123'], events: [halfOrg] } } };
+  const events = normalizeLiveEvents(input);
+  assert.equal(events.length, 1);
+  assert.equal(events[0].half, '1/2');
+});
+
+test('generic merged non-ORG blocks stay a single continuous event through API normalization', () => {
+  const other = { ...org, id: 'biology-long', subject: 'Биология', orgMerged: false, mergedConsecutive: true, doubleMergeReason: 'identical consecutive slots' };
   const input = { ...payload, courses: { '1': { specialty: '31.05.01', groups: ['123'], events: [other] } } };
   const events = normalizeLiveEvents(input);
-  assert.equal(events.length, 2);
-  assert.deepEqual(events.map(event => event.doublePart), [1, 2]);
+  assert.equal(events.length, 1);
+  assert.equal(events[0].start, '09:00');
+  assert.equal(events[0].end, '12:25');
+  assert.equal(events[0].mergedConsecutive, true);
+  assert.equal(events[0].doublePart, undefined);
 });

@@ -57,8 +57,12 @@ ok(merged[0].get('orgMerged') is True, 'merged ORG event carries an explicit par
 
 wrong_group = {**second, 'group': '124'}
 ok(len(parser.merge_org_consecutive_events([first, wrong_group])) == 2, 'ORG events from different groups are not merged')
+wrong_teacher = {**second, 'teacher': 'Другой преподаватель'}
+ok(len(parser.merge_consecutive_identical_events([first, wrong_teacher])) == 2, 'adjacent slots with different teachers remain separate')
 non_org = [{**first, 'subject': 'Анатомия'}, {**second, 'subject': 'Анатомия'}]
-ok(len(parser.merge_org_consecutive_events(non_org)) == 2, 'non-ORG consecutive lessons are not merged by the special case')
+generic_merged = parser.merge_consecutive_identical_events(non_org)
+ok(len(generic_merged) == 1 and generic_merged[0]['end'] == '12:25', 'identical consecutive Biology slots merge into one continuous card')
+ok(generic_merged[0].get('mergedConsecutive') is True, 'generic merge provenance survives parser normalization')
 
 long_org = {**common, 'subject': 'Основы Российской государственности (ОРГ)', 'start': '09:00', 'end': '12:25'}
 expanded_org = parser.expand_double_lesson_events([long_org])
@@ -66,5 +70,20 @@ ok(len(expanded_org) == 1 and expanded_org[0].get('orgMerged'), 'long ORG source
 long_other = {**common, 'subject': 'Анатомия', 'start': '09:00', 'end': '12:25'}
 expanded_other = parser.expand_double_lesson_events([long_other])
 ok(len(expanded_other) == 2 and [x.get('doubleIndex') for x in expanded_other] == [1, 2], 'other long blocks retain explicit 1/2 and 2/2 parts')
+
+# Consecutive slots for the same half may merge but must retain the half marker;
+# distinct halves must stay separate.
+base_half = {'program':'31.05.01','course':1,'group':'123','stream':'A','weekStart':'2026-10-05','weekday':0,'type':'practice','subject':'Химия','location':'ауд. 1','teacher':'Иванов И.И.','sourceUrl':'fixture://half','half':'1/2'}
+merged_half = parser.merge_consecutive_identical_events([
+    {**base_half,'start':'09:00','end':'10:35'},
+    {**base_half,'start':'10:50','end':'12:25'}
+])
+assert len(merged_half)==1 and merged_half[0].get('half')=='1/2', 'generic merge preserves sub-half identity'
+different_halves = parser.merge_consecutive_identical_events([
+    {**base_half,'half':'1/2','start':'09:00','end':'10:35'},
+    {**base_half,'half':'2/2','start':'10:50','end':'12:25'}
+])
+assert len(different_halves)==2, 'different explicit half groups must not merge'
+print('PASS - generic merge preserves sub-half identity')
 
 print('PHASE 3 PARSER REGRESSIONS: PASS')

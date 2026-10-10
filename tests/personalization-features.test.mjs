@@ -46,7 +46,7 @@ test('weekly workweek explicitly includes Monday through Saturday', () => {
   assert.match(app, /const DAYS=\['Пн','Вт','Ср','Чт','Пт','Сб','Вс'\]/);
   assert.match(app, /from:dates\[0\]!,to:dates\[5\]!,dates/);
   assert.match(app, /function weekdayLabel\(d:string\)/);
-  assert.match(app, /<header><span>\$\{weekdayLabel\(date\)\}/);
+  assert.match(app, /<header class=\"schedule-day-head\"><div><span>\$\{weekdayLabel\(date\)\}/);
   assert.match(app, /<span>\$\{weekdayLabel\(d\)\}<\/span>/);
 });
 

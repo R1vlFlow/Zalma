@@ -39,6 +39,8 @@ export interface ScheduleEvent {
   type: LessonType;
   half?: '1/2' | '2/2';
   double?: boolean;
+  orgMerged?: boolean;
+  mergedConsecutive?: boolean;
   doublePart?: 1 | 2;
   doubleOf?: string;
   durationMinutes?: number;
@@ -114,12 +116,19 @@ export interface UserProfile {
   group: string;
 }
 
+export type HomeworkStatus = 'todo' | 'in_progress' | 'done';
+export type HomeworkPriority = 'low' | 'medium' | 'high';
 export interface Task {
   id: string;
   subject: string;
   text: string;
   due?: string;
   done: boolean;
+  status?: HomeworkStatus;
+  priority?: HomeworkPriority;
+  link?: string;
+  attachmentName?: string;
+  attachmentData?: string;
   program: ProgramCode;
   course: Course;
   group: string;

@@ -12,7 +12,7 @@ export async function loadSchedule(program:ProgramCode,course:Course):Promise<Sc
   if(cachedResult&&cachedResult.status!=='error')return cachedResult;
 
   try{
-    const api=await fetch(`${API_BASE}?program=${encodeURIComponent(program)}&course=${course}`,{cache:'no-store'});
+    const api=await fetch(`${API_BASE}?program=${encodeURIComponent(program)}&course=${course}`,{cache:'no-store',signal:AbortSignal.timeout(8000)});
     if(api.ok){
       const payload=await api.json() as {events?:ScheduleEvent[];generatedAt?:string;sourceUrl?:string;sourceName?:string;status?:string;issues?:string[];message?:string};
       const status=['partial','cache','unavailable','error','live'].includes(payload.status??'') ? payload.status as ScheduleLoadResult['status'] : 'live';
@@ -39,7 +39,7 @@ export async function loadSchedule(program:ProgramCode,course:Course):Promise<Sc
 
 async function loadStaticSnapshot(program:ProgramCode,course:Course):Promise<ScheduleLoadResult|null>{
   try{
-    const res=await fetch(`./data/schedules/${encodeURIComponent(program)}/${course}.json`,{cache:'no-store'});
+    const res=await fetch(`./data/schedules/${encodeURIComponent(program)}/${course}.json`,{cache:'no-store',signal:AbortSignal.timeout(5000)});
     if(!res.ok)return null;
     const payload=await res.json() as {events?:ScheduleEvent[];generatedAt?:string;sourceUrl?:string;sourceName?:string;status?:string;issues?:string[];message?:string};
     if(!Array.isArray(payload.events) || payload.events.length===0)return null;
@@ -49,7 +49,7 @@ async function loadStaticSnapshot(program:ProgramCode,course:Course):Promise<Sch
 }
 
 async function loadLdRemote(program:ProgramCode,course:Course,key:string):Promise<ScheduleLoadResult>{
-  try{const res=await fetch(LIVE_LD_JSON,{cache:'no-store'});if(!res.ok)throw new Error(`HTTP ${res.status}`);const payload=await res.json() as ScheduleIndex;const validation=validateScheduleIndex(payload);if(!validation.ok)throw new Error(validation.issues.filter(i=>i.level==='error').map(i=>i.message).join('; '));const events=normalizeLiveEvents(payload).filter(e=>e.program===program&&e.course===course);const result:ScheduleLoadResult={status:'live',events,generatedAt:payload.generatedAt,sourceUrl:LIVE_LD_JSON,sourceName:'official-schedules.json',issues:validation.issues.map(i=>i.message),message:`Live snapshot ${formatInstant(payload.generatedAt)} · ${events.length} событий`};await saveCache(`raw:${program}`,payload);memory.set(key,result);return result;}
+  try{const res=await fetch(LIVE_LD_JSON,{cache:'no-store',signal:AbortSignal.timeout(8000)});if(!res.ok)throw new Error(`HTTP ${res.status}`);const payload=await res.json() as ScheduleIndex;const validation=validateScheduleIndex(payload);if(!validation.ok)throw new Error(validation.issues.filter(i=>i.level==='error').map(i=>i.message).join('; '));const events=normalizeLiveEvents(payload).filter(e=>e.program===program&&e.course===course);const result:ScheduleLoadResult={status:'live',events,generatedAt:payload.generatedAt,sourceUrl:LIVE_LD_JSON,sourceName:'official-schedules.json',issues:validation.issues.map(i=>i.message),message:`Live snapshot ${formatInstant(payload.generatedAt)} · ${events.length} событий`};await saveCache(`raw:${program}`,payload);memory.set(key,result);return result;}
   catch(error){const raw=await readCache<ScheduleIndex>(`raw:${program}`);const payload=(raw as any)?.payload??raw;if(payload){const events=normalizeLiveEvents(payload).filter(e=>e.program===program&&e.course===course);const result:ScheduleLoadResult={status:'cache',events,generatedAt:payload.generatedAt,sourceUrl:LIVE_LD_JSON,sourceName:'last verified snapshot',issues:[],message:`Сеть недоступна. Показан последний проверенный snapshot · ${events.length} событий`};memory.set(key,result);return result;}const result:ScheduleLoadResult={status:'error',events:[],sourceUrl:LIVE_LD_JSON,issues:[error instanceof Error?error.message:'Неизвестная ошибка'],message:'Не удалось загрузить источник расписания. Проверьте интернет и официальный источник.'};memory.set(key,result);return result;}
 }
 

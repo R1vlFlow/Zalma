@@ -5,7 +5,7 @@ import {normalizeGroup,normalizeGroupList,cleanSubject,cleanLocation,cleanTeache
 import {parseSourceBuffer} from './source-parser.mjs';
 import {RedisScheduleCache} from './redis-cache.mjs';
 
-const STORAGE=join(process.cwd(),'storage','snapshots');const PIPELINE_VERSION='2026-10-08-schedule-normalization-v4';const memory=new Map();
+const STORAGE=join(process.cwd(),'storage','snapshots');const PIPELINE_VERSION='2026-10-09-schedule-normalization-v5-stream-a-org-merge';const memory=new Map();
 let redisPromise;
 async function redisCache(){if(!process.env.REDIS_URL)return null;if(!redisPromise){redisPromise=(async()=>{try{const {createClient}=await import('redis');const client=createClient({url:process.env.REDIS_URL});client.on('error',()=>{});await client.connect();return new RedisScheduleCache(client);}catch{return null;}})();}return redisPromise;}
 
@@ -24,24 +24,36 @@ function datesForRaw(raw){
   if(!start||!slots.length)return [];
   const base=new Date(`${start}T00:00:00Z`);return slots.map(slot=>{const d=new Date(base);d.setUTCDate(d.getUTCDate()+slot);return d.toISOString().slice(0,10);});
 }
-function splitDoubleTimes(start,end){
+export function splitDoubleTimes(start,end){
   const [sh,sm]=start.split(':').map(Number);const [eh,em]=end.split(':').map(Number);const a=sh*60+sm,b=eh*60+em,d=b-a;
   if(![185,205].includes(d))return [{start,end,double:false,durationMinutes:d}];
   const slot=(d-15)/2;const firstEnd=a+slot;const secondStart=firstEnd+15;const fmt=(v)=>`${String(Math.floor(v/60)).padStart(2,'0')}:${String(v%60).padStart(2,'0')}`;
   return [{start:fmt(a),end:fmt(firstEnd),double:true,doublePart:1,durationMinutes:slot},{start:fmt(secondStart),end:fmt(b),double:true,doublePart:2,durationMinutes:slot}];
 }
-function normalizeOfficialCoursePayload(payload,program,course,sourceUrl,sourceTitle='official-schedules.json'){
+export function normalizeOfficialCoursePayload(payload,program,course,sourceUrl,sourceTitle='official-schedules.json'){
   const events=[];const courseData=payload?.courses?.[String(course)];
   for(const [index,raw] of (Array.isArray(courseData?.events)?courseData.events:[]).entries()){
     const dates=datesForRaw(raw);const tr=timeRange(`${raw?.start??''} ${raw?.end??''}`)||timeRange(raw?.time);const subject=cleanSubject(raw?.subject??raw?.discipline??raw?.name);if(!dates.length||!tr||!subject)continue;
     const groups=normalizeGroupList(raw?.groups??raw?.group);const stream=normalizeStream(raw?.stream);if(!groups.length&&!stream)continue;const visibleGroups=groups.length?groups:['_ALL_'];
     const alreadyDouble=raw?.doubleIndex===1||raw?.doubleIndex===2;
+    const durationMinutes=Number(tr.end.slice(0,2))*60+Number(tr.end.slice(3))-Number(tr.start.slice(0,2))*60-Number(tr.start.slice(3));
+    if(durationMinutes<=0) console.warn(`[schedule-parser] invalid duration ${program}/${course} ${raw?.date??raw?.weekStart??'?'} ${subject}: ${tr.start}-${tr.end}`);
+    if(durationMinutes>=175&&![185,205].includes(durationMinutes)&&!alreadyDouble) console.warn(`[schedule-parser] unclassified long block kept intact ${program}/${course} ${raw?.date??raw?.weekStart??'?'} ${raw?.group??raw?.groups??'?'} ${subject}: ${tr.start}-${tr.end} (${durationMinutes} min)`);
+    const rawDuration=Number(tr.end.slice(0,2))*60+Number(tr.end.slice(3))-Number(tr.start.slice(0,2))*60-Number(tr.start.slice(3));
     const doubleSlots=alreadyDouble
-      ? [{start:tr.start,end:tr.end,double:true,doublePart:raw.doubleIndex,durationMinutes:Number(raw?.durationMinutes??0)||Math.max(0,(Number(tr.end.slice(0,2))*60+Number(tr.end.slice(3))-Number(tr.start.slice(0,2))*60-Number(tr.start.slice(3)))),doubleOf:typeof raw?.doubleOf==='string'?raw.doubleOf:undefined}]
-      : splitDoubleTimes(tr.start,tr.end).map(x=>({...x,doubleOf:typeof raw?.doubleOf==='string'?raw.doubleOf:undefined}));
-    for(const date of dates)for(const groupValue of visibleGroups){const group=groupValue==='_ALL_'?'ALL':normalizeGroup(groupValue);for(const slot of doubleSlots){events.push({id:String(raw?.id?`${raw.id}-${date}-${slot.doublePart??0}`:`${program}-${course}-${group}-${date}-${slot.start}-${slot.end}-${subject}-${index}-${slot.doublePart??0}`),program,course,group,stream,date,start:slot.start,end:slot.end,subject,location:cleanLocation(raw?.location),teacher:cleanTeacher(raw?.teacher),type:typeFrom(raw?.type,subject),half:normalizeHalf(raw?.half),double:slot.double,doublePart:slot.doublePart,doubleOf:slot.doubleOf,durationMinutes:slot.durationMinutes,weeks:raw?.weekNumber?`нед. ${Array.isArray(raw.weekNumber)?raw.weekNumber.join(', '):String(raw.weekNumber)}`:undefined,sourceUrl,sourceTitle,sourceKind:'live-json',confidence:1});}}
+      ? [{start:tr.start,end:tr.end,double:true,doublePart:raw.doubleIndex,durationMinutes:Number(raw?.durationMinutes??0)||rawDuration,doubleOf:typeof raw?.doubleOf==='string'?raw.doubleOf:undefined}]
+      : raw?.orgMerged===true||raw?.mergedConsecutive===true
+        ? [{start:tr.start,end:tr.end,double:true,durationMinutes:Number(raw?.durationMinutes??0)||rawDuration,doubleOf:typeof raw?.doubleOf==='string'?raw.doubleOf:undefined}]
+        : splitDoubleTimes(tr.start,tr.end).map(x=>({...x,doubleOf:typeof raw?.doubleOf==='string'?raw.doubleOf:(x.doublePart?`auto:${program}:${course}:${raw?.weekStart??''}:${subject}:${tr.start}-${tr.end}`:undefined)}));
+    for(const date of dates)for(const groupValue of visibleGroups){const group=groupValue==='_ALL_'?'ALL':normalizeGroup(groupValue);for(const slot of doubleSlots){events.push({id:String(raw?.id?`${raw.id}-${date}-${slot.doublePart??0}`:`${program}-${course}-${group}-${date}-${slot.start}-${slot.end}-${subject}-${index}-${slot.doublePart??0}`),program,course,group,stream,date,start:slot.start,end:slot.end,subject,location:cleanLocation(raw?.location),teacher:cleanTeacher(raw?.teacher),type:typeFrom(raw?.type,subject),half:normalizeHalf(raw?.half),double:slot.double,orgMerged:raw?.orgMerged===true||undefined,mergedConsecutive:raw?.mergedConsecutive===true||undefined,doublePart:slot.doublePart,doubleOf:slot.doubleOf,durationMinutes:slot.durationMinutes,weeks:raw?.weekNumber?`нед. ${Array.isArray(raw.weekNumber)?raw.weekNumber.join(', '):String(raw.weekNumber)}`:undefined,sourceUrl,sourceTitle,sourceKind:'live-json',confidence:1});}}
   }
-  return dedupe(events);
+  return mergeAutoSplitDoubleSlots(dedupe(events));
+}
+function mergeAutoSplitDoubleSlots(events){
+  const mins=v=>Number(v.slice(0,2))*60+Number(v.slice(3));
+  const identity=e=>[e.program,e.course,e.group,e.stream??'',e.date,String(e.subject??'').toLocaleLowerCase('ru-RU'),String(e.location??'').toLocaleLowerCase('ru-RU'),String(e.teacher??'').toLocaleLowerCase('ru-RU'),e.type,e.half??'',e.doubleOf??''].join('|');
+  const ordered=[...events].sort((a,b)=>identity(a).localeCompare(identity(b))||a.start.localeCompare(b.start));const out=[];
+  for(let i=0;i<ordered.length;){const first=ordered[i],second=ordered[i+1];if(second&&typeof first.doubleOf==='string'&&first.doubleOf.startsWith('auto:')&&first.doubleOf===second.doubleOf&&first.doublePart===1&&second.doublePart===2&&identity(first)===identity(second)){const gap=mins(second.start)-mins(first.end);if(gap>=0&&gap<=20&&mins(second.end)>mins(first.start)){const merged={...first,end:second.end,double:true,mergedConsecutive:true,durationMinutes:mins(second.end)-mins(first.start),doublePart:undefined,id:first.id.replace(/-1$/,'')};if(/\bОРГ\b|основы\s+российской\s+государственности/i.test(first.subject)){merged.orgMerged=true;delete merged.mergedConsecutive;}out.push(merged);i+=2;continue;}}out.push(first);i++;}return out;
 }
 async function loadLiveLd(program,course){const res=await fetch(LIVE_LD_JSON,{cache:'no-store',signal:AbortSignal.timeout(Number(process.env.SCHEDULE_FETCH_TIMEOUT_MS??30000))});if(!res.ok)throw new Error(`HTTP ${res.status}`);const payload=await res.json();if(typeof payload?.schemaVersion!=='number'||!payload?.courses)throw new Error('Invalid official JSON schema');const events=normalizeOfficialCoursePayload(payload,program,course,LIVE_LD_JSON);return{status:'live',events,generatedAt:payload.generatedAt,sourceUrl:LIVE_LD_JSON,sourceName:'official-schedules.json',issues:[],message:`Live snapshot ${payload.generatedAt??''} · ${events.length} событий`};}
 async function loadLocalLd(program,course){try{const payload=JSON.parse(await readFile(join(process.cwd(),'data','official-schedules.json'),'utf8'));if(typeof payload?.schemaVersion!=='number'||!payload?.courses)throw new Error('Invalid local official JSON schema');const events=normalizeOfficialCoursePayload(payload,program,course,'file://local/data/official-schedules.json','local official-schedules.json');if(!events.length)throw new Error('Локальный официальный snapshot не содержит событий');return{status:'cache',events,generatedAt:payload.generatedAt,sourceUrl:LIVE_LD_JSON,sourceName:'local official-schedules.json',issues:[],message:`Локальный официальный snapshot ${payload.generatedAt??''} · ${events.length} событий`};}catch{return null;}}

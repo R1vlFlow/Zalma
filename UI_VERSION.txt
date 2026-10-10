@@ -1,2 +1,2 @@
-Almazov Student UI: 2.6.0-rc.1
-Runtime build: 2.6.0-rc.1
+Almazov Student UI: 2.7.0-rc.1
+Runtime build: 2.7.0-rc.1
