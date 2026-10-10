@@ -34,10 +34,11 @@ check('current SPA exposes schedule cards and next-class homework linking',
 check('official schedule pipeline validates and merges double blocks',
       'merge_consecutive_identical_events' in (ROOT / 'scripts/build_official_schedule.py').read_text(encoding='utf-8') and
       'mergeAutoSplitDoubleSlots' in (ROOT / 'server/pipeline.mjs').read_text(encoding='utf-8'))
-check('Pediatrics/Clinical Psychology producer runs before Pages build',
-      pages.index('scripts/build_specialist_program_schedules.py --use-last-good') < pages.index('run: npm run qa'))
+check('Pediatrics/Clinical Psychology live sync and strict release gate run before Pages build',
+      pages.index('run: python scripts/build_specialist_program_schedules.py') < pages.index('run: python scripts/validate_production_release.py') < pages.index('run: npm run qa') and
+      '--use-last-good' not in pages and '--use-last-good' not in sync)
 check('Pages RC build requires minification and validated specialist snapshots',
-      'REQUIRE_MINIFICATION: "1"' in pages and 'REQUIRE_SPECIALIST_SNAPSHOT: "1"' in pages)
+      "REQUIRE_MINIFICATION: '1'" in pages and "REQUIRE_SPECIALIST_SNAPSHOT: '1'" in pages)
 check('schedule sync commits data before deploying and does not hide push errors',
       sync.index('git push') < sync.index('actions/upload-pages-artifact@v3') and 'git push || true' not in sync)
 check('production build fails closed when required dependencies/data are absent',

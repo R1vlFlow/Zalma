@@ -83,6 +83,8 @@ def bootstrap_event_errors(data: dict) -> list[str]:
                 errors.append(f'{p}: event is not an object')
                 continue
             typ = event.get('type')
+            if str(event.get('sourceUrl','')).startswith('fixture://') or event.get('sourceKind')=='practice-fallback-fixture':
+                errors.append(f'{p}: fixture-derived event must never be included in the published index')
             if typ not in _VALID_TYPES:
                 errors.append(f'{p}: invalid type {typ!r}')
             stream = str(event.get('stream', '') or '')

@@ -281,6 +281,17 @@ class UniversalScheduleParser:
                 except Exception:
                     events=[]
 
+        # Try the PDFPlumber table-grid extractor for daily timetable PDFs before
+        # the PyMuPDF compatibility fallback. It retains the relation between
+        # weekday/time rows and group columns and can reject partial roster output.
+        if not events and raw is not None:
+            try:
+                candidate=self.m.parse_practice_with_pdfplumber(raw,course,url,stream)
+                if self._acceptable_practice_events(candidate,profile):
+                    events=candidate
+            except Exception:
+                pass
+
         # Daily tables and any unknown future layout use the legacy extractor
         # chain as a compatibility engine. The universal layer decides this from
         # observed structure rather than from course number.

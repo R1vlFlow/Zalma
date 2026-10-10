@@ -855,7 +855,113 @@
             }
           ],
           "lectureStatus": "source_mismatch",
-          "status": "published_practice_only"
+          "status": "published_practice_only",
+          "lectureRules": [
+            {
+              "weekday": 1,
+              "start": "13:30",
+              "end": "14:55",
+              "subject": "Гистология, цитология, эмбриология, общая цитология, эмбриология (2-9)",
+              "weeks": "2,3,5,7,9,11,13",
+              "lessonType": "lecture",
+              "audience": "ALL",
+              "location": "Солнечное, лит. С, ауд. 3.32"
+            },
+            {
+              "weekday": 1,
+              "start": "13:30",
+              "end": "14:55",
+              "subject": "Гигиена и экология",
+              "weeks": "4,6,8,10,12,14-16",
+              "lessonType": "lecture",
+              "audience": "ALL",
+              "location": "Солнечное, лит. С, ауд. 3.32"
+            },
+            {
+              "weekday": 1,
+              "start": "15:10",
+              "end": "16:35",
+              "subject": "Сестринское дело",
+              "weeks": "2",
+              "lessonType": "lecture",
+              "audience": "ALL",
+              "location": "Солнечное, лит. С, ауд. 3.23"
+            },
+            {
+              "weekday": 1,
+              "start": "15:10",
+              "end": "16:35",
+              "subject": "Нормальная физиология",
+              "weeks": "3-15",
+              "lessonType": "lecture",
+              "audience": "ALL",
+              "location": "Солнечное, лит. С, ауд. 3.53"
+            },
+            {
+              "weekday": 3,
+              "start": "13:30",
+              "end": "15:05",
+              "subject": "Биохимия",
+              "weeks": "2-9,11-16",
+              "lessonType": "lecture",
+              "audience": "ALL",
+              "location": "Солнечное, лит. С, ауд. 2.10"
+            },
+            {
+              "weekday": 3,
+              "start": "15:20",
+              "end": "16:55",
+              "subject": "Микробиология",
+              "weeks": "2-9,11-16",
+              "lessonType": "lecture",
+              "audience": "ALL",
+              "location": "Солнечное, лит. С, ауд. 2.54"
+            },
+            {
+              "weekday": 6,
+              "start": "13:30",
+              "end": "15:05",
+              "subject": "Анатомия человека",
+              "weeks": "2-6",
+              "lessonType": "lecture",
+              "audience": "ALL",
+              "location": "ШКОЛА, ауд. 6.1"
+            },
+            {
+              "weekday": 6,
+              "start": "13:30",
+              "end": "15:05",
+              "subject": "Физическая культура и спорт",
+              "weeks": "7-12",
+              "lessonType": "lecture",
+              "audience": "ALL",
+              "location": "Солнечное, лит. С, ауд. 24"
+            },
+            {
+              "weekday": 6,
+              "start": "13:30",
+              "end": "15:05",
+              "subject": "Микробиология",
+              "weeks": "13",
+              "lessonType": "lecture",
+              "audience": "ALL",
+              "location": "ЦДТИ, ауд. 2.50"
+            },
+            {
+              "weekday": 6,
+              "start": "15:20",
+              "end": "16:55",
+              "subject": "Психология",
+              "weeks": "2-6",
+              "lessonType": "lecture",
+              "audience": "ALL",
+              "location": "ШКОЛА, ауд. 6.1"
+            }
+          ],
+          "lectureSourceNote": {
+            "code": "OFFICIAL_PEDS2_LECTURE_TITLE_MISLABEL",
+            "detail": "The official student-hub link is listed under Pediatrics, and the PDF body lists course 2, Flow A and groups 201П–203П, but the document header incorrectly says 31.05.01 Лечебное дело / Поток А. Rules were transcribed from the official PDF text view; the raw bytes and SHA-256 were unavailable in this runtime."
+          }
         }
       }
     },
@@ -874,8 +980,8 @@
           },
           "sources": {
             "kug": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/kug_klinicheskaya-psihologiya_1-kurs.pdf",
-            "lecture": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/klinicheskaya-psihologiya_1-kurs_lekczii-1.pdf",
-            "practice": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/klinicheskaya-psihologiya_1-kurs_seminary-2.pdf"
+            "lecture": "https://education.almazovcentre.ru/wp-content/uploads/2026/10/klinicheskaya-psihologiya_1-kurs_lekczii.pdf",
+            "practice": "https://education.almazovcentre.ru/wp-content/uploads/2026/10/klinicheskaya-psihologiya_1-kurs_seminary.pdf"
           },
           "lectureRules": [
             {
@@ -1209,8 +1315,8 @@
           },
           "sources": {
             "kug": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/kug_klinicheskaya-psihologiya_2-kurs.pdf",
-            "lecture": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/klinicheskaya-psihologiya_2-kurs_lekczii-2.pdf",
-            "practice": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/klinicheskaya-psihologiya_2-kurs_seminary-1.pdf"
+            "lecture": "https://education.almazovcentre.ru/wp-content/uploads/2026/10/klinicheskaya-psihologiya_2-kurs_lekczii.pdf",
+            "practice": "https://education.almazovcentre.ru/wp-content/uploads/2026/10/klinicheskaya-psihologiya_2-kurs_seminary.pdf"
           },
           "lectureRules": [
             {
@@ -1465,6 +1571,6 @@
       }
     }
   },
-  "sourcesCheckedAt": "2026-10-04",
-  "note": "Official published PDF sources on the Almazov student cabinet; normalized manually into safe week/group rules. Missing higher-course schedule is shown as unpublished, never fabricated."
+  "sourcesCheckedAt": "2026-10-10",
+  "note": "Pediatrics/Clinical Psychology course 1–2 rules are manually normalized from timetable PDFs linked on the current official student hub. URLs refreshed on 2026-10-10; rules are not the same as an independently regenerated/validated program-schedules.json. Higher-course schedules/groups are not fabricated."
 }

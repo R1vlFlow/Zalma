@@ -20,6 +20,7 @@ SCRIPTS = ROOT / 'scripts'
 sys.path.insert(0, str(SCRIPTS))
 import build_official_schedule as legacy
 from universal_schedule_ingest import parse_source_bytes
+from source_integrity import source_provenance
 from bs4 import BeautifulSoup
 
 PAGE = legacy.PAGE
@@ -138,8 +139,21 @@ def doc_metadata(candidate: dict, data: bytes, fmt: str) -> dict:
     header = text[:12000]
     body_program = detect_program(header)
     program = candidate['programHint']
+    metadata_exception = None
+    peds2_known_mislabel = (
+        canonical_url(candidate['url']) == 'https://education.almazovcentre.ru/wp-content/uploads/2026/09/raspisanielekczij_2k_pediatry-osen-1.pdf'
+        and program == '31.05.02' and int(candidate.get('courseHint') or 0) == 2
+        and candidate.get('kindHint') == 'lecture' and body_program == '31.05.01'
+        and re.search(r'201\s*П', header, re.I) and re.search(r'202\s*П', header, re.I) and re.search(r'203\s*П', header, re.I)
+        and re.search(r'ПОТОК\s*[AА]', header, re.I)
+    )
     if body_program and body_program != program:
-        raise ValueError(f"SOURCE_FACULTY_MISMATCH expected={program} document={body_program} url={candidate['url']}")
+        if peds2_known_mislabel:
+            metadata_exception = {'code':'OFFICIAL_PEDS2_LECTURE_TITLE_MISLABEL',
+                'expectedProgram':'31.05.02','documentHeaderProgram':'31.05.01',
+                'evidence':'Exact current official student-hub URL; body contains course 2, Flow A and groups 201П–203П; retained as an explicit warning.'}
+        else:
+            raise ValueError(f"SOURCE_FACULTY_MISMATCH expected={program} document={body_program} url={candidate['url']}")
     course = infer_course(header) or candidate['courseHint']
     # The document heading wins over a stale filename and over link context.
     kind = infer_kind(header) or candidate['kindHint']
@@ -152,37 +166,63 @@ def doc_metadata(candidate: dict, data: bytes, fmt: str) -> dict:
         raise ValueError(f"SOURCE_ACADEMIC_YEAR_MISMATCH year={invalid_years[0]} url={candidate['url']}")
     if course not in (1, 2, 3, 4, 5, 6) or kind not in ('lecture', 'practice'):
         raise ValueError(f"SOURCE_METADATA_INCOMPLETE course={course} kind={kind} url={candidate['url']}")
+    provenance = source_provenance(data, text, candidate['url'])
     return {'program': program, 'course': int(course), 'kind': kind, 'stream': stream,
-            'title': candidate['title'], 'url': candidate['url'], 'format': fmt, 'preview': header}
+            'title': candidate['title'], 'url': candidate['url'], 'format': fmt, 'preview': header,
+            'metadataException': metadata_exception, **provenance}
+
+
+_ACADEMIC_WEEK_CACHE: dict[int, dict] | None = None
+_HOLIDAY_DATES = {dt.date(2026, 11, 4), *[dt.date(2027, 1, day) for day in range(1, 9)]}
+
+
+def official_week_map() -> dict[int, dict]:
+    """Read the official first-semester week ranges; never infer a matrix column as a weekday."""
+    global _ACADEMIC_WEEK_CACHE
+    if _ACADEMIC_WEEK_CACHE is not None:
+        return _ACADEMIC_WEEK_CACHE
+    result: dict[int, dict] = {}
+    try:
+        payload = json.loads((ROOT / 'data' / 'academic-weeks-2026-2027.json').read_text(encoding='utf-8'))
+        if payload.get('academicYear') == '2026/2027':
+            for row in payload.get('weeks', []):
+                try:
+                    number = int(row['weekNumber'])
+                    first = dt.date.fromisoformat(row['from'])
+                    last = dt.date.fromisoformat(row['to'])
+                    if 1 <= number <= 52 and first <= last:
+                        result[number] = {**row, '_status': payload.get('status'), '_source': payload.get('source', {})}
+                except (KeyError, TypeError, ValueError):
+                    continue
+    except (OSError, ValueError, TypeError):
+        pass
+    _ACADEMIC_WEEK_CACHE = result
+    return result
 
 
 def materialize_dates(event: dict) -> list[str]:
     direct = legacy.norm(event.get('date'))
     if re.fullmatch(r'\d{4}-\d{2}-\d{2}', direct):
         return [direct]
-    base = legacy.norm(event.get('weekStart'))
-    if not re.fullmatch(r'\d{4}-\d{2}-\d{2}', base):
-        week = event.get('weekNumber')
+    week = event.get('weekNumber')
+    week_row = None
+    try:
         if week not in (None, ''):
-            try:
-                base = legacy.week_start(int(week))
-            except (TypeError, ValueError):
-                base = ''
+            week_row = official_week_map().get(int(week))
+    except (TypeError, ValueError):
+        week_row = None
+    base = legacy.norm((week_row or {}).get('from')) or legacy.norm(event.get('weekStart'))
+    end_bound = legacy.norm((week_row or {}).get('to'))
     try:
         start_date = dt.date.fromisoformat(base)
+        end_date = dt.date.fromisoformat(end_bound) if end_bound else start_date + dt.timedelta(days=6)
     except ValueError:
         return []
     slots = event.get('matrixSlots')
     if isinstance(slots, list) and slots:
-        out = []
-        for val in slots:
-            try:
-                offset = int(val)
-            except (ValueError, TypeError):
-                continue
-            if 0 <= offset <= 6:
-                out.append((start_date + dt.timedelta(days=offset)).isoformat())
-        return sorted(set(out))
+        # Matrix slots are within-week columns, not calendar weekdays. Preserve them as
+        # weekly blocks in the upstream parser; this function must not turn them into dates.
+        return []
     weekday = event.get('weekday')
     if weekday is None:
         return []
@@ -190,7 +230,16 @@ def materialize_dates(event: dict) -> list[str]:
         wd = int(weekday)
     except (TypeError, ValueError):
         return []
-    return [(start_date + dt.timedelta(days=wd)).isoformat()] if 0 <= wd <= 6 else []
+    if not 0 <= wd <= 6:
+        return []
+    # Source weekday is JavaScript-style (0=Sunday, 1=Monday...). Align it to
+    # the actual weekday of the official week start rather than adding wd to Monday.
+    target_python_weekday = (wd + 6) % 7
+    offset = (target_python_weekday - start_date.weekday()) % 7
+    target = start_date + dt.timedelta(days=offset)
+    if target > end_date or target in _HOLIDAY_DATES:
+        return []
+    return [target.isoformat()]
 
 
 def clean_teacher(value: object) -> str:
@@ -244,7 +293,11 @@ def normalize_events(raw_events: list[dict], meta: dict) -> list[dict]:
                 'doublePart': raw.get('doublePart'), 'doubleIndex': raw.get('doubleIndex'),
                 'doubleOf': raw.get('doubleOf'), 'durationMinutes': (int(end[:2])*60+int(end[3:]))-(int(start[:2])*60+int(start[3:])),
                 'weeks': f"нед. {raw['weekNumber']}" if raw.get('weekNumber') not in (None, '') else '',
-                'weekNumber': raw.get('weekNumber'), 'weekStart': raw.get('weekStart'), 'weekday': raw.get('weekday'),
+                'weekNumber': raw.get('weekNumber'), 'weekStart': (official_week_map().get(int(raw['weekNumber']), {}).get('from') if raw.get('weekNumber') not in (None, '') and str(raw.get('weekNumber')).isdigit() else raw.get('weekStart')), 'weekday': raw.get('weekday'),
+                'weekRangeStart': (official_week_map().get(int(raw['weekNumber']), {}).get('from') if raw.get('weekNumber') not in (None, '') and str(raw.get('weekNumber')).isdigit() else None),
+                'weekRangeEnd': (official_week_map().get(int(raw['weekNumber']), {}).get('to') if raw.get('weekNumber') not in (None, '') and str(raw.get('weekNumber')).isdigit() else None),
+                'weekCalendarSource': (official_week_map().get(int(raw['weekNumber']), {}).get('_source', {}).get('url') if raw.get('weekNumber') not in (None, '') and str(raw.get('weekNumber')).isdigit() else None),
+                'weekCalendarStatus': (official_week_map().get(int(raw['weekNumber']), {}).get('_status') if raw.get('weekNumber') not in (None, '') and str(raw.get('weekNumber')).isdigit() else None),
                 'sourceUrl': meta['url'], 'sourceTitle': meta['title'], 'sourceKind': meta['format'],
                 'confidence': 0.92, 'parser': raw.get('parser', f"universal-ingest-{meta['format']}-v2")
             })
@@ -361,7 +414,10 @@ def build_payload(session, previous: dict | None) -> dict:
                 key = (event['group'], event.get('stream'), event['date'], event['start'], event['end'], event['subject'].casefold(), event['location'].casefold(), event.get('teacher','').casefold(), event['type'], event.get('half') or '')
                 unique.setdefault(key, event)
             events = legacy.merge_consecutive_identical_events(list(unique.values()))
-            source_records = [{'kind': rec['meta']['kind'], 'stream': rec['meta'].get('stream') or '', 'title': rec['meta']['title'], 'url': rec['meta']['url'], 'format': rec['meta']['format'], 'events': len(rec['events']), 'status': 'published'} for rec in recs]
+            source_records = [{'kind': rec['meta']['kind'], 'stream': rec['meta'].get('stream') or '', 'title': rec['meta']['title'], 'url': rec['meta']['url'], 'format': rec['meta']['format'], 'events': len(rec['events']), 'status': 'published',
+                'sha256':rec['meta'].get('sha256'),'contentBytes':rec['meta'].get('contentBytes'),'checkedAt':rec['meta'].get('checkedAt'),
+                'academicYearInDocument':rec['meta'].get('academicYearInDocument'),'dateLabelAudit':rec['meta'].get('dateLabelAudit'),
+                **({'metadataException':rec['meta']['metadataException']} if rec['meta'].get('metadataException') else {})} for rec in recs]
             if source_errors:
                 source_records.extend({'kind': x['kindHint'], 'title': x['title'], 'url': x['url'], 'status': 'quarantined', 'error': x['error']} for x in source_errors)
             if events:

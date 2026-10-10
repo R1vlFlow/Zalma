@@ -36,6 +36,7 @@ expected={
  '6': {'':list(map(str,range(601,619)))},
 }
 errors=[]
+recovery = DATA.get('dataState') == 'local-recovery-snapshot'
 for cid, roster in expected.items():
     c=courses.get(cid,{})
     groups=set(map(str,c.get('groups',[])))
@@ -47,6 +48,8 @@ for cid, roster in expected.items():
     if not events: errors.append(f'{cid}: no events')
     seen=set()
     for e in events:
+        if str(e.get('sourceUrl','')).startswith('fixture://') or e.get('sourceKind')=='practice-fallback-fixture':
+            errors.append(f'{cid}: fixture-derived event must not be shipped')
         if e.get('type')=='practice' and len(str(e.get('group',''))) != 3:
             errors.append(f"{cid}: practice event without 3-digit group: {e}")
         wd=e.get('weekday')
@@ -63,13 +66,13 @@ for cid, roster in expected.items():
     if cid in {'1','2','3','4','5'}:
         for st in ('A','B'):
             if not c.get('streams',{}).get(st): errors.append(f'{cid}: stream {st} has no groups')
-            if DATA.get('dataState') != 'local-recovery-snapshot' and not any(e.get('stream')==st and e.get('type')=='practice' for e in events): errors.append(f'{cid}: stream {st} has no practice events')
+            if not recovery and not any(e.get('stream')==st and e.get('type')=='practice' for e in events): errors.append(f'{cid}: stream {st} has no practice events')
             if not any(e.get('stream')==st and e.get('type')=='lecture' for e in events): errors.append(f'{cid}: stream {st} has no lecture events')
     else:
-        if not any(e.get('type')=='practice' for e in events): errors.append('6: no practice events')
+        if not recovery and not any(e.get('type')=='practice' for e in events): errors.append('6: no practice events')
 
 if errors:
     print('SCHEDULE DATA VALIDATION FAILED')
     print('\n'.join(' - '+x for x in errors))
     raise SystemExit(1)
-print('SCHEDULE DATA VALIDATION: OK — 1–6 course rosters, event shape, duplicates and source coverage are consistent.')
+print('SCHEDULE DATA VALIDATION: OK — 1–6 rosters and event shape verified; recovery snapshot is explicitly partial.' if recovery else 'SCHEDULE DATA VALIDATION: OK — 1–6 rosters, event shape, duplicates and source coverage are consistent.')

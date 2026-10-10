@@ -29,6 +29,27 @@ if suspicious_warnings:
 if DATA.get("dataState") == "bootstrap-pending":
     print("DEEP SCHEDULE AUDIT: OK — bootstrap-pending; strict event audit is deferred to the first live GitHub synchronization.")
     raise SystemExit(0)
+if DATA.get("dataState") == "local-recovery-snapshot":
+    fixture_events=[]
+    for cid, course in (DATA.get('courses') or {}).items():
+        for idx, event in enumerate(course.get('events') or []):
+            if str(event.get('sourceUrl','')).startswith('fixture://') or event.get('sourceKind')=='practice-fallback-fixture':
+                fixture_events.append(f'{cid}[{idx}] still contains a fixture-derived event')
+    if fixture_events:
+        print('DEEP SCHEDULE AUDIT: FAILED — unsafe fixture rows remain')
+        for x in fixture_events[:100]: print(' -', x)
+        raise SystemExit(1)
+    print('DEEP SCHEDULE AUDIT: SAFE RECOVERY SNAPSHOT — NOT PRODUCTION-COMPLETE')
+    for cid, course in sorted((DATA.get('courses') or {}).items(), key=lambda x:int(x[0])):
+        events=course.get('events') or []
+        practice=[e for e in events if e.get('type')=='practice']
+        groups={str(e.get('group','')) for e in practice}
+        missing=sorted(set(map(str,course.get('groups',[])))-groups)
+        if missing: print(f' - course {cid}: verified practice missing for {len(missing)} groups; snapshot remains partial')
+        if any(s.get('status')=='quarantined' for s in course.get('sources',[])):
+            print(f' - course {cid}: one or more official sources are quarantined pending successful re-ingestion')
+    print('Strict 100% group/stream lesson coverage is required before dataState may be changed to live-generated.')
+    raise SystemExit(0)
 if DATA.get("dataState") not in {None, "live-generated"}:
     print(f"DEEP SCHEDULE AUDIT: FAILED\n - unsupported dataState={DATA.get('dataState')!r}")
     raise SystemExit(1)

@@ -9,7 +9,9 @@ required = [
     'workflow_dispatch:', 'schedule:', 'permissions:', 'contents: write',
     'scripts/build_official_schedule.py', 'scripts/validate_generated_index.py',
     'scripts/validate_schedule_data.py', 'scripts/validate_js.py',
-    'actions/upload-pages-artifact@v3', 'actions/deploy-pages@v4'
+    'actions/upload-pages-artifact@v3', 'actions/deploy-pages@v4',
+    'scripts/write_ci_sync_diagnostics.py', 'official-schedule-sync-diagnostics-',
+    'if: always()', 'actions/upload-artifact@v4'
 ]
 for needle in required:
     if needle not in text: raise SystemExit(f'WORKFLOW CONTRACT FAILED: missing {needle!r}')

@@ -14,9 +14,10 @@ checks=[
  ('builder reads complete canonical KUG file', "readFile(join(root,'data','kug.json')" in BUILDER and 'Object.entries(curatedKug)' in BUILDER),
  ('client reads built KUG JSON with bounded network timeout', "fetch('./data/kug.json'" in APP and 'AbortSignal.timeout(6000)' in APP),
  ('UI renders date-ranged periods and links', 'function renderKug()' in APP and 'function renderKugGrid(dates:string[])' in APP and 'x.sourceUrl' in APP and 'x.start' in APP and 'x.end' in APP),
+ ('UI warns when KUG PDFs have not passed live hash verification', "sourceManifestStatus==='live-verified'" in APP and 'КУГ не прошёл live-проверку PDF и SHA-256' in APP),
  ('KUG periods carry a supported shape and valid date range', all(isinstance(items,list) and all(isinstance(x.get('from'),str) and isinstance(x.get('to'),str) and x['from']<=x['to'] for x in items) for courses in CURATED.values() for items in courses.values())),
  ('published assessment periods carry their own source URLs', isinstance(OFFICIAL.get('assessmentPeriods'),list) and all(x.get('sourceUrl') for x in OFFICIAL.get('assessmentPeriods',[]))),
- ('non-LD period sources are not falsely linked to LD-specific PDFs', "program==='31.05.01'" in BUILDER),
+ ('KUG source manifest maps every programme/course independently', "officialSources.find(x=>String(x.program)===String(program)&&String(x.course)===String(course))" in BUILDER),
  ('KUG overlay styles cover each named period type', all(f'.kug-{k}' in CSS for k in ('study','assessment','practice','vacation','session'))),
  ('built KUG payload exists', DIST.is_file()),
 ]
@@ -28,7 +29,11 @@ if DIST.is_file():
   exists=any(program=='31.05.01' and str(course)==candidate[1] and item.get('from')==candidate[2] and item.get('to')==candidate[3] for program,courses in CURATED.items() for course,items in courses.items() for item in items)
   if not exists: expected += 1
  checks.append(('built KUG payload matches all curated periods and nonduplicate official assessments',len(built.get('periods',[]))==expected and len(built.get('sources',[]))==sum(len(courses) for courses in CURATED.values())))
- checks.append(('non-LD built periods have no unrelated LD PDF URLs',all(not p.get('sourceUrl') for p in built.get('periods',[]) if p.get('program')!='31.05.01')))
+ if built.get('sourceManifestStatus')=='live-verified':
+  checks.append(('all programmes have source-hashed direct KUG URLs', all(x.get('url','').startswith('https://education.almazovcentre.ru/wp-content/uploads/') and len(x.get('sha256') or '')==64 for x in built.get('sources',[]))))
+  checks.append(('non-LD periods link to their own programme KUG', all(p.get('sourceUrl') and ('pediatriya' in p.get('sourceUrl','').lower() if p.get('program')=='31.05.02' else 'klinicheskaya-psihologiya' in p.get('sourceUrl','').lower()) for p in built.get('periods',[]) if p.get('program')!='31.05.01')))
+ else:
+  checks.append(('non-LD built periods do not point to unrelated LD PDFs',all(not (p.get('sourceUrl') or '').endswith('kug_lechebnoe-delo_1-kurs.pdf') for p in built.get('periods',[]) if p.get('program')!='31.05.01')))
 for name,ok in checks:
  print(('PASS' if ok else 'FAIL')+' — '+name)
 failed=[name for name,ok in checks if not ok]

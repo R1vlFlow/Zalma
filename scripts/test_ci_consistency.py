@@ -14,6 +14,9 @@ checks=[
  ('shared deployment queue cannot cancel in-progress release', 'group: pages' in pages and 'group: pages' in sync and 'cancel-in-progress: false' in pages and 'cancel-in-progress: false' in sync),
  ('both workflows deploy dist artifacts', pages.count('path: dist')>=1 and sync.count('path: dist')>=1),
  ('canonical URL instructions avoid /dist/', 'без `/dist/`' in guide),
+ ('page deploy runs current official sync and strict production gate', 'python scripts/sync_kug_and_calendar.py' in pages and 'python scripts/validate_production_release.py' in pages),
+ ('normal deploy never silently reuses specialist last-good data', '--use-last-good' not in pages),
+ ('scheduled sync checks all KUG and official hashes', 'data/kug-source-manifest.json' in sync and 'validate_production_release.py' in sync),
 ]
 failed=[name for name,ok in checks if not ok]
 print(f'CI CONSISTENCY CONTRACT: {len(checks)-len(failed)}/{len(checks)} passed')

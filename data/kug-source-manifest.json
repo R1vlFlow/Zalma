@@ -1,0 +1,201 @@
+{
+  "schemaVersion": 1,
+  "academicYear": "2026/2027",
+  "generatedAt": null,
+  "status": "url-reviewed-awaiting-live-byte-verification",
+  "sourcePage": "https://education.almazovcentre.ru/about_institute/programm/specialist_programme/student/",
+  "expectedProgramCourses": [
+    {
+      "program": "31.05.01",
+      "course": 1
+    },
+    {
+      "program": "31.05.01",
+      "course": 2
+    },
+    {
+      "program": "31.05.01",
+      "course": 3
+    },
+    {
+      "program": "31.05.01",
+      "course": 4
+    },
+    {
+      "program": "31.05.01",
+      "course": 5
+    },
+    {
+      "program": "31.05.01",
+      "course": 6
+    },
+    {
+      "program": "31.05.02",
+      "course": 1
+    },
+    {
+      "program": "31.05.02",
+      "course": 2
+    },
+    {
+      "program": "37.05.01",
+      "course": 1
+    },
+    {
+      "program": "37.05.01",
+      "course": 2
+    }
+  ],
+  "sources": [
+    {
+      "program": "31.05.01",
+      "programName": "Лечебное дело",
+      "course": 1,
+      "title": "КУГ · Лечебное дело · 1 курс",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/kug_lechebnoe-delo_1-kurs.pdf",
+      "discovery": "official-hub",
+      "status": "url-reviewed-awaiting-live-byte-verification",
+      "sha256": null,
+      "contentBytes": null,
+      "checkedAt": null,
+      "academicYearInDocument": null,
+      "periods": 8,
+      "evidence": "Direct URL was reviewed against the official student hub. PDF bytes and SHA-256 have not been fetched in this runtime; production gate must remain blocked until live sync."
+    },
+    {
+      "program": "31.05.01",
+      "programName": "Лечебное дело",
+      "course": 2,
+      "title": "КУГ · Лечебное дело · 2 курс",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/kug_lechebnoe-delo_2-kurs.pdf",
+      "discovery": "official-hub",
+      "status": "url-reviewed-awaiting-live-byte-verification",
+      "sha256": null,
+      "contentBytes": null,
+      "checkedAt": null,
+      "academicYearInDocument": null,
+      "periods": 7,
+      "evidence": "Direct URL was reviewed against the official student hub. PDF bytes and SHA-256 have not been fetched in this runtime; production gate must remain blocked until live sync."
+    },
+    {
+      "program": "31.05.01",
+      "programName": "Лечебное дело",
+      "course": 3,
+      "title": "КУГ · Лечебное дело · 3 курс",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/kug_lechebnoe-delo_3-kurs.pdf",
+      "discovery": "official-hub",
+      "status": "url-reviewed-awaiting-live-byte-verification",
+      "sha256": null,
+      "contentBytes": null,
+      "checkedAt": null,
+      "academicYearInDocument": null,
+      "periods": 7,
+      "evidence": "Direct URL was reviewed against the official student hub. PDF bytes and SHA-256 have not been fetched in this runtime; production gate must remain blocked until live sync."
+    },
+    {
+      "program": "31.05.01",
+      "programName": "Лечебное дело",
+      "course": 4,
+      "title": "КУГ · Лечебное дело · 4 курс",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/kug_lechebnoe-delo_4-kurs.pdf",
+      "discovery": "official-hub",
+      "status": "url-reviewed-awaiting-live-byte-verification",
+      "sha256": null,
+      "contentBytes": null,
+      "checkedAt": null,
+      "academicYearInDocument": null,
+      "periods": 7,
+      "evidence": "Direct URL was reviewed against the official student hub. PDF bytes and SHA-256 have not been fetched in this runtime; production gate must remain blocked until live sync."
+    },
+    {
+      "program": "31.05.01",
+      "programName": "Лечебное дело",
+      "course": 5,
+      "title": "КУГ · Лечебное дело · 5 курс",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/kug_lechebnoe-delo_5-kurs.pdf",
+      "discovery": "official-hub",
+      "status": "url-reviewed-awaiting-live-byte-verification",
+      "sha256": null,
+      "contentBytes": null,
+      "checkedAt": null,
+      "academicYearInDocument": null,
+      "periods": 7,
+      "evidence": "Direct URL was reviewed against the official student hub. PDF bytes and SHA-256 have not been fetched in this runtime; production gate must remain blocked until live sync."
+    },
+    {
+      "program": "31.05.01",
+      "programName": "Лечебное дело",
+      "course": 6,
+      "title": "КУГ · Лечебное дело · 6 курс",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/kug_lechebnoe-delo_6-kurs.pdf",
+      "discovery": "official-hub",
+      "status": "url-reviewed-awaiting-live-byte-verification",
+      "sha256": null,
+      "contentBytes": null,
+      "checkedAt": null,
+      "academicYearInDocument": null,
+      "periods": 7,
+      "evidence": "Direct URL was reviewed against the official student hub. PDF bytes and SHA-256 have not been fetched in this runtime; production gate must remain blocked until live sync."
+    },
+    {
+      "program": "31.05.02",
+      "programName": "Педиатрия",
+      "course": 1,
+      "title": "КУГ · Педиатрия · 1 курс",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/kug_pediatriya_1-kurs.pdf",
+      "discovery": "official-hub",
+      "status": "url-reviewed-awaiting-live-byte-verification",
+      "sha256": null,
+      "contentBytes": null,
+      "checkedAt": null,
+      "academicYearInDocument": null,
+      "periods": 8,
+      "evidence": "Direct URL was reviewed against the official student hub. PDF bytes and SHA-256 have not been fetched in this runtime; production gate must remain blocked until live sync."
+    },
+    {
+      "program": "31.05.02",
+      "programName": "Педиатрия",
+      "course": 2,
+      "title": "КУГ · Педиатрия · 2 курс",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/kug_pediatriya_2-kurs.pdf",
+      "discovery": "official-hub",
+      "status": "url-reviewed-awaiting-live-byte-verification",
+      "sha256": null,
+      "contentBytes": null,
+      "checkedAt": null,
+      "academicYearInDocument": null,
+      "periods": 7,
+      "evidence": "Direct URL was reviewed against the official student hub. PDF bytes and SHA-256 have not been fetched in this runtime; production gate must remain blocked until live sync."
+    },
+    {
+      "program": "37.05.01",
+      "programName": "Клиническая психология",
+      "course": 1,
+      "title": "КУГ · Клиническая психология · 1 курс",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/kug_klinicheskaya-psihologiya_1-kurs.pdf",
+      "discovery": "official-hub",
+      "status": "url-reviewed-awaiting-live-byte-verification",
+      "sha256": null,
+      "contentBytes": null,
+      "checkedAt": null,
+      "academicYearInDocument": null,
+      "periods": 7,
+      "evidence": "Direct URL was reviewed against the official student hub. PDF bytes and SHA-256 have not been fetched in this runtime; production gate must remain blocked until live sync."
+    },
+    {
+      "program": "37.05.01",
+      "programName": "Клиническая психология",
+      "course": 2,
+      "title": "КУГ · Клиническая психология · 2 курс",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/kug_klinicheskaya-psihologiya_2-kurs.pdf",
+      "discovery": "official-hub",
+      "status": "url-reviewed-awaiting-live-byte-verification",
+      "sha256": null,
+      "contentBytes": null,
+      "checkedAt": null,
+      "academicYearInDocument": null,
+      "periods": 7,
+      "evidence": "Direct URL was reviewed against the official student hub. PDF bytes and SHA-256 have not been fetched in this runtime; production gate must remain blocked until live sync."
+    }
+  ]
+}

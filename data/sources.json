@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-10-04",
+  "checkedAt": "2026-10-10",
   "institution": "Институт медицинского образования НМИЦ им. В.А. Алмазова",
   "sources": [
     {
@@ -72,7 +72,9 @@
       "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/raspisanielekczij_2k_pediatry-osen-1.pdf",
       "program": "31.05.02",
       "course": "2",
-      "warning": "Проверить заголовок PDF: на опубликованной версии указан Лечебный факультет / 31.05.01."
+      "warning": "Проверить заголовок PDF: на опубликованной версии указан Лечебный факультет / 31.05.01.",
+      "status": "published-link-needs-explicit-metadata-exception",
+      "notes": "Official hub link exists; PDF heading incorrectly says 31.05.01, but it includes course-2 Stream A groups 201П–203П. Live bytes must pass exact URL/group validation."
     },
     {
       "title": "Педиатрия · ПЗ 2 курс",
@@ -91,14 +93,14 @@
     {
       "title": "КП · Лекции 1 курс",
       "kind": "lecture",
-      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/klinicheskaya-psihologiya_1-kurs_lekczii-1.pdf",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/10/klinicheskaya-psihologiya_1-kurs_lekczii.pdf",
       "program": "37.05.01",
       "course": "1"
     },
     {
       "title": "КП · Семинары 1 курс",
       "kind": "practice",
-      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/klinicheskaya-psihologiya_1-kurs_seminary-2.pdf",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/10/klinicheskaya-psihologiya_1-kurs_seminary.pdf",
       "program": "37.05.01",
       "course": "1"
     },
@@ -112,14 +114,14 @@
     {
       "title": "КП · Лекции 2 курс",
       "kind": "lecture",
-      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/klinicheskaya-psihologiya_2-kurs_lekczii-2.pdf",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/10/klinicheskaya-psihologiya_2-kurs_lekczii.pdf",
       "program": "37.05.01",
       "course": "2"
     },
     {
       "title": "КП · Семинары 2 курс",
       "kind": "practice",
-      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/klinicheskaya-psihologiya_2-kurs_seminary-1.pdf",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/10/klinicheskaya-psihologiya_2-kurs_seminary.pdf",
       "program": "37.05.01",
       "course": "2"
     },
@@ -327,6 +329,15 @@
       "course": "4"
     },
     {
+      "title": "ЛД · Дополнительные обязательные занятия в симуляционном центре · 4 курс",
+      "kind": "supplemental-practice",
+      "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/10/sim-czentr-4-kurs.pdf",
+      "program": "31.05.01",
+      "course": "4",
+      "scope": "supplemental-not-replacement",
+      "note": "Отдельный обязательный слой. Не заменяет основной график практики; включать в live после отдельной нормализации."
+    },
+    {
       "title": "ЛД · ПЗ B · 4 курс",
       "kind": "practice",
       "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/09/4k_ld_b-26-27-na-sajt.pdf",
@@ -397,5 +408,6 @@
       "course": "6"
     }
   ],
-  "note": "The student cabinet currently publishes schedule links for LD courses 1-6, Pediatrics courses 1-2, and Clinical Psychology courses 1-2. Unpublished course layers are intentionally not fabricated."
+  "note": "Official hub links are current as of 2026-10-10. This inventory records page publication only; local SHA-256 verification is created during the live CI sync, not asserted here.",
+  "verificationScope": "Current official student-hub link inventory inspected on 2026-10-10; PDF body validation is documented separately in reports/official-coverage-audit-2026-10-10.md."
 }

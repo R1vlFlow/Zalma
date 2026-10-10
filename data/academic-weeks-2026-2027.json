@@ -1,0 +1,181 @@
+{
+  "schemaVersion": 1,
+  "academicYear": "2026/2027",
+  "status": "web-text-reviewed-byte-unverified",
+  "source": {
+    "url": "https://education.almazovcentre.ru/wp-content/uploads/2026/08/grafik-uchebnyh-nedel-2026-2027-uch.-god-1.pdf",
+    "title": "График учебных недель 2026-2027 учебный год",
+    "discovery": "official-student-hub",
+    "sha256": null,
+    "contentBytes": null,
+    "checkedAt": null,
+    "academicYearInDocument": "2026/2027",
+    "verificationChannel": "Official PDF text and rendered page reviewed through the web reader; raw bytes could not be downloaded in the runtime.",
+    "anomalies": [
+      {
+        "code": "HOLIDAY_DATE_YEAR_CONFLICT",
+        "sourceText": "31.12.2027",
+        "context": "Appears in the non-working holiday list inside the 2026/2027 academic-week PDF. Preserved as a source anomaly; not silently corrected."
+      }
+    ]
+  },
+  "weeks": [
+    {
+      "weekNumber": 1,
+      "from": "2026-09-01",
+      "to": "2026-09-05"
+    },
+    {
+      "weekNumber": 2,
+      "from": "2026-09-07",
+      "to": "2026-09-12"
+    },
+    {
+      "weekNumber": 3,
+      "from": "2026-09-14",
+      "to": "2026-09-19"
+    },
+    {
+      "weekNumber": 4,
+      "from": "2026-09-21",
+      "to": "2026-09-26"
+    },
+    {
+      "weekNumber": 5,
+      "from": "2026-09-28",
+      "to": "2026-10-03"
+    },
+    {
+      "weekNumber": 6,
+      "from": "2026-10-05",
+      "to": "2026-10-10"
+    },
+    {
+      "weekNumber": 7,
+      "from": "2026-10-12",
+      "to": "2026-10-17"
+    },
+    {
+      "weekNumber": 8,
+      "from": "2026-10-19",
+      "to": "2026-10-24"
+    },
+    {
+      "weekNumber": 9,
+      "from": "2026-10-26",
+      "to": "2026-10-31"
+    },
+    {
+      "weekNumber": 10,
+      "from": "2026-11-02",
+      "to": "2026-11-07"
+    },
+    {
+      "weekNumber": 11,
+      "from": "2026-11-09",
+      "to": "2026-11-14"
+    },
+    {
+      "weekNumber": 12,
+      "from": "2026-11-16",
+      "to": "2026-11-21"
+    },
+    {
+      "weekNumber": 13,
+      "from": "2026-11-23",
+      "to": "2026-11-28"
+    },
+    {
+      "weekNumber": 14,
+      "from": "2026-11-30",
+      "to": "2026-12-05"
+    },
+    {
+      "weekNumber": 15,
+      "from": "2026-12-07",
+      "to": "2026-12-12"
+    },
+    {
+      "weekNumber": 16,
+      "from": "2026-12-14",
+      "to": "2026-12-19"
+    },
+    {
+      "weekNumber": 17,
+      "from": "2026-12-21",
+      "to": "2026-12-26"
+    },
+    {
+      "weekNumber": 18,
+      "from": "2026-12-28",
+      "to": "2027-01-02"
+    },
+    {
+      "weekNumber": 19,
+      "from": "2027-01-04",
+      "to": "2027-01-09"
+    },
+    {
+      "weekNumber": 20,
+      "from": "2027-01-11",
+      "to": "2027-01-16"
+    },
+    {
+      "weekNumber": 21,
+      "from": "2027-01-18",
+      "to": "2027-01-23"
+    },
+    {
+      "weekNumber": 22,
+      "from": "2027-01-25",
+      "to": "2027-01-30"
+    }
+  ],
+  "officialHolidayLabels": [
+    {
+      "sourceText": "04.11.2026",
+      "date": "2026-11-04"
+    },
+    {
+      "sourceText": "31.12.2027",
+      "date": null
+    },
+    {
+      "sourceText": "01.01.2027",
+      "date": "2027-01-01"
+    },
+    {
+      "sourceText": "02.01.2027",
+      "date": "2027-01-02"
+    },
+    {
+      "sourceText": "03.01.2027",
+      "date": "2027-01-03"
+    },
+    {
+      "sourceText": "04.01.2027",
+      "date": "2027-01-04"
+    },
+    {
+      "sourceText": "05.01.2027",
+      "date": "2027-01-05"
+    },
+    {
+      "sourceText": "06.01.2027",
+      "date": "2027-01-06"
+    },
+    {
+      "sourceText": "07.01.2027",
+      "date": "2027-01-07"
+    },
+    {
+      "sourceText": "08.01.2027",
+      "date": "2027-01-08"
+    }
+  ],
+  "limitations": [
+    "First-semester weeks 1–22 only; the official document does not provide a trustworthy binary hash in this local recovery.",
+    "The source prints 31.12.2027 in its holiday list; that conflict requires human confirmation.",
+    "This artifact is not live-verified and must not satisfy production release checks."
+  ]
+}

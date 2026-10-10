@@ -3,6 +3,7 @@
   "description": "Canonical offline regression suite for the current TypeScript SPA, schedule parsers, official source discovery and release workflows.",
   "tests": [
     "scripts/test_current_release_contract.py",
+    "scripts/test_recovery_snapshot_contract.py",
     "scripts/test_universal_parser.py",
     "scripts/test_universal_ingest_formats.py",
     "scripts/test_source_sniff_mismatch.py",
@@ -11,6 +12,7 @@
     "scripts/test_5k_lecture_regression.py",
     "scripts/test_6k_matrix_real_pdf.py",
     "scripts/test_6k_lecture_regression.py",
-    "tests/test_specialist_source_discovery.py"
+    "tests/test_specialist_source_discovery.py",
+    "scripts/test_sync_failure_diagnostic.py"
   ]
 }

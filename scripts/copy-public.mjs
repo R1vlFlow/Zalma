@@ -13,19 +13,22 @@ await mkdir(join(dist,'data'),{recursive:true});
 await cp(join(root,'public','data'),join(dist,'data'),{recursive:true});
 
 try{
-  const {normalizeLiveEvents}=await import(join(dist,'core','validate.js'));
+  const {normalizeLiveEvents,normalizeWeeklyBlocks}=await import(join(dist,'core','validate.js'));
   const payload=JSON.parse(await readFile(join(root,'data','official-schedules.json'),'utf8'));
   const curatedKug=JSON.parse(await readFile(join(root,'data','kug.json'),'utf8'));
-  const officialSources=Array.isArray(payload.kugSources)?payload.kugSources:[];
+  const kugManifest=JSON.parse(await readFile(join(root,'data','kug-source-manifest.json'),'utf8').catch(()=>'{"sources":[]}'));
+  const officialSources=Array.isArray(kugManifest.sources)?kugManifest.sources:[];
+  const ldSources=Array.isArray(payload.kugSources)?payload.kugSources:[];
   const periods=[];
   for(const [program,courses] of Object.entries(curatedKug)){
     if(!courses||typeof courses!=='object') continue;
     for(const [course,items] of Object.entries(courses)){
       if(!Array.isArray(items)) continue;
-      const source=program==='31.05.01'?(officialSources.find(x=>String(x.course)===String(course))||null):null;
+      const source=officialSources.find(x=>String(x.program)===String(program)&&String(x.course)===String(course))||
+        (program==='31.05.01'?(ldSources.find(x=>String(x.course)===String(course))||null):null);
       for(const item of items){
         if(!item||typeof item.from!=='string'||typeof item.to!=='string'||item.from>item.to) continue;
-        periods.push({program,course,kind:String(item.kind||'study'),label:String(item.label||'Учебный период'),start:item.from,end:item.to,sourceUrl:source?.url||null});
+        periods.push({program,course,kind:String(item.kind||'study'),label:String(item.label||'Учебный период'),start:item.from,end:item.to,sourceUrl:item.sourceUrl||source?.url||null,sourceSha256:source?.sha256||null});
       }
     }
   }
@@ -38,18 +41,27 @@ try{
   const sources=[];
   for(const [program,courses] of Object.entries(curatedKug)) for(const [course,items] of Object.entries(courses||{})){
     const periodCount=Array.isArray(items)?items.length:0;
-    const source=program==='31.05.01'?(officialSources.find(x=>String(x.course)===String(course))||null):null;
-    sources.push({program,course,title:source?.title||`КУГ · ${program} · ${course} курс`,url:source?.url||'https://education.almazovcentre.ru/about_institute/programm/specialist_programme/student/',periods:periodCount,status:source?.status||'verified-bootstrap'});
+    const source=officialSources.find(x=>String(x.program)===String(program)&&String(x.course)===String(course))||
+      (program==='31.05.01'?(ldSources.find(x=>String(x.course)===String(course))||null):null);
+    sources.push({program,course,title:source?.title||`КУГ · ${program} · ${course} курс`,url:source?.url||'https://education.almazovcentre.ru/about_institute/programm/specialist_programme/student/',periods:periodCount,status:source?.status||'verified-bootstrap',sha256:source?.sha256||null,checkedAt:source?.checkedAt||null,academicYearInDocument:source?.academicYearInDocument||null});
   }
-  const kugPayload={schemaVersion:2,generatedAt:payload.generatedAt??null,sources,periods};
+  const kugIsLiveVerified=kugManifest.status==='live-verified';
+  const kugPayload={schemaVersion:2,generatedAt:kugIsLiveVerified?(kugManifest.generatedAt??null):null,academicYear:kugManifest.academicYear??null,sourceManifestStatus:kugManifest.status??'not-live-verified',sources,periods};
   await mkdir(join(dist,'data'),{recursive:true});
   await writeFile(join(dist,'data','kug.json'),JSON.stringify(kugPayload));
   const events=normalizeLiveEvents(payload);
   for(let course=1;course<=6;course++){
     const courseEvents=events.filter(e=>e.program==='31.05.01'&&e.course===course);
+    const weeklyBlocks=normalizeWeeklyBlocks(payload,'31.05.01',course);
     const dir=join(dist,'data','schedules','31.05.01');
     await mkdir(dir,{recursive:true});
-    await writeFile(join(dir,`${course}.json`),JSON.stringify({version:1,generatedAt:payload.generatedAt,program:'31.05.01',course,status:'live',events:courseEvents,issues:[],message:`Bundled official snapshot · ${courseEvents.length} событий`,sourceUrl:payload.sourcePage,sourceName:'official-schedules.json'}));
+    const liveGenerated=payload.dataState==='live-generated';
+    const snapshotStatus=liveGenerated?'live':payload.dataState==='local-recovery-snapshot'?'partial':'cache';
+    const issues=liveGenerated?[]:['LOCAL_RECOVERY_SNAPSHOT','SCHEDULE_SOURCE_COVERAGE_INCOMPLETE'];
+    const message=liveGenerated
+      ? `Официальный snapshot · ${courseEvents.length} событий`
+      : `Частичный локальный snapshot · ${courseEvents.length} подтверждённых событий. Данные требуют синхронизации с официальным источником.`;
+    await writeFile(join(dir,`${course}.json`),JSON.stringify({version:1,generatedAt:payload.generatedAt,program:'31.05.01',course,status:snapshotStatus,events:courseEvents,weeklyBlocks,issues,message,sourceUrl:payload.sourcePage,sourceName:'official-schedules.json'}));
   }
 }catch(error){
   console.warn(`static schedule snapshot generation skipped: ${error instanceof Error?error.message:String(error)}`);
@@ -70,10 +82,14 @@ try{
       const target=join(dist,'data','schedules',program,`${course}.json`);
       await mkdir(join(dist,'data','schedules',program),{recursive:true});
       const events=courseData.events;
+      const recoveryOnly=specialist.dataState!=='live-generated';
+      const fallbackMessage=recoveryOnly
+        ? (events.length?`Восстановительный локальный снимок · ${events.length} событий. Исходные PDF не проверены по SHA-256; не считать актуальным расписанием.`:'Официальный источник для этого курса пока не дал опубликованных данных.')
+        : (events.length?`Официальный снимок · ${events.length} событий`:'Официальный источник пока не опубликовал расписание.');
       await writeFile(target,JSON.stringify({version:1,generatedAt:courseData.generatedAt??specialist.generatedAt??null,
-        program,course,status:courseData.status??(events.length?'live':'unpublished'),events,
-        issues:Array.isArray(courseData.issues)?courseData.issues:[],
-        message:courseData.message??(events.length?`Official specialist snapshot · ${events.length} событий`:'Официальный источник пока не опубликовал расписание.'),
+        program,course,status:recoveryOnly?(events.length?'partial':'unpublished'):(courseData.status??(events.length?'live':'unpublished')),events,
+        issues:[...(Array.isArray(courseData.issues)?courseData.issues:[]),...(recoveryOnly?['LOCAL_RECOVERY_SNAPSHOT','SOURCE_BYTES_AND_SHA256_NOT_VERIFIED','NOT_FOR_PRODUCTION']:[])],
+        message:recoveryOnly?fallbackMessage:(courseData.message??fallbackMessage),
         sourceUrl:courseData.sourceUrl??specialist.sourcePage,sourceName:courseData.sourceName??programData.title}));
     }
   }

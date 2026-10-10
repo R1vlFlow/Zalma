@@ -7,6 +7,7 @@ from bs4 import BeautifulSoup
 import fitz
 import pdfplumber
 from universal_schedule_ingest import sniff_format, decode_rows, parse_source_bytes
+from source_integrity import source_provenance
 
 PAGE='https://education.almazovcentre.ru/about_institute/programm/specialist_programme/student/'
 OUT=Path('data/official-schedules.json')
@@ -566,6 +567,31 @@ def repair_pdf_subject(text):
     return text
 
 
+def repair_subject_leaks_from_location(location, known_subjects):
+    """Remove a subject accidentally concatenated after a numeric room label.
+
+    This is deliberately conservative: a suffix is stripped only when it matches
+    a known schedule subject (or an incomplete prefix of one) from the parsed
+    official dataset. No location or subject is inferred from unrelated text.
+    """
+    value = clean_location(location)
+    match = re.match(r'^(?P<base>.*(?:\b(?:ауд\.?\s*)?\d{1,2}[.,]\d{1,2}[А-ЯA-Zа-яa-z]?))\s+(?P<tail>[А-ЯЁA-Z].+)$', value, re.I)
+    if not match:
+        return value
+    tail = repair_pdf_subject(match.group('tail'))
+    folded = lambda x: re.sub(r'[^0-9a-zа-яё]+', ' ', norm(x).lower()).strip()
+    tail_key = folded(tail)
+    if len(tail_key) < 7 or len(tail_key.split()) < 2:
+        return value
+    for candidate in known_subjects:
+        candidate_key = folded(repair_pdf_subject(candidate))
+        if not candidate_key or candidate_key == folded(match.group('base')):
+            continue
+        if candidate_key == tail_key or candidate_key.startswith(tail_key + ' ') or tail_key.startswith(candidate_key + ' '):
+            return clean_location(match.group('base'))
+    return value
+
+
 def split_practice_cell(text):
     """Return ``(subject, weeks, location)`` records from one practice cell.
 
@@ -657,18 +683,19 @@ def parse_practice_tables(doc, course, url, stream):
             continue
         table = max(tables, key=lambda t: (len(t), max((len(r) for r in t), default=0)))
 
-        # Recover the group header once. Subsequent pages of the same PDF often
-        # start in the middle of the table and therefore have no header row.
-        if group_columns is None:
-            for row in table:
-                for ci, value in enumerate(row or []):
-                    value = norm(value)
-                    if re.fullmatch(rf'{re.escape(course_prefix)}\d{{2}}', value):
-                        if group_columns is None:
-                            group_columns = {}
-                        group_columns[value] = ci
-            if not group_columns:
-                continue
+        # Re-detect group columns on every page that carries a header. Excel/PDF
+        # exports can change the extracted cell indexes between pages because of
+        # merged cells. Reusing the first page's indexes silently loses groups.
+        page_group_columns = {}
+        for row in table:
+            for ci, value in enumerate(row or []):
+                value = norm(value)
+                if re.fullmatch(rf'{re.escape(course_prefix)}\d{{2}}', value):
+                    page_group_columns[value] = ci
+        if page_group_columns:
+            group_columns = page_group_columns
+        if not group_columns:
+            continue
 
         for row in table:
             row = list(row or [])
@@ -1464,7 +1491,9 @@ def build_assessment_index(sess):
         try:
             data=fetch_pdf(sess,url)
             parsed=parse_kug_periods(data,int(course),url)
-            sources.append({'course':course,'title':title or Path(url).name,'url':url,'periods':len(parsed)})
+            preview=source_preview_text(data,'pdf')
+            provenance=source_provenance(data,preview,url)
+            sources.append({'course':course,'title':title or Path(url).name,'url':url,'periods':len(parsed),**provenance})
             periods.extend(parsed)
             print(f'OK KUG {course}: {len(parsed)} attestation periods from {url}')
         except Exception as e:
@@ -1632,7 +1661,13 @@ def parse_source(item,sess):
         e['stream']=e.get('stream') or ''
         e.setdefault('parser',f'universal-ingest-{fmt}-v1')
         e['sourceFormat']=fmt
-    return c,stream,kind,url,title,events
+    preview = source_preview_text(data, fmt)
+    provenance = source_provenance(data, preview, url)
+    if any(e.get('scheduleMode') == 'weekly-block' for e in events):
+        provenance['dateResolution'] = 'week-number-only; no weekday/date inferred'
+        if provenance.get('dateLabelAudit', {}).get('conflictingDateYears'):
+            provenance['dateResolution'] = 'official-week-calendar-required; embedded table dates conflict with academic-year heading'
+    return c,stream,kind,url,title,events,provenance
 
 def validate_course(course_id,c):
     """Strict completeness validation for one course after parsing."""
@@ -1710,9 +1745,46 @@ def main():
     failures=[]
     for item in manifest:
         try:
-            c,st,k,url,title,events=parse_source(item,sess)
+            c,st,k,url,title,events,provenance=parse_source(item,sess)
+            # Apply authoritative week date ranges only to weekly matrix rows. A matrix
+            # column/index is not a weekday, so no date is ever generated from it.
+            week_path=Path('data/academic-weeks-2026-2027.json')
+            week_map={}
+            if week_path.exists():
+                try:
+                    week_doc=json.loads(week_path.read_text(encoding='utf-8'))
+                    if week_doc.get('status') in ('live-verified','web-text-reviewed-byte-unverified') and week_doc.get('academicYear')=='2026/2027':
+                        week_map={int(w['weekNumber']):w for w in week_doc.get('weeks',[]) if isinstance(w,dict)}
+                except (OSError,ValueError,TypeError):
+                    week_map={}
+            for event in events:
+                if event.get('scheduleMode')!='weekly-block': continue
+                matrix_week=int(event.get('weekNumber') or 0)
+                calendar_week=matrix_week
+                week=week_map.get(calendar_week)
+                if week and matrix_week > 0:
+                    event['matrixWeekNumber']=matrix_week
+                    event['calendarWeekNumber']=calendar_week
+                    event['weekCalendarOffset']=0
+                    event['weekRangeStart']=week['from']; event['weekRangeEnd']=week['to']
+                    event['weekCalendarSource']=week_doc.get('source',{}).get('url')
+                    event['weekCalendarSha256']=week_doc.get('source',{}).get('sha256')
+                    event['weekCalendarStatus']=week_doc.get('status')
+                    event['date']=None; event['dateHint']=None; event['weekDate']=None
             cc=courses[str(c)]
-            cc['sources'].append({'kind':k,'stream':st or '','title':title,'url':url,'events':len(events)})
+            source_row={'kind':k,'stream':st or '','title':title,'url':url,'events':len(events),**provenance}
+            if provenance.get('academicYearInDocument') != '2026/2027':
+                source_row['identityWarning']='Document does not explicitly match academic year 2026/2027'
+            if provenance.get('dateLabelAudit',{}).get('conflictingDateYears') and not provenance.get('dateResolution','').startswith('official-week-calendar-required'):
+                source_row['identityWarning']='Embedded dates conflict with expected academic year; manual review required'
+            if any(e.get('scheduleMode')=='weekly-block' for e in events):
+                if all(e.get('weekRangeStart') and e.get('weekRangeEnd') and e.get('calendarWeekNumber') == int(e.get('weekNumber') or 0) for e in events if e.get('scheduleMode')=='weekly-block'):
+                    source_row['dateResolution']='official-week-calendar-2026-2027'
+                    source_row['matrixWeekOffset']=0
+                    source_row['matrixWeekAlignment']='matrixWeekNumber = official calendarWeekNumber'
+                else:
+                    source_row['dateResolution']='week-number-only; not calendar-dated'
+            cc['sources'].append(source_row)
             if k=='practice':
                 groups=sorted({str(e['group']) for e in events if re.fullmatch(r'\d{3}',str(e.get('group','')))},key=int)
                 if groups:
@@ -1745,6 +1817,7 @@ def main():
     if applied_overrides:
         print(f'APPLIED VERIFIED SCHEDULE OVERRIDES: {applied_overrides}')
     course_warnings=[]
+    known_subjects=[str(e.get('subject','')) for course_data in courses.values() for e in course_data.get('events',[]) if str(e.get('subject','')).strip()]
     for cid,c in courses.items():
         # First-week and semester lecture PDFs can overlap on week 1. Remove
         # exact semantic duplicates without collapsing two different subjects
@@ -1757,6 +1830,7 @@ def main():
         c['events']=unique
         c['groups']=sorted({g for gs in c['streams'].values() for g in gs},key=int)
         for e in c['events']:
+            e['location']=repair_subject_leaks_from_location(e.get('location',''),known_subjects)
             subject,leading_location=split_leading_location(e.get('subject',''))
             if leading_location:
                 e['subject']=subject
