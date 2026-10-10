@@ -5,17 +5,45 @@ import {normalizeGroup,normalizeGroupList,cleanSubject,cleanLocation,cleanTeache
 import {parseSourceBuffer} from './source-parser.mjs';
 import {RedisScheduleCache} from './redis-cache.mjs';
 
-const STORAGE=join(process.cwd(),'storage','snapshots');const PIPELINE_VERSION='2026-10-09-schedule-normalization-v5-stream-a-org-merge';const memory=new Map();
+const STORAGE=join(process.cwd(),'storage','snapshots');const PIPELINE_VERSION='2026-10-10-schedule-normalization-v6-multifaculty-content-verified-merge';const memory=new Map();
 let redisPromise;
 async function redisCache(){if(!process.env.REDIS_URL)return null;if(!redisPromise){redisPromise=(async()=>{try{const {createClient}=await import('redis');const client=createClient({url:process.env.REDIS_URL});client.on('error',()=>{});await client.connect();return new RedisScheduleCache(client);}catch{return null;}})();}return redisPromise;}
 
 export function sourcesFor(program,course){return SOURCES.filter(s=>s.program===program&&s.course===course);}
 export function available(program,course){const sources=sourcesFor(program,course);return {published:sources.filter(s=>['published','verified'].includes(s.status)),quarantined:sources.filter(s=>s.status==='quarantined')};}
-export async function loadSchedule(program,course,{forceRefresh=false}={}){const key=`${program}:${course}`;const mem=memory.get(key);if(!forceRefresh&&mem&&Date.now()-mem.cachedAt<10*60*1000)return mem.result;const external=await redisCache();if(!forceRefresh&&external){const cached=await external.get(key);if(cached){memory.set(key,{cachedAt:Date.now(),result:cached});return cached;}}const disk=await readSnapshot(key);if(!forceRefresh&&disk&&Date.now()-disk.cachedAt<6*60*60*1000){memory.set(key,{cachedAt:Date.now(),result:disk.result});return disk.result;}
+export async function loadSchedule(program,course,{forceRefresh=false}={}){const key=`${program}:${course}`;
+ // Generated multi-faculty snapshots are authoritative for Pediatrics/Clinical
+ // Psychology. Check them before any memory/Redis/disk snapshot so the previous
+ // course payload cannot outlive an official data deployment.
+ if(program!=='31.05.01'){
+   const generated=await loadGeneratedSpecialistSnapshot(program,course);
+   if(generated){memory.set(key,{cachedAt:Date.now(),result:generated});return generated;}
+ }
+ const mem=memory.get(key);if(!forceRefresh&&mem&&Date.now()-mem.cachedAt<10*60*1000)return mem.result;const external=await redisCache();if(!forceRefresh&&external){const cached=await external.get(key);if(cached?.pipelineVersion===PIPELINE_VERSION&&cached?.result&&Array.isArray(cached.result.events)){memory.set(key,{cachedAt:Date.now(),result:cached.result});return cached.result;}}const disk=await readSnapshot(key);if(!forceRefresh&&disk&&Date.now()-disk.cachedAt<6*60*60*1000){memory.set(key,{cachedAt:Date.now(),result:disk.result});return disk.result;}
  if(program==='31.05.01'){try{const result=await loadLiveLd(program,course);await saveSnapshot(key,result);return result;}catch(err){const local=await loadLocalLd(program,course);if(local){await saveSnapshot(key,local);return {...local,status:'cache',message:`Live источник недоступен. Показан локальный официальный snapshot: ${err.message}`};}if(disk?.result?.events?.length)return {...disk.result,status:'cache',message:`Live источник и локальный snapshot недоступны. Показан последний snapshot: ${err.message}`};return {status:'error',events:[],issues:[String(err.message)],message:'Live источник недоступен и локальный официальный snapshot отсутствует.'};}}
  const {published,quarantined}=available(program,course);if(!published.length){return{status:'unavailable',events:[],issues:['NO_PUBLISHED_SOURCE'],message:`Официальное расписание ${programNames[program]}, ${course} курса, сейчас не опубликовано на странице кабинета студента.`,sourceUrl:STUDENT_PAGE};}
  const events=[];const issues=[];for(const source of published){try{const r=await fetchSource(source);const safe=r.events.filter(e=>e.program===program&&e.course===course);events.push(...safe);issues.push(...(r.warnings??[]));}catch(err){issues.push(`${source.title}: ${err.message}`);}}
  const unique=dedupe(events);const hasQuarantine=quarantined.length>0;const status=unique.length&&issues.length?'partial':unique.length&&hasQuarantine?'partial':unique.length?'live':'error';const result={status,events:unique,issues,sourceUrl:published[0]?.url??quarantined[0]?.url??STUDENT_PAGE,sourceName:published.map(s=>s.title).join(' · '),message:unique.length?`${unique.length} событий. Источников: ${published.length}.${hasQuarantine?' Часть официальных источников проходит карантин и не публикуется.':''}`:`Не удалось получить подтверждённые события. ${issues.join(' ')}`};if(unique.length)await saveSnapshot(key,result);return result;}
+async function loadGeneratedSpecialistSnapshot(program,course){
+ try{
+  const file=join(process.cwd(),'data','program-schedules.json');
+  const payload=JSON.parse(await readFile(file,'utf8'));
+  if(payload?.schemaVersion!==1||!payload?.programs||typeof payload.programs!=='object')return null;
+  const p=payload.programs[program];const entry=p?.courses?.[String(course)];
+  if(!entry||!Array.isArray(entry.events)||entry.events.length===0)return null;
+  const generatedAt=entry.generatedAt??payload.generatedAt;
+  const time=generatedAt?Date.parse(generatedAt):NaN;
+  const sourceName=entry.sourceName??p.title??'Official specialist snapshot';
+  const stale=Number.isFinite(time)&&Date.now()-time>7*24*60*60*1000;
+  const events=entry.events.filter(e=>e&&e.program===program&&Number(e.course)===Number(course)&&e.subject&&e.start&&e.end&&e.date);
+  if(!events.length)return {status:'unavailable',events:[],generatedAt,sourceUrl:entry.sourceUrl??payload.sourcePage,sourceName,issues:Array.isArray(entry.issues)?entry.issues:['NO_VALID_SPECIALIST_EVENTS'],message:entry.status==='unpublished'?`Официальный источник ${sourceName} пока не публикует расписание для ${course} курса.`:`Snapshot ${sourceName} не содержит валидных событий.`};
+  const issues=Array.isArray(entry.issues)?[...entry.issues]:[];
+  if(stale)issues.push('SPECIALIST_SNAPSHOT_STALE');
+  const status=stale?'cache':['partial','cache'].includes(entry.status)?entry.status:'live';
+  return {status,events,generatedAt,sourceUrl:entry.sourceUrl??payload.sourcePage,sourceName,issues,message:`${stale?'Последний проверенный snapshot (устарел более чем на 7 дней)':'Official'} ${sourceName} · ${events.length} событий · ${generatedAt??'дата генерации неизвестна'}`};
+ }catch{return null;}
+}
+
 function datesForRaw(raw){
   const direct=isoDate(raw?.date??raw?.dateHint??'');
   if(direct)return [direct];

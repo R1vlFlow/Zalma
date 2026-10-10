@@ -9,7 +9,13 @@ import {readFile as readFileAttachment} from 'node:fs/promises';
 
 const ROOT=join(process.cwd(),'dist');const MAX_BODY=15*1024*1024;const rateBuckets=new Map();
 const TYPES={'.html':'text/html;charset=utf-8','.js':'text/javascript;charset=utf-8','.css':'text/css;charset=utf-8','.json':'application/json;charset=utf-8','.webmanifest':'application/manifest+json','.png':'image/png','.webp':'image/webp','.svg':'image/svg+xml','.ico':'image/x-icon','.txt':'text/plain;charset=utf-8'};
-function send(res,status,body,type='application/json;charset=utf-8',extra={}){const cacheable=status===200&&type!=='application/json;charset=utf-8'&&type!=='text/html;charset=utf-8';res.writeHead(status,{'content-type':type,'cache-control':cacheable?'public, max-age=3600, stale-while-revalidate=86400':'no-store','x-content-type-options':'nosniff','referrer-policy':'strict-origin-when-cross-origin','x-frame-options':'SAMEORIGIN','permissions-policy':'geolocation=(),camera=(),microphone=()','content-security-policy':"default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self' data:; connect-src 'self' https://raw.githubusercontent.com; worker-src 'self'; manifest-src 'self'",...extra});res.end(body);}
+function send(res,status,body,type='application/json;charset=utf-8',extra={}){
+ const isMutableData=type.includes('application/json')||type==='application/manifest+json'||type==='text/html;charset=utf-8';
+ const cacheable=status===200&&!isMutableData;
+ const headers={'content-type':type,'cache-control':isMutableData?'no-cache, no-store, must-revalidate':cacheable?'public, max-age=3600, stale-while-revalidate=86400':'no-store','x-content-type-options':'nosniff','referrer-policy':'strict-origin-when-cross-origin','x-frame-options':'SAMEORIGIN','permissions-policy':'geolocation=(),camera=(),microphone=()','content-security-policy':"default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; form-action 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self' data:; connect-src 'self' https://raw.githubusercontent.com; worker-src 'self'; manifest-src 'self'",...extra};
+ if(isMutableData){headers.pragma='no-cache';headers.expires='0';}
+ res.writeHead(status,headers);res.end(body);
+}
 function json(res,status,payload){return send(res,status,JSON.stringify(payload));}
 function clientKey(req){return `${req.socket.remoteAddress??'unknown'}:${req.headers['x-forwarded-for']??''}`;}
 function allowRate(req,key,limit,windowMs){const now=Date.now(),bucketKey=`${key}:${clientKey(req)}`,current=rateBuckets.get(bucketKey);if(!current||now-current.startedAt>=windowMs){rateBuckets.set(bucketKey,{startedAt:now,count:1});return true;}if(current.count>=limit)return false;current.count++;return true;}

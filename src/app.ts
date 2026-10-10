@@ -15,6 +15,7 @@ import {localDate,localDateTimeToUtc,localTime,userTimeZone,localDateTimeInput} 
 import {scheduleToCalendarEvent,type CalendarEvent} from './core/calendar.js';
 import {enhanceControls,refreshControls} from './ui/customControls.js';
 import {deleteFileMaterial,getFileMaterial,listFileMaterials,materialScope,saveFileMaterial,type FileMaterial,MAX_MATERIAL_FILE_SIZE} from './services/materialStore.js';
+import {ensureScheduleCacheVersion} from './services/cache.js';
 
 const DAYS=['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
 const STATUS_LABEL:Record<EventStatus,string>={planned:'Запланировано',confirmed:'Подтверждено',in_progress:'В процессе',completed:'Завершено',cancelled:'Отменено'};
@@ -89,7 +90,7 @@ async function reloadEvents(){
   if(sequence!==reloadSequence)return;
   renderShell();renderSchedule();
 }
-export async function boot(){initTheme();loadAppearance();applyAppearance();ensureProfile();enhanceControls();renderShell();bind();render();void loadKugData();await reloadEvents();await refreshHomePersonal();await refreshUploadedMaterials();render();window.setInterval(()=>{if(state.page==='home')renderHome();},30000);}
+export async function boot(){await ensureScheduleCacheVersion(document.documentElement.dataset.buildId??'dev');initTheme();loadAppearance();applyAppearance();ensureProfile();enhanceControls();renderShell();bind();render();void loadKugData();await reloadEvents();await refreshHomePersonal();await refreshUploadedMaterials();render();window.setInterval(()=>{if(state.page==='home')renderHome();},30000);}
 function render(){renderShell();renderProfileOptions();renderSchedule();renderTasks();renderFaculties();renderResources();renderKug();renderFaq(state.faqQuery);renderHome();renderSupport();renderSettings();renderProfilePage();refreshControls();}
 function nav(page:string){
   const destination=document.getElementById(`page-${page}`);
