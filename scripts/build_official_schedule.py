@@ -64,8 +64,78 @@ def _clock_minutes(value):
 def _clock_from_minutes(value):
     value=value%(24*60); return f'{value//60:02d}:{value%60:02d}'
 
+ORG_SUBJECT_RE = re.compile(
+    r"(?:\bОРГ\b|основы\s+российской\s+государственности)", re.I
+)
+
+
+def is_org_subject(value):
+    """Recognize the official ORG subject without matching unrelated words."""
+    text=norm(value or '')
+    return bool(ORG_SUBJECT_RE.search(text))
+
+
+def merge_org_consecutive_events(events):
+    """Merge two ORG slots into one visible lesson when the source split them.
+
+    Matching is deliberately strict: same group, stream, week/date/day, subject,
+    event kind and location; the second slot must follow the first within a
+    normal break (0–20 min). Unrelated groups, rooms, or dates are never merged.
+    """
+    def identity(e):
+        values=[]
+        for key in ('program','course','group','stream','weekNumber','weekStart','weekday',
+                    'date','type','subject','location','teacher','sourceUrl'):
+            value=e.get(key) or ''
+            if key=='subject':
+                value='__ORG__' if is_org_subject(value) else norm(value).casefold()
+            elif isinstance(value,str):
+                value=norm(value).casefold() if key in {'location','teacher','type'} else value
+            values.append(str(value))
+        return tuple(values)
+    ordered=sorted((dict(e) for e in events), key=lambda e:(
+        identity(e),
+        _clock_minutes(e.get('start','00:00')) if re.fullmatch(r'\d{1,2}:\d{2}',str(e.get('start',''))) else 0,
+        _clock_minutes(e.get('end','00:00')) if re.fullmatch(r'\d{1,2}:\d{2}',str(e.get('end',''))) else 0,
+    ))
+    out=[]; i=0; merged=0
+    while i < len(ordered):
+        first=ordered[i]
+        if (i+1 < len(ordered) and is_org_subject(first.get('subject'))
+                and not first.get('orgMerged')):
+            second=ordered[i+1]
+            try:
+                a1=_clock_minutes(first['start']); b1=_clock_minutes(first['end'])
+                a2=_clock_minutes(second['start']); b2=_clock_minutes(second['end'])
+                gap=a2-b1
+                same=(identity(first)==identity(second)
+                      and first.get('group') not in (None,'','ALL')
+                      and not second.get('orgMerged')
+                      and 45 <= b1-a1 <= 130
+                      and 45 <= b2-a2 <= 130
+                      and 0 <= gap <= 20
+                      and b2>a2)
+            except Exception:
+                same=False
+            if same:
+                item=dict(first)
+                item['end']=second['end']
+                item['orgMerged']=True
+                item['double']=True
+                item['durationMinutes']=b2-a1
+                item['doubleMergeReason']='ORG consecutive slots'
+                # The merged UI event is a single long block, not a 1/2 or 2/2 part.
+                for key in ('doubleIndex','doubleOf'):
+                    item.pop(key,None)
+                out.append(item); merged+=1; i+=2; continue
+        out.append(first); i+=1
+    if merged:
+        print(f'PARSER_ORG_MERGE merged_pairs={merged}',file=sys.stderr)
+    return out
+
+
 def expand_double_lesson_events(events):
-    """Split known long blocks and log source anomalies instead of guessing."""
+    """Split known long blocks, except ORG which must stay one continuous card."""
     out=[]
     for e in events:
         try:
@@ -76,6 +146,10 @@ def expand_double_lesson_events(events):
         if duration <= 0:
             print(f"PARSER_ANOMALY non_positive_duration group={e.get('group','?')} subject={e.get('subject','?')!r} start={e.get('start')} end={e.get('end')}",file=sys.stderr)
             out.append(e); continue
+        if duration in {185,205} and is_org_subject(e.get('subject')):
+            item=dict(e); item['orgMerged']=True; item['double']=True
+            item['durationMinutes']=duration; item['doubleMergeReason']='ORG source long block'
+            out.append(item); continue
         # Current Almazov exports use 09:00–12:25, 09:20–12:25 and
         # 13:30–16:55 as two equal slots with a 15-minute break.
         if duration in {185,205}:
@@ -1233,15 +1307,15 @@ def session():
     s=requests.Session()
     retry=requests.adapters.Retry(total=4,connect=4,read=4,backoff_factor=1.2,status_forcelist=(429,500,502,503,504),allowed_methods=frozenset(['GET']))
     s.mount('https://',requests.adapters.HTTPAdapter(max_retries=retry,pool_connections=20,pool_maxsize=20))
-    s.headers.update({'User-Agent':'Almazov-Student-Schedule-Sync/4.6.3','Accept':'text/html,application/pdf,*/*'})
+    s.headers.update({'User-Agent':'Almazov-Student-Schedule-Sync/4.7.0-rc.1','Accept':'text/html,application/pdf,*/*'})
     return s
 
 def classify_pdf(text, url, hinted_course=None, hinted_stream=None, hinted_kind=None):
     """Classify an official schedule PDF conservatively.
 
-    Official filenames are the strongest signal (e.g. 5k_a and 5k_ld_b).
-    Do not reject a clearly identified schedule because an extracted PDF page
-    happens to contain an unrelated abbreviation such as КУГ.
+    Printed document headings override stale filenames. URL metadata is a fallback.
+    Reject known non-schedule documents unless the source URL and metadata
+    independently identify a specific schedule PDF.
     """
     t=norm(text)
     low=t.lower()
@@ -1274,10 +1348,17 @@ def classify_pdf(text, url, hinted_course=None, hinted_stream=None, hinted_kind=
         m=re.search(r'(?<!\d)([1-6])\s*курс', t, re.I)
         course=int(m.group(1)) if m else hinted_course
 
-    sm=re.search(r'поток\s*([АAБB])', t, re.I)
+    # The document heading is the primary source of truth. URL names are a
+    # fallback only: official links occasionally keep an old filename while the
+    # PDF itself is updated. If the two disagree, emit an anomaly and follow the
+    # visible heading rather than silently assigning all events to Stream B.
+    heading=t[:5000]
+    sm=re.search(r'поток\s*([АAБB])(?=\W|$)', heading, re.I)
     stream_text=('A' if sm and sm.group(1).upper() in ('А','A') else
-                 'B' if sm else None)
-    stream=stream_url or stream_text or hinted_stream
+                 'B' if sm and sm.group(1).upper() in ('Б','B') else None)
+    if stream_text and stream_url and stream_text != stream_url:
+        print(f"PARSER_ANOMALY stream_header_filename_mismatch header={stream_text} filename={stream_url} url={url}",file=sys.stderr)
+    stream=stream_text or stream_url or hinted_stream
 
     kind=kind_url
     if not kind:
@@ -1624,10 +1705,16 @@ def main():
     # splitter defined but never invoked for the official live pipeline, so
     # matrix/PDF imports could still publish a single 3h+ event.
     split_total=0
+    org_total=0
     for cc in courses.values():
         before=len(cc['events'])
-        cc['events']=expand_double_lesson_events(cc['events'])
-        split_total += len(cc['events'])-before
+        expanded=expand_double_lesson_events(cc['events'])
+        merged=merge_org_consecutive_events(expanded)
+        cc['events']=merged
+        split_total += max(0,len(expanded)-before)
+        org_total += sum(1 for e in merged if e.get('orgMerged'))
+    if org_total:
+        print(f'ORG CONTINUOUS EVENTS: {org_total}')
     if split_total:
         print(f'EXPANDED DOUBLE LESSON BLOCKS: {split_total} additional events')
     applied_overrides=apply_verified_schedule_overrides(courses)
@@ -1665,7 +1752,7 @@ def main():
     OUT.parent.mkdir(parents=True,exist_ok=True); tmp=OUT.with_suffix('.json.tmp'); tmp.write_text(json.dumps(payload,ensure_ascii=False,separators=(',',':')),encoding='utf-8'); tmp.replace(OUT)
     total=sum(len(c['events']) for c in courses.values())
     status={
-        'status':'ok','dataState':'live-generated','engineVersion':Path('SCHEDULE_ENGINE_VERSION.txt').read_text(encoding='utf-8').strip(),
+        'status':'ok','dataState':'live-generated','engineVersion':Path('SCHEDULE_ENGINE_VERSION.txt').read_text(encoding='utf-8').splitlines()[0].split(':',1)[-1].strip(),
         'generatedAt':generated_at,'sourcePage':PAGE,'schemaVersion':7,
         'courses':{k:{'groups':len(v['groups']),'events':len(v['events']),
                        'lecture':sum(e['type']=='lecture' for e in v['events']),

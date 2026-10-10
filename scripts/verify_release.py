@@ -18,7 +18,7 @@ missing=[p for p in required if not (ROOT/p).exists()]
 if missing: raise SystemExit('RELEASE CHECK FAILED: missing '+', '.join(missing))
 
 pkg=json.loads((ROOT/'package.json').read_text())
-assert pkg.get('version')=='2.3.1', pkg.get('version')
+assert str(pkg.get('version','')).endswith('-rc.1'), pkg.get('version')
 data=json.loads((ROOT/'data/official-schedules.json').read_text(encoding='utf-8'))
 assert data.get('schemaVersion')==7
 after=data.get('dataState')

@@ -114,9 +114,16 @@ class UniversalScheduleParser:
     @staticmethod
     def _infer_stream(text, url=''):
         url = url or ''
-        # Prefer explicit document title/header over filename.
-        if re.search(r'поток\s*[БB]\b', text, re.I): return 'B'
-        if re.search(r'поток\s*[АA]\b', text, re.I): return 'A'
+        # Titles/header lines must win over legacy filenames. Only inspect the
+        # leading region for the primary designation, as tables can mention
+        # both streams in cross-reference text further down the document.
+        head=(text or '')[:5000]
+        m=re.search(r'(?im)^.{0,80}?поток\s*([АAБB])(?=\W|$)',head)
+        if m:
+            return 'A' if m.group(1).upper() in ('А','A') else 'B'
+        m=re.search(r'поток\s*([АAБB])(?=\W|$)',head,re.I)
+        if m:
+            return 'A' if m.group(1).upper() in ('А','A') else 'B'
         m=re.search(r'[_-]([ab])(?:[_\-.]|$)', url, re.I)
         return m.group(1).upper() if m else None
 

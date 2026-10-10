@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 const root=fileURLToPath(new URL('..',import.meta.url));
 const dist=join(root,'dist');
 await mkdir(join(dist,'assets'),{recursive:true});
-for(const name of ['index.html','styles.css','sw.js','boot.js','manifest.webmanifest','offline.html'])
+for(const name of ['index.html','styles.css','sw.js','boot.js','runtime-config.js','telemetry.js','manifest.webmanifest','offline.html'])
   await copyFile(join(root,'public',name),join(dist,name));
 await cp(join(root,'public','assets'),join(dist,'assets'),{recursive:true});
 await mkdir(join(dist,'data'),{recursive:true});
@@ -65,6 +65,30 @@ async function walk(dir){
   return result;
 }
 
+// Bundle/minify the production entry and critical shell files. Local environments
+// without installed dependencies may still run functional QA; release workflows
+// set REQUIRE_MINIFICATION=1 so a production artifact cannot be published unminified.
+let minified=false;
+let esbuild=null;
+try { esbuild=await import('esbuild'); }
+catch(error) {
+  if(process.env.REQUIRE_MINIFICATION==='1') throw new Error(`esbuild is required for an RC build: ${error instanceof Error?error.message:String(error)}`);
+  console.warn('RC MINIFICATION SKIPPED: install esbuild to produce a minified artifact; CI release workflows require it.');
+}
+if(esbuild){
+  const entry=join(dist,'main.js');
+  const bundled=await esbuild.build({entryPoints:[entry],outfile:entry,bundle:true,minify:true,format:'esm',target:['es2022'],legalComments:'none',write:false});
+  const output=bundled.outputFiles?.find(f=>f.path.endsWith('.js'));
+  if(!output)throw new Error('esbuild did not emit the bundled application entry');
+  await writeFile(entry,output.text);
+  for(const name of ['styles.css','boot.js','runtime-config.js','telemetry.js']){
+    const path=join(dist,name);const source=await readFile(path,'utf8');
+    const result=await esbuild.transform(source,{loader:name.endsWith('.css')?'css':'js',minify:true,target:'es2022',legalComments:'none'});
+    await writeFile(path,result.code);
+  }
+  minified=true;
+}
+
 // Fingerprint the actual deployable output, not just the human-edited version
 // string. Any JS/CSS/HTML/data change creates a new immutable asset namespace.
 const files=(await walk(dist)).filter(path=>!path.endsWith(`${sep}version.json`)).sort();
@@ -90,7 +114,7 @@ await writeFile(bootPath,bootSource.replaceAll('__BUILD_ID__',buildId));
 let html=await readFile(join(dist,'index.html'),'utf8');
 html=html.replace(/<html\b([^>]*)>/i,(_match,attrs)=>`<html${attrs} data-build-id="${buildId}">`);
 html=html.replace(/(<meta\s+name="description"[^>]*>)/i,`$1\n<meta name="app-build" content="${buildId}">`);
-html=html.replace(/((?:src|href)="\.\/)(boot\.js|styles\.css|main\.js|manifest\.webmanifest)(?:\?[^\"]*)?("\s*)/g,`$1$2?v=${buildId}$3`);
+html=html.replace(/((?:src|href)="\.\/)(boot\.js|runtime-config\.js|telemetry\.js|styles\.css|main\.js|manifest\.webmanifest)(?:\?[^\"]*)?("\s*)/g,`$1$2?v=${buildId}$3`);
 await writeFile(join(dist,'index.html'),html);
 
 const jsFiles=(await walk(dist)).filter(path=>path.endsWith('.js')&&!path.endsWith(`${sep}sw.js`));
@@ -112,5 +136,5 @@ sw=sw.replaceAll('__BUILD_ID__',buildId).replace('__VERSIONED_SHELL__',JSON.stri
 await writeFile(join(dist,'sw.js'),sw);
 
 const sourceVersion=JSON.parse(await readFile(join(root,'version.json'),'utf8'));
-await writeFile(join(dist,'version.json'),JSON.stringify({...sourceVersion,buildId},null,2)+'\n');
-console.log(`public assets copied; release fingerprint ${buildId}; ${jsFiles.length} JS modules versioned`);
+await writeFile(join(dist,'version.json'),JSON.stringify({...sourceVersion,buildId,minified},null,2)+'\n');
+console.log(`public assets copied; release fingerprint ${buildId}; ${jsFiles.length} JS files versioned; minified=${minified}`);

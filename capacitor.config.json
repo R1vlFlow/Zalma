@@ -1,0 +1,15 @@
+{
+  "appId": "ru.almazov.schedulehub",
+  "appName": "Almazov Schedule Hub",
+  "webDir": "dist",
+  "android": {
+    "allowMixedContent": false
+  },
+  "ios": {
+    "contentInset": "automatic"
+  },
+  "server": {
+    "androidScheme": "https",
+    "cleartext": false
+  }
+}

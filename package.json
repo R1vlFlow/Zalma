@@ -1,6 +1,6 @@
 {
   "name": "almazov-schedule-hub",
-  "version": "2.5.0",
+  "version": "2.6.0-rc.1",
   "private": true,
   "type": "module",
   "scripts": {
@@ -8,19 +8,25 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "npm run build && node --test tests/*.test.mjs",
     "validate": "npm run build && node scripts/validate-dist.mjs",
-    "qa": "npm run lint && npm test && npm run validate && node scripts/test-cache-invalidation.mjs && node scripts/test-deployment-contract.mjs && python3 scripts/test_kug_grid_contract.py && python3 scripts/test_ci_consistency.py && python3 scripts/test_double_lesson_and_bookmark_contract.py && python3 scripts/test_schedule_coverage_contract.py && python3 tests/test_sync_parser.py && python3 scripts/check_theme_contrast.py && node scripts/http-acceptance.mjs && node --check server/server.mjs && node --check server/pipeline.mjs && node --check server/source-parser.mjs && node --check server/academic-config.mjs && node --check server/pdf-adapter.mjs && node --check server/xlsx-adapter.mjs && node --check server/html-adapter.mjs && node --check server/sync-schedules.mjs && node scripts/validate-project.mjs && node scripts/smoke-server.mjs",
+    "qa": "npm run lint && npm test && npm run validate && node scripts/test-cache-invalidation.mjs && node scripts/test-deployment-contract.mjs && python3 scripts/test_kug_grid_contract.py && python3 scripts/test_ci_consistency.py && python3 scripts/test_double_lesson_and_bookmark_contract.py && python3 scripts/test_schedule_coverage_contract.py && python3 tests/test_sync_parser.py && python3 tests/test_phase3_parser.py && node scripts/test-rc-contract.mjs && python3 scripts/check_theme_contrast.py && node scripts/http-acceptance.mjs && node --check server/server.mjs && node --check server/pipeline.mjs && node --check server/source-parser.mjs && node --check server/academic-config.mjs && node --check server/pdf-adapter.mjs && node --check server/xlsx-adapter.mjs && node --check server/html-adapter.mjs && node --check server/sync-schedules.mjs && node scripts/validate-project.mjs && python3 scripts/verify_engine_version.py && python3 scripts/verify_release.py && node scripts/smoke-server.mjs",
     "start": "npm run build && node server/server.mjs",
     "sync": "node server/sync-schedules.mjs",
     "validate-live": "node server/sync-official.mjs --validate-only",
-    "lint": "npm run typecheck && node scripts/lint-project.mjs"
+    "lint": "npm run typecheck && node scripts/lint-project.mjs",
+    "build:rc": "REQUIRE_MINIFICATION=1 npm run build",
+    "android:sync": "npm run build:rc && npx cap sync android"
   },
   "dependencies": {
     "pdfjs-dist": "^5.4.296",
     "xlsx": "^0.18.5",
-    "redis": "^5.7.0"
+    "redis": "^5.7.0",
+    "@capacitor/core": "8.5.3",
+    "@capacitor/android": "8.5.3"
   },
   "devDependencies": {
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "@capacitor/cli": "8.5.3",
+    "esbuild": "0.28.2"
   },
   "engines": {
     "node": ">=22.5.0"

@@ -3,18 +3,26 @@ import { dirname, join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 const root=fileURLToPath(new URL('..',import.meta.url));
 const dist=join(root,'dist');
-for(const f of ['index.html','styles.css','boot.js','main.js','sw.js','manifest.webmanifest','offline.html','version.json'])await readFile(join(dist,f));
+for(const f of ['index.html','styles.css','boot.js','runtime-config.js','telemetry.js','main.js','sw.js','manifest.webmanifest','offline.html','version.json'])await readFile(join(dist,f));
 const html=await readFile(join(dist,'index.html'),'utf8');
 const css=await readFile(join(dist,'styles.css'),'utf8');
 for(const selector of ['.modal-backdrop{','.modal-backdrop.open{','.modal{','.modal-body{'])if(!css.includes(selector))throw new Error(`Required modal/layout CSS missing: ${selector}`);
 const version=JSON.parse(await readFile(join(dist,'version.json'),'utf8'));
+const manifest=JSON.parse(await readFile(join(dist,'manifest.webmanifest'),'utf8'));
+if(manifest.display!=='standalone'||!manifest.start_url||!manifest.scope||manifest.prefer_related_applications!==false)throw new Error('PWA manifest missing install-critical fields');
+for(const [size,name] of [[192,'assets/pwa-192.png'],[512,'assets/pwa-512.png'],[512,'assets/pwa-maskable-512.png']]){
+ const image=await readFile(join(dist,name));
+ if(image.readUInt32BE(16)!==size||image.readUInt32BE(20)!==size)throw new Error(`PWA icon dimensions invalid: ${name}`);
+ if(!manifest.icons.some(icon=>icon.src===name&&icon.sizes===`${size}x${size}`))throw new Error(`PWA manifest missing icon: ${name}`);
+}
+if(process.env.REQUIRE_MINIFICATION==='1'&&version.minified!==true)throw new Error('Release build is not minified');
 if(!/^[a-f0-9]{16}$/.test(version.buildId??''))throw new Error('Missing/invalid content-derived buildId in dist/version.json');
 if(!html.includes(`data-build-id="${version.buildId}"`)||!html.includes(`name="app-build" content="${version.buildId}"`))throw new Error('HTML build marker does not match version.json');
 const ids=[...html.matchAll(/id="([^"]+)"/g)].map(m=>m[1]);
 if(new Set(ids).size!==ids.length)throw new Error('Duplicate HTML ids');
 const internal=[...html.matchAll(/(?:href|src)="\.\/([^"#]+)"/g)].map(m=>m[1].split(/[?#]/)[0]);
 for(const p of internal)await stat(join(dist,p));
-for(const name of ['boot.js','styles.css','main.js','manifest.webmanifest']){
+for(const name of ['boot.js','runtime-config.js','telemetry.js','styles.css','main.js','manifest.webmanifest']){
   if(!html.includes(`./${name}?v=${version.buildId}`))throw new Error(`${name} is not cache-busted for this build`);
 }
 const boot=await readFile(join(dist,'boot.js'),'utf8');

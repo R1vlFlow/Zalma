@@ -1,8 +1,8 @@
-# Almazov Schedule Hub — release 2.5.0
+# Almazov Schedule Hub — release 2.6.0-rc.1 (Phase 3 RC)
 
-Версия приложения: **2.5.0**.
-Версия интерфейса: **2.5.0**.
-Движок официального расписания: **4.6.3**.
+Версия приложения: **2.6.0-rc.1** (кандидат в релиз).
+Версия интерфейса: **2.6.0-rc.1**.
+Движок официального расписания: **4.7.0-rc.1**.
 
 ## Установка и правильная публикация
 
@@ -33,3 +33,8 @@
 **Пользовательские материалы:** PDF, DOCX, XLSX, PPTX, ZIP, JPG/JPEG и PNG; файлы доступны в том же браузере для выбранной программы/курса/группы.
 
 Официальный источник расписания: https://education.almazovcentre.ru/about_institute/programm/specialist_programme/student/
+
+
+## Установка на телефон (Phase 3 RC)
+
+Подробная инструкция Android APK и iPhone PWA находится в [`docs/ANDROID_INSTALL.md`](docs/ANDROID_INSTALL.md). APK создаётся вручную через GitHub Actions workflow `Build Android APK (RC)`; ссылка на APK начнёт работать после успешной сборки и прикрепления файла к GitHub Release.

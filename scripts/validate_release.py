@@ -18,7 +18,7 @@ try:
     pkg=json.loads((ROOT/'package.json').read_text())
     version=json.loads((ROOT/'version.json').read_text())
     if pkg.get('version') != version.get('version'): errors.append('package.json/version.json version mismatch')
-    if pkg.get('version') != '2.3.1': errors.append(f"unexpected release version: {pkg.get('version')}")
+    if not str(pkg.get('version','')).endswith('-rc.1'): errors.append(f"release candidate version expected: {pkg.get('version')}")
 except Exception as exc: errors.append(f'bad release metadata: {exc}')
 
 try:
