@@ -1,10 +1,10 @@
 {
-  "version": "2.6.0-rc.1",
-  "uiVersion": "2.6.0-rc.1",
-  "engineVersion": "4.7.0-rc.1",
-  "release": "PHASE3-PWA-ANDROID-STREAM-A-ORG-DOUBLE-LESSON-RELEASE-CANDIDATE",
-  "released": "2026-10-09",
+  "version": "2.7.0-rc.1",
+  "uiVersion": "2.7.0-rc.1",
+  "engineVersion": "4.8.0-rc.1",
+  "release": "MASTER-CARD-TIMETABLE-GENERIC-DOUBLE-MERGE-RELEASE-CANDIDATE",
+  "released": "2026-10-10",
   "releaseChannel": "rc",
-  "buildId": "e20ab0a42137613c",
+  "buildId": "d2156d5018346a2e",
   "minified": false
 }

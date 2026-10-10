@@ -1,4 +1,4 @@
-import { cleanLocation, cleanSubject, cleanTeacher, isoDate, normalizeCourse, normalizeGroup, normalizeHalf, normalizeStream, normalizeTime, normalizeTimeRange, normalizeType } from './normalize.js?v=e20ab0a42137613c';
+import { cleanLocation, cleanSubject, cleanTeacher, isoDate, normalizeCourse, normalizeGroup, normalizeHalf, normalizeStream, normalizeTime, normalizeTimeRange, normalizeType } from './normalize.js?v=d2156d5018346a2e';
 const VALID_PROGRAMS = new Set(['31.05.01', '31.05.02', '37.05.01']);
 export function validateScheduleIndex(payload) {
     const issues = [];
@@ -62,20 +62,52 @@ export function normalizeLiveEvents(payload) {
             const rawDuration = Number(time.end.slice(0, 2)) * 60 + Number(time.end.slice(3)) - Number(time.start.slice(0, 2)) * 60 - Number(time.start.slice(3));
             const doubleSlots = raw?.doubleIndex === 1 || raw?.doubleIndex === 2
                 ? [{ start: time.start, end: time.end, double: true, doublePart: raw.doubleIndex, durationMinutes: Number(raw?.durationMinutes ?? 0) || undefined, doubleOf: raw?.doubleOf }]
-                : raw?.orgMerged === true
+                : (raw?.orgMerged === true || raw?.mergedConsecutive === true)
                     ? [{ start: time.start, end: time.end, double: true, durationMinutes: Number(raw?.durationMinutes ?? 0) || rawDuration, doubleOf: raw?.doubleOf }]
-                    : splitDoubleTimes(time.start, time.end).map(x => ({ ...x, doubleOf: raw?.doubleOf }));
+                    : splitDoubleTimes(time.start, time.end).map(x => ({ ...x, doubleOf: typeof raw?.doubleOf === 'string' ? raw.doubleOf : (x.doublePart ? `auto:${program}:${course}:${weekStart ?? ''}:${subject}:${time.start}-${time.end}` : undefined) }));
             for (const date of blockDates)
                 for (const group of safeGroups) {
                     if (!group)
                         continue;
                     for (const slot of doubleSlots) {
-                        result.push({ id: String(raw?.id ? `${raw.id}-${date}-${slot.doublePart ?? 0}` : `${program}-${course}-${group}-${date}-${slot.start}-${slot.end}-${subject}-${index}-${slot.doublePart ?? 0}`), program, course, group, stream, date, start: slot.start, end: slot.end, subject, location: cleanLocation(raw?.location), teacher: cleanTeacher(raw?.teacher), type: normalizeType(raw?.type, subject), half: normalizeHalf(raw?.half), double: slot.double, orgMerged: raw?.orgMerged === true || undefined, doublePart: slot.doublePart, doubleOf: slot.doubleOf, durationMinutes: slot.durationMinutes, weeks: raw?.weekNumber ? `нед. ${Array.isArray(raw.weekNumber) ? raw.weekNumber.join(', ') : String(raw.weekNumber)}` : undefined, sourceUrl: raw?.sourceUrl, sourceTitle: raw?.sourceTitle, sourceKind: 'live-json', confidence: 1 });
+                        result.push({ id: String(raw?.id ? `${raw.id}-${date}-${slot.doublePart ?? 0}` : `${program}-${course}-${group}-${date}-${slot.start}-${slot.end}-${subject}-${index}-${slot.doublePart ?? 0}`), program, course, group, stream, date, start: slot.start, end: slot.end, subject, location: cleanLocation(raw?.location), teacher: cleanTeacher(raw?.teacher), type: normalizeType(raw?.type, subject), half: normalizeHalf(raw?.half), double: slot.double, orgMerged: raw?.orgMerged === true || undefined, mergedConsecutive: raw?.mergedConsecutive === true || undefined, doublePart: slot.doublePart, doubleOf: slot.doubleOf, durationMinutes: slot.durationMinutes, weeks: raw?.weekNumber ? `нед. ${Array.isArray(raw.weekNumber) ? raw.weekNumber.join(', ') : String(raw.weekNumber)}` : undefined, sourceUrl: raw?.sourceUrl, sourceTitle: raw?.sourceTitle, sourceKind: 'live-json', confidence: 1 });
                     }
                 }
         }
     }
-    return dedupe(result);
+    return mergeAutoSplitDoubleSlots(dedupe(result));
+}
+function mergeAutoSplitDoubleSlots(events) {
+    const ordered = [...events].sort((a, b) => [a.program, a.course, a.group, a.stream ?? '', a.date, a.subject, a.location, a.teacher, a.type, a.half ?? '', a.start].join('|').localeCompare([b.program, b.course, b.group, b.stream ?? '', b.date, b.subject, b.location, b.teacher, b.type, b.half ?? '', b.start].join('|')));
+    const out = [];
+    let i = 0;
+    const identity = (e) => [e.program, e.course, e.group, e.stream ?? '', e.date, e.subject.toLocaleLowerCase('ru-RU'), e.location.toLocaleLowerCase('ru-RU'), e.teacher.toLocaleLowerCase('ru-RU'), e.type, e.half ?? '', e.doubleOf ?? ''].join('|');
+    const mins = (v) => Number(v.slice(0, 2)) * 60 + Number(v.slice(3));
+    while (i < ordered.length) {
+        const first = ordered[i];
+        if (!first) {
+            i += 1;
+            continue;
+        }
+        const second = ordered[i + 1];
+        if (second && typeof first.doubleOf === 'string' && first.doubleOf.startsWith('auto:') && first.doubleOf === second.doubleOf && first.doublePart === 1 && second.doublePart === 2 && identity(first) === identity(second)) {
+            const gap = mins(second.start) - mins(first.end);
+            if (gap >= 0 && gap <= 20 && mins(second.end) > mins(first.start)) {
+                const joined = { ...first, end: second.end, double: true, mergedConsecutive: true, durationMinutes: mins(second.end) - mins(first.start), doublePart: undefined };
+                if (/\bОРГ\b|основы\s+российской\s+государственности/i.test(first.subject)) {
+                    joined.orgMerged = true;
+                    joined.mergedConsecutive = undefined;
+                }
+                joined.id = first.id.replace(/-1$/, '');
+                out.push(joined);
+                i += 2;
+                continue;
+            }
+        }
+        out.push(first);
+        i += 1;
+    }
+    return out;
 }
 export function dedupe(events) {
     const map = new Map();

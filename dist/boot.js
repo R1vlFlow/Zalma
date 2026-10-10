@@ -1,5 +1,5 @@
 (()=>{
-  const BUILD_ID='e20ab0a42137613c';
+  const BUILD_ID='d2156d5018346a2e';
   document.documentElement.dataset.buildId=BUILD_ID;
   const showBuildLabel=()=>{const buildLabel=document.getElementById('appBuildLabel');if(buildLabel)buildLabel.textContent=BUILD_ID;};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',showBuildLabel,{once:true});

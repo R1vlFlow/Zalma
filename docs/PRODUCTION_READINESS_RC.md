@@ -2,8 +2,8 @@
 
 ## Release identity
 
-- App version: `2.6.0-rc.1`
-- Schedule engine: `4.7.0-rc.1`
+- App version: `2.7.0-rc.1`
+- Schedule engine: `4.8.0-rc.1`
 - Release channel: RC; not a final store release.
 
 ## Build contract
@@ -30,7 +30,7 @@ The browser app uses relative `/api/...` requests for same-origin API deployment
 
 - Stream A/B classification prefers the text printed in the PDF heading over a stale filename suffix and logs any disagreement.
 - A synthetic Stream A matrix regression fixture verifies layout-generalized parsing and roster coverage (401–412). It represents the matrix parser shape, not official lesson assignments; production events must only be generated from official live documents.
-- ORG consecutive slots are merged only if subject, group, stream, course, date/week/day, type, location, teacher and source match, the gap is 0–20 minutes, and both slots have plausible durations. Other subjects retain their 1/2 and 2/2 cards.
+- Consecutive slots are merged for any subject only if program/course/group/stream, date or week/day, type, normalized subject, room, teacher and source match, both slots have plausible durations, and the gap is 0–20 minutes. ORG merges are marked `orgMerged`; other subjects use `mergedConsecutive`. Explicit, differently labelled subgroup halves never merge with each other, and the same half marker is preserved when two consecutive slots are consolidated. Long blocks with unclear identity are kept intact or logged for review rather than silently reinterpreted.
 
 ## RC exit criteria
 

@@ -1,19 +1,19 @@
-import { PROGRAMS, sourceFor, sourcesFor } from './data/catalog.js?v=e20ab0a42137613c';
-import { groupsFor, streamForGroup } from './data/roster.js?v=e20ab0a42137613c';
-import { mondayOf, weekDates, formatDateRu, longDateRu, addDays, todayISO } from './core/date.js?v=e20ab0a42137613c';
-import { eventAppliesToGroup } from './core/filter.js?v=e20ab0a42137613c';
-import { loadSchedule, clearScheduleMemory } from './services/scheduleService.js?v=e20ab0a42137613c';
-import { addTask, readTasks, removeTask, updateTask } from './services/taskService.js?v=e20ab0a42137613c';
-import { readPersonalization, updatePersonalization, setAcademicProfile, subjectColorKey } from './services/personalizationStore.js?v=e20ab0a42137613c';
-import { applyTheme, cycleTheme, initTheme, themeMode } from './ui/theme.js?v=e20ab0a42137613c';
-import { FAQ } from './ui/faq.js?v=e20ab0a42137613c';
-import { createPersonalEvent, deletePersonalEvent, listPersonalEvents, updatePersonalEvent } from './services/eventService.js?v=e20ab0a42137613c';
-import { fileToAttachment } from './services/supportService.js?v=e20ab0a42137613c';
-import { createTicket, listTickets, getTicket, addTicketMessage } from './services/supportService.js?v=e20ab0a42137613c';
-import { localDate, localDateTimeToUtc, localTime, userTimeZone, localDateTimeInput } from './core/time.js?v=e20ab0a42137613c';
-import { scheduleToCalendarEvent } from './core/calendar.js?v=e20ab0a42137613c';
-import { enhanceControls, refreshControls } from './ui/customControls.js?v=e20ab0a42137613c';
-import { deleteFileMaterial, getFileMaterial, listFileMaterials, materialScope, saveFileMaterial, MAX_MATERIAL_FILE_SIZE } from './services/materialStore.js?v=e20ab0a42137613c';
+import { PROGRAMS, sourceFor, sourcesFor } from './data/catalog.js?v=d2156d5018346a2e';
+import { groupsFor, streamForGroup } from './data/roster.js?v=d2156d5018346a2e';
+import { mondayOf, weekDates, formatDateRu, longDateRu, addDays, todayISO } from './core/date.js?v=d2156d5018346a2e';
+import { eventAppliesToGroup } from './core/filter.js?v=d2156d5018346a2e';
+import { loadSchedule, clearScheduleMemory } from './services/scheduleService.js?v=d2156d5018346a2e';
+import { addTask, readTasks, removeTask, updateTask } from './services/taskService.js?v=d2156d5018346a2e';
+import { readPersonalization, updatePersonalization, setAcademicProfile, subjectColorKey } from './services/personalizationStore.js?v=d2156d5018346a2e';
+import { applyTheme, cycleTheme, initTheme, themeMode } from './ui/theme.js?v=d2156d5018346a2e';
+import { FAQ } from './ui/faq.js?v=d2156d5018346a2e';
+import { createPersonalEvent, deletePersonalEvent, listPersonalEvents, updatePersonalEvent } from './services/eventService.js?v=d2156d5018346a2e';
+import { fileToAttachment } from './services/supportService.js?v=d2156d5018346a2e';
+import { createTicket, listTickets, getTicket, addTicketMessage } from './services/supportService.js?v=d2156d5018346a2e';
+import { localDate, localDateTimeToUtc, localTime, userTimeZone, localDateTimeInput } from './core/time.js?v=d2156d5018346a2e';
+import { scheduleToCalendarEvent } from './core/calendar.js?v=d2156d5018346a2e';
+import { enhanceControls, refreshControls } from './ui/customControls.js?v=d2156d5018346a2e';
+import { deleteFileMaterial, getFileMaterial, listFileMaterials, materialScope, saveFileMaterial, MAX_MATERIAL_FILE_SIZE } from './services/materialStore.js?v=d2156d5018346a2e';
 const DAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 const STATUS_LABEL = { planned: 'Запланировано', confirmed: 'Подтверждено', in_progress: 'В процессе', completed: 'Завершено', cancelled: 'Отменено' };
 const VIEW_LABEL = { day: 'День', workweek: 'Рабочая неделя', week: 'Неделя', month: 'Месяц', agenda: 'Agenda', list: 'Список' };
@@ -253,7 +253,7 @@ function renderSchedule() {
         $('mobileSchedule').innerHTML = renderMobileSkeleton();
     }
     else {
-        const html = state.scheduleMode === 'kug' ? (state.view === 'agenda' || state.view === 'list' ? renderKugAgenda(range.from, range.to) : renderKugGrid(range.dates)) : state.view === 'month' ? renderMonth(events) : state.view === 'agenda' ? renderAgenda(events) : state.view === 'list' ? renderList(events) : renderTimeGrid(events, dates);
+        const html = state.scheduleMode === 'kug' ? (state.view === 'agenda' || state.view === 'list' ? renderKugAgenda(range.from, range.to) : renderKugGrid(range.dates)) : state.view === 'month' ? renderMonth(events) : state.view === 'agenda' ? renderAgenda(events) : state.view === 'list' ? renderList(events) : renderCardSchedule(events, dates);
         $('desktopSchedule').innerHTML = html;
         $('mobileSchedule').innerHTML = state.scheduleMode === 'kug' || state.view === 'month' ? html : renderMobile(events, dates);
     }
@@ -290,21 +290,28 @@ function kugTags(date) { if (state.scheduleMode !== 'combined')
 function renderKugGrid(dates) { const month = state.view === 'month'; const columns = month ? 7 : Math.max(1, dates.length); const heads = month ? DAYS : dates.map(weekdayLabel); return `<div class="kug-calendar-grid" style="--kug-columns:${columns}">${heads.map(d => `<div class="month-head">${d}</div>`).join('')}${dates.map(d => { const periods = kugPeriodsFor(d); return `<article class="kug-calendar-cell ${d.slice(0, 7) !== state.focusDate.slice(0, 7) ? 'muted-month' : ''} ${d === todayISO(state.timezone) ? 'today' : ''}"><span class="kug-day-number">${d.slice(8, 10)}</span><div class="kug-calendar-tags">${periods.map(p => `<span class="kug-day-tag kug-${esc(p.kind)}" title="${esc(p.label)} · ${esc(kugDay(p.start))} — ${esc(kugDay(p.end))}">${esc(p.label)}</span>`).join('') || '<span class="kug-no-period">—</span>'}</div></article>`; }).join('')}</div>`; }
 function renderKugAgenda(from, to) { const periods = activeKugPeriods().filter(p => p.start <= to && p.end >= from).sort((a, b) => a.start.localeCompare(b.start)); return `<div class="agenda-list kug-agenda-list">${periods.map(p => `<article class="agenda-item card kug-agenda-period kug-${esc(p.kind)}"><time>${esc(kugDay(p.start))}<br><b>${esc(kugDay(p.end))}</b></time><div><span class="eyebrow">${esc(kugKindLabel(p.kind))}</span><h3>${esc(p.label)}</h3><p>${esc(p.program ?? state.profile.program)} · ${esc(String(p.course))} курс</p></div>${p.sourceUrl ? `<a class="btn small" href="${esc(p.sourceUrl)}" target="_blank" rel="noopener noreferrer">Источник ↗</a>` : ''}</article>`).join('') || '<div class="empty-state card"><h3>Периодов КУГ нет</h3><p>В выбранном диапазоне не найдено периодов.</p></div>'}</div>`; }
 function visibleSegments(events, date) { return events.filter(e => { const s = localDate(e.startAt, state.timezone), end = localDate(e.endAt, state.timezone); return s <= date && end >= date; }); }
-function layoutForDay(list, date) { const day = visibleSegments(list, date); const decorated = day.map(e => { const startDate = localDate(e.startAt, state.timezone), endDate = localDate(e.endAt, state.timezone); const st = startDate === date ? localTime(e.startAt, state.timezone) : '00:00'; const en = endDate === date ? localTime(e.endAt, state.timezone) : '24:00'; return { e, sm: timeMinutes(st), em: timeMinutes(en) }; }).sort((a, b) => a.sm - b.sm || a.em - b.em); const lanes = []; const result = []; for (const item of decorated) {
-    let lane = 0;
-    let occupied = lanes[lane];
-    while (occupied !== undefined && occupied > item.sm) {
-        lane++;
-        occupied = lanes[lane];
-    }
-    lanes[lane] = item.em;
-    result.push({ ...item, lane });
-} return result.map(x => ({ ...x, total: Math.max(...result.filter(r => r.sm < x.em && r.em > x.sm).map(r => r.lane + 1), x.lane + 1) })); }
-function timeMinutes(v) { if (v === '24:00')
-    return 1440; const [h, m] = v.split(':').map(Number); return (h || 0) * 60 + (m || 0); }
-function renderTimeGrid(events, dates) { const start = 420, px = 1.15; const labels = Array.from({ length: 17 }, (_, i) => `${String(7 + i).padStart(2, '0')}:00`); return `<div class="time-grid" style="--day-count:${dates.length}"><div class="time-axis">${labels.map((l, i) => `<span style="top:${i * 60 * px}px">${l}</span>`).join('')}</div><div class="time-days">${dates.map((date, i) => { const dayEvents = visibleSegments(events, date); const allDay = dayEvents.filter(e => e.allDay); const laid = layoutForDay(dayEvents.filter(e => !e.allDay), date); return `<section class="time-day ${date === todayISO(state.timezone) ? 'today' : ''}" data-drop-date="${date}"><header><span>${weekdayLabel(date)}</span><b>${date.slice(8, 10)} ${new Intl.DateTimeFormat('ru-RU', { month: 'short' }).format(new Date(`${date}T12:00:00Z`)).replace('.', '')}</b></header>${kugTags(date) ? `<div class="kug-time-day-tags">${kugTags(date)}</div>` : ''}${allDay.length ? `<div class="all-day-strip">${allDay.map(e => `<button class="all-day-event ${e.kind === 'personal' ? 'personal' : ''}" data-open-event="${esc(e.id)}"><span>Весь день</span><strong>${esc(String(e.title ?? (('subject' in e) ? e.subject : '')))}</strong></button>`).join('')}</div>` : ''}<div class="time-canvas">${Array.from({ length: 17 }, (_, n) => `<i class="hour-line" style="top:${n * 60 * px}px"></i>`).join('')}${laid.map((x) => { const top = Math.max(0, (x.sm - start) * px), height = Math.max(42, (x.em - x.sm) * px); const width = 100 / x.total, left = x.lane * width; return eventHtml(x.e, date, top, height, left, width); }).join('')}${date === todayISO(state.timezone) ? currentTimeLine(px, start) : ''}</div></section>`; }).join('')}</div></div>`; }
-function currentTimeLine(px, start) { const now = new Date(); const tm = new Intl.DateTimeFormat('en-US', { timeZone: state.timezone, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(now).split(':').map(Number); const hh = Number(tm[0] ?? 0), mm = Number(tm[1] ?? 0); const top = ((hh * 60 + mm) - start) * px; if (top < 0 || top > 1100)
-    return ''; return `<div class="current-time" style="top:${top}px"><i></i><b>Сейчас</b></div>`; }
+function renderCardSchedule(events, dates) {
+    const today = todayISO(state.timezone);
+    const columns = Math.max(1, dates.length);
+    return `<div class="schedule-card-grid ${columns === 1 ? 'single-day' : ''}" style="--schedule-days:${columns}">${dates.map(date => {
+        const dayEvents = visibleSegments(events, date).sort((a, b) => a.startAt.localeCompare(b.startAt) || eventSubject(a).localeCompare(eventSubject(b), 'ru'));
+        const labels = dayEvents.length === 1 ? '1 занятие' : `${dayEvents.length} событий`;
+        return `<section class="schedule-day-card ${date === today ? 'today' : ''}" data-drop-date="${date}">
+      <header class="schedule-day-head"><div><span>${weekdayLabel(date)}${date === today ? ' · Сегодня' : ''}</span><h3>${esc(longDateRu(date))}</h3><small>${labels}</small></div><button class="schedule-day-add" type="button" data-action="new-event" data-jump-date="${date}" aria-label="Создать событие ${esc(longDateRu(date))}">＋</button></header>
+      ${kugTags(date) ? `<div class="schedule-day-kug">${kugTags(date)}</div>` : ''}
+      <div class="schedule-event-stack">${dayEvents.map(e => {
+            const title = eventSubject(e), startDate = localDate(e.startAt, state.timezone), endDate = localDate(e.endAt, state.timezone);
+            const time = e.allDay ? 'Весь день' : startDate < date ? (endDate === date ? `Продолжается · до ${localTime(e.endAt, state.timezone)}` : 'Продолжается') : endDate > date ? `${localTime(e.startAt, state.timezone)} · продолжается` : `${localTime(e.startAt, state.timezone)}–${localTime(e.endAt, state.timezone)}`;
+            const status = e.status ?? 'planned', personal = e.kind === 'personal';
+            return `<article class="calendar-event schedule-event-card ${personal ? 'personal' : 'official'} status-${status}" data-event-id="${esc(e.id)}" data-event-kind="${e.kind}" ${personal ? 'draggable="true"' : ''} style="${subjectColor(e) ? `--subject-color:${subjectColor(e)};` : ''}">
+          <div class="schedule-event-head"><span class="event-time">${esc(time)}</span><span class="status-badge">${esc(STATUS_LABEL[status])}</span></div>
+          <button type="button" class="schedule-event-open" data-open-event="${esc(e.id)}" aria-label="Открыть ${esc(title)}"><span class="schedule-event-title">${eventHalfMarkup(e, true)}<strong>${esc(title)}</strong>${taskBadge(title)}</span><span class="schedule-event-meta">${esc(personal ? (e.category || 'Личное') : (e.type === 'practice' ? 'Практика' : e.type === 'lecture' ? 'Лекция' : e.type === 'lab' ? 'Лабораторная' : 'Занятие'))}${e.location ? ` · ${esc(e.location)}` : ''}</span>${e.kind === 'schedule' && e.teacher ? `<span class="schedule-event-meta">${esc(e.teacher)}</span>` : ''}</button>
+          <div class="schedule-event-actions">${e.kind === 'schedule' ? `<button type="button" class="event-homework-link" data-homework-from-event="${esc(e.id)}">＋ Записать ДЗ</button>` : ''}${personal ? `${subjectColorControl(e)}<button class="duration-adjust" type="button" data-duration-adjust="-15" aria-label="Сократить длительность на 15 минут">−15 мин</button><button class="duration-adjust" type="button" data-duration-adjust="15" aria-label="Увеличить длительность на 15 минут">＋15 мин</button>` : ''}</div>
+        </article>`;
+        }).join('') || `<div class="schedule-day-empty"><span>Свободный день</span><button type="button" data-action="new-event" data-jump-date="${date}">＋ Добавить событие</button></div>`}</div>
+    </section>`;
+    }).join('')}</div>`;
+}
 function eventHalfLabel(e) {
     if (e.half === '1/2' || e.half === '2/2')
         return e.half;
@@ -321,8 +328,6 @@ function subjectColor(e) { return state.personalization.subjectColors[subjectCol
 function subjectColorControl(e) { if (e.kind !== 'schedule')
     return ''; const key = subjectColorKey(eventSubject(e)); const c = subjectColor(e) || '#7892bf'; return `<button type="button" class="subject-color-trigger" data-subject-color-trigger="${esc(key)}" title="Изменить цвет предмета" aria-label="Изменить цвет предмета ${esc(eventSubject(e))}" style="--subject-swatch:${c}">●</button>`; }
 function taskBadge(subject) { const key = subjectColorKey(subject); const n = state.tasks.filter(t => t.status !== 'done' && subjectColorKey(t.subject) === key).length; return n ? `<span class="homework-badge" title="Активных заданий: ${n}">ДЗ ${n}</span>` : ''; }
-function eventTitleRow(e, title) { return `<span class="event-title-row">${eventHalfMarkup(e)}<strong>${esc(String(title))}</strong>${taskBadge(title)}${subjectColorControl(e)}</span>`; }
-function eventHtml(e, date, top, height, left, width) { const isPersonal = e.kind === 'personal'; const title = e.title ?? (('subject' in e) ? e.subject : ''); const st = e.allDay ? 'Весь день' : localDate(e.startAt, state.timezone) === date ? localTime(e.startAt, state.timezone) : '00:00'; const en = e.allDay ? '' : localDate(e.endAt, state.timezone) === date ? localTime(e.endAt, state.timezone) : '24:00'; const status = e.status ?? (isPersonal ? 'planned' : undefined); const draggable = isPersonal ? ' draggable="true"' : ''; return `<article class="calendar-event ${isPersonal ? 'personal' : 'official'} status-${status ?? 'planned'}" data-event-id="${esc(e.id)}" data-event-kind="${e.kind}" data-open-event="${esc(e.id)}" role="button" aria-label="Открыть событие: ${esc(String(title))}"${draggable} tabindex="0" style="top:${top}px;height:${height}px;left:${left}%;width:${width}%;${subjectColor(e) ? `--subject-color:${subjectColor(e)};` : ''}"><div class="event-accent"></div><div class="event-time">${esc(st)}–${esc(en)}</div>${eventTitleRow(e, String(title))}<div class="event-meta">${esc(isPersonal ? (e.category || 'Личное') : (e.type === 'practice' ? 'ПЗ' : e.type === 'lecture' ? 'Лекция' : 'Занятие'))}${e.location ? ` · ${esc(e.location)}` : ''}</div>${!isPersonal ? `<button type="button" class="event-homework-link" data-homework-from-event="${esc(e.id)}">＋ Записать ДЗ</button>` : ''}${status ? `<span class="event-status">${STATUS_LABEL[status]}</span>` : ''}${isPersonal ? '<span class="resize-handle" data-resize-event="true" aria-hidden="true"></span>' : ''}</article>`; }
 function renderMobile(events, dates) { return `<div class="mobile-days">${dates.map(d => `<section class="mobile-day ${d === todayISO(state.timezone) ? 'today' : ''}" data-drop-date="${d}"><header><div><span>${weekdayLabel(d)}</span><h3>${longDateRu(d)}</h3></div><b>${visibleSegments(events, d).length}</b></header>${kugTags(d) ? `<div class="kug-mobile-day-tags">${kugTags(d)}</div>` : ''}<div class="mobile-event-list">${visibleSegments(events, d).map(e => { const st = e.allDay ? 'Весь день' : localDate(e.startAt, state.timezone) === d ? localTime(e.startAt, state.timezone) : '00:00'; const en = e.allDay ? '' : localDate(e.endAt, state.timezone) === d ? localTime(e.endAt, state.timezone) : '24:00'; const title = e.title ?? (('subject' in e) ? e.subject : ''); return `<div class="mobile-event-wrap"><button class="mobile-event ${e.kind === 'personal' ? 'personal' : 'official'}" data-open-event="${esc(e.id)}" style="${subjectColor(e) ? `--subject-color:${subjectColor(e)};` : ''}"><span class="mobile-event-time">${e.allDay ? 'Весь день' : `${st}–${en}`}</span><span class="mobile-event-title">${eventHalfMarkup(e, true)}<strong>${esc(String(title))}</strong>${taskBadge(String(title))}</span><small>${esc(e.location || '')} ${e.kind === 'personal' ? '· личное' : '· официальное'}</small></button>${e.kind === 'schedule' ? `<button type="button" class="mobile-homework-link" data-homework-from-event="${esc(e.id)}">＋ Записать ДЗ</button>` : ''}</div>`; }).join('') || '<div class="day-empty">Свободный день</div>'}</div></section>`).join('')}</div>`; }
 function renderMonth(events) { const from = startOfWeek(monthStart(state.focusDate)); const to = addDays(startOfWeek(monthEnd(state.focusDate)), 6); const dates = []; for (let d = from; d <= to; d = addDays(d, 1))
     dates.push(d); return `<div class="month-grid">${DAYS.map(d => `<div class="month-head">${d}</div>`).join('')}${dates.map(d => `<button class="month-cell ${d.slice(0, 7) !== state.focusDate.slice(0, 7) ? 'muted-month' : ''} ${d === todayISO(state.timezone) ? 'today' : ''}" data-jump-date="${d}"><span>${d.slice(8, 10)}</span><div class="month-kug-tags">${kugTags(d)}</div><div>${visibleSegments(events, d).slice(0, 4).map(e => `<em class="month-event ${e.kind === 'personal' ? 'personal' : ''}" style="${subjectColor(e) ? `--subject-color:${subjectColor(e)};` : ''}">${eventHalfMarkup(e, true)}${e.allDay ? 'Весь день' : localTime(e.startAt, state.timezone)} ${esc(String(e.title ?? (('subject' in e) ? e.subject : '')))} ${taskBadge(eventSubject(e))}</em>`).join('')}</div>${visibleSegments(events, d).length > 4 ? `<small>+${visibleSegments(events, d).length - 4}</small>` : ''}</button>`).join('')}</div>`; }
@@ -857,15 +862,13 @@ catch (error) {
 function bind() {
     document.addEventListener('click', async (e) => {
         const origin = e.target instanceof Element ? e.target : null;
-        if (origin?.closest('[data-resize-event]'))
-            return;
         if (origin?.classList.contains('modal-backdrop')) {
             const backdrop = origin;
             if (backdrop.classList.contains('open'))
                 closeModal(backdrop.id);
             return;
         }
-        const target = origin?.closest('[data-action],[data-page],[data-view],[data-schedule-mode],[data-pick-program],[data-task-delete],[data-task-toggle],[data-task-status],[data-task-attachment],[data-jump-date],[data-open-event],[data-homework-from-event],[data-ticket],[data-faq-category],[data-faq-open],[data-subject-color-trigger],[data-avatar-preset],[data-material-delete],[data-material-open],[data-material-download]');
+        const target = origin?.closest('[data-action],[data-page],[data-view],[data-schedule-mode],[data-pick-program],[data-task-delete],[data-task-toggle],[data-task-status],[data-task-attachment],[data-jump-date],[data-open-event],[data-homework-from-event],[data-ticket],[data-faq-category],[data-faq-open],[data-subject-color-trigger],[data-duration-adjust],[data-avatar-preset],[data-material-delete],[data-material-open],[data-material-download]');
         if (!target)
             return;
         const action = target.dataset.action;
@@ -891,6 +894,31 @@ function bind() {
                 state.view = 'month';
             renderSchedule();
             renderSettings();
+            return;
+        }
+        if (target.dataset.durationAdjust) {
+            const card = target.closest('.calendar-event');
+            const id = card?.dataset.eventId;
+            const ev = id ? state.personal.find(x => x.id === id) : undefined;
+            if (!id || !ev)
+                return;
+            const before = toInput(ev);
+            const delta = Number(target.dataset.durationAdjust);
+            const nextEnd = new Date(Date.parse(ev.endAt) + delta * 60000);
+            if (!Number.isFinite(nextEnd.getTime()) || nextEnd.getTime() <= Date.parse(ev.startAt)) {
+                toast('Длительность не может быть меньше 15 минут', 'error');
+                return;
+            }
+            try {
+                await updatePersonalEvent(id, { ...before, endAt: nextEnd.toISOString() }, 'single');
+                state.undo = { id, before, scope: 'single', kind: 'update' };
+                await reloadEvents();
+                render();
+                showUndo('Длительность изменена');
+            }
+            catch (error) {
+                toast(error instanceof Error ? error.message : 'Не удалось изменить длительность', 'error');
+            }
             return;
         }
         if (target.dataset.subjectColorTrigger) {
@@ -1287,18 +1315,6 @@ function bind() {
     catch (error) {
         toast(error instanceof Error ? error.message : 'Не удалось перенести событие', 'error');
     } });
-    document.addEventListener('pointerdown', e => { const t = e.target.closest('[data-resize-event]'); if (!t)
-        return; const eventEl = t.closest('.calendar-event'); const id = eventEl?.dataset.eventId; const ev = id ? state.personal.find(x => x.id === id) : undefined; if (!ev || !eventEl)
-        return; e.preventDefault(); const startY = e.clientY, base = toInput(ev), baseEnd = Date.parse(ev.endAt); const move = (ev2) => { const min = Math.max(15, Math.round((baseEnd - Date.parse(base.startAt)) / 60000 + ((ev2.clientY - startY) / 1.15) / 15) * 15); eventEl.style.height = `${Math.max(42, min * 1.15)}px`; }; const up = async (ev2) => { document.removeEventListener('pointermove', move); document.removeEventListener('pointerup', up); const duration = Math.max(15, Math.round((baseEnd - Date.parse(base.startAt)) / 60000 + ((ev2.clientY - startY) / 1.15) / 15) * 15); const end = new Date(Date.parse(base.startAt) + duration * 60000).toISOString(); try {
-        await updatePersonalEvent(id, { ...base, endAt: end }, 'single');
-        state.undo = { id: id, before: base, scope: 'single', kind: 'update' };
-        await reloadEvents();
-        render();
-        showUndo('Длительность изменена');
-    }
-    catch (error) {
-        toast(error instanceof Error ? error.message : 'Не удалось изменить длительность', 'error');
-    } }; document.addEventListener('pointermove', move); document.addEventListener('pointerup', up, { once: true }); });
 }
 async function applySelectProfile() { const p = $('programSelect'), c = $('courseSelect'), g = $('groupSelect'); state.profile = { program: p.value, course: Number(c.value), group: g.value || '' }; ensureProfile(); localStorage.setItem('almazov.profile', JSON.stringify(state.profile)); setAcademicProfile(state.profile); state.focusDate = todayISO(state.timezone); state.week = mondayOf(state.focusDate); state.events = []; state.status = 'loading'; clearScheduleMemory(); render(); await reloadEvents(); await refreshUploadedMaterials(); await refreshHomePersonal(); render(); }
 async function shareLink() { const url = new URL(location.href); url.search = ''; url.searchParams.set('program', state.profile.program); url.searchParams.set('course', String(state.profile.course)); if (state.profile.group)
