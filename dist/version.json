@@ -1,8 +1,10 @@
 {
-  "version": "2.5.0",
-  "uiVersion": "2.5.0",
-  "engineVersion": "4.6.3",
-  "release": "PHASE2-INDEXEDDB-CUSTOM-CONTROLS-SMART-HOMEWORK-MIGRATION",
+  "version": "2.6.0-rc.1",
+  "uiVersion": "2.6.0-rc.1",
+  "engineVersion": "4.7.0-rc.1",
+  "release": "PHASE3-PWA-ANDROID-STREAM-A-ORG-DOUBLE-LESSON-RELEASE-CANDIDATE",
   "released": "2026-10-09",
-  "buildId": "cac1dffbc9239c02"
+  "releaseChannel": "rc",
+  "buildId": "e20ab0a42137613c",
+  "minified": false
 }

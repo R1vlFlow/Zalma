@@ -248,3 +248,19 @@ html,body{max-width:100%;overflow-x:clip}
 .ui-date-day{position:relative}.ui-date-day.has-tasks::after{content:'';position:absolute;left:50%;bottom:2px;width:4px;height:4px;transform:translateX(-50%);border-radius:50%;background:var(--warning,#c58a18)}.ui-date-day.selected.has-tasks::after{background:currentColor}.ui-select-option{min-height:44px}.ui-date-header button,.ui-date-clear,.ui-date-done{min-height:44px}
 
 .ui-select-option-content{display:flex;align-items:center;gap:8px;min-width:0}.ui-select-option-content>span:last-child{min-width:0;overflow-wrap:anywhere}.ui-select-option-icon{display:inline-grid;place-items:center;width:20px;height:20px;flex:0 0 auto}.ui-select-option-swatch{display:inline-block;width:9px;height:9px;flex:0 0 auto;border-radius:50%;background:var(--option-color);box-shadow:0 0 0 2px color-mix(in srgb,var(--option-color) 18%,transparent)}
+
+/* PWA/install promotion dialog: themed and safe-area aware on mobile. */
+.install-actions{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0;min-width:0}
+.install-actions>*{max-width:100%;white-space:normal;text-align:center}
+.install-help-dialog{width:min(620px,calc(100vw - 28px));max-width:620px;max-height:min(86dvh,820px);overflow:auto;padding:0;border:1px solid var(--border);border-radius:20px;background:var(--surface);color:var(--text);box-shadow:var(--shadow-md);overscroll-behavior:contain}
+.install-help-dialog::backdrop{background:var(--overlay);backdrop-filter:blur(3px)}
+.install-dialog-head{position:sticky;top:0;z-index:2;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:18px 20px;border-bottom:1px solid var(--border);background:var(--surface)}
+.install-dialog-head h2{margin:4px 0 0;font-size:clamp(20px,4vw,27px)}
+.install-help-dialog>p,.install-help-dialog>section{margin:16px 20px}
+.install-help-dialog section{padding:14px;border:1px solid var(--border);border-radius:14px;background:var(--surface-2)}
+.install-help-dialog section h3{margin:0 0 8px;font-size:15px}
+.install-help-dialog section p{margin:0;color:var(--text-2);line-height:1.6}
+.install-help-dialog ol{margin:8px 0 14px;padding-left:22px;color:var(--text-2);line-height:1.65}
+.install-help-dialog li{padding-left:3px;margin:5px 0;overflow-wrap:anywhere}
+@media(max-width:480px){.install-actions{display:grid;grid-template-columns:minmax(0,1fr)}.install-actions>*{width:100%;min-height:46px}.install-help-dialog{width:calc(100vw - 20px);max-height:calc(100dvh - 20px);border-radius:16px}.install-dialog-head{padding:14px}.install-help-dialog>p,.install-help-dialog>section{margin:12px;padding:12px}}
+@media(prefers-reduced-motion:reduce){.install-help-dialog{scroll-behavior:auto}}

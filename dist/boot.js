@@ -1,5 +1,5 @@
 (()=>{
-  const BUILD_ID='cac1dffbc9239c02';
+  const BUILD_ID='e20ab0a42137613c';
   document.documentElement.dataset.buildId=BUILD_ID;
   const showBuildLabel=()=>{const buildLabel=document.getElementById('appBuildLabel');if(buildLabel)buildLabel.textContent=BUILD_ID;};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',showBuildLabel,{once:true});
@@ -64,4 +64,57 @@
     await checkForNewBuild(true);
   });
   void checkForNewBuild();
+
+  // Native install prompt (Chrome/Android) plus accurate Safari/iOS guidance.
+  var deferredInstallPrompt = null;
+  function installDialog(message) {
+    var dialog = document.getElementById('installHelpDialog');
+    var hint = document.getElementById('installPlatformHint');
+    if (hint && message) hint.textContent = message;
+    if (dialog && typeof dialog.showModal === 'function') {
+      if (!dialog.open) dialog.showModal();
+    } else if (message) {
+      window.alert(message + '\n\nДля iPhone используйте Safari → Поделиться → На экран «Домой».');
+    }
+  }
+  window.addEventListener('beforeinstallprompt', function (event) {
+    event.preventDefault();
+    deferredInstallPrompt = event;
+    document.querySelectorAll('[data-install-pwa]').forEach(function (button) {
+      button.textContent = 'Установить приложение';
+      button.setAttribute('aria-label', 'Установить Almazov Schedule Hub');
+    });
+  });
+  window.addEventListener('appinstalled', function () {
+    deferredInstallPrompt = null;
+    document.querySelectorAll('[data-install-pwa]').forEach(function (button) { button.textContent = 'Приложение установлено'; });
+    installDialog('Приложение установлено на это устройство.');
+  });
+  document.addEventListener('click', async function (event) {
+    var target = event.target instanceof Element ? event.target.closest('[data-install-pwa], [data-install-close]') : null;
+    if (!target) return;
+    if (target.hasAttribute('data-install-close')) {
+      var dialog = document.getElementById('installHelpDialog');
+      if (dialog && typeof dialog.close === 'function') dialog.close();
+      return;
+    }
+    if (deferredInstallPrompt) {
+      try {
+        var promptEvent = deferredInstallPrompt;
+        deferredInstallPrompt = null;
+        await promptEvent.prompt();
+        var result = await promptEvent.userChoice;
+        var status = document.getElementById('appUpdateStatus');
+        if (status) status.textContent = result && result.outcome === 'accepted' ? 'Установка запущена.' : 'Установка отменена. Её можно повторить из меню браузера.';
+        if (window.zalmaTrack) window.zalmaTrack(result && result.outcome === 'accepted' ? 'pwa_install_accepted' : 'pwa_install_dismissed');
+      } catch (_) { installDialog('Браузер не смог открыть системное окно установки. Используйте меню браузера или инструкцию ниже.'); }
+      return;
+    }
+    var isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    installDialog(isIOS ? 'Для установки на iPhone или iPad откройте этот сайт в Safari.' : 'Системный запрос установки сейчас недоступен. Откройте меню браузера и выберите установку приложения либо используйте APK для Android.');
+  });
+  document.addEventListener('click', function (event) {
+    var target = event.target instanceof Element ? event.target.closest('[data-download-apk]') : null;
+    if (target && window.zalmaTrack) window.zalmaTrack('apk_download_clicked');
+  });
 })();
