@@ -76,13 +76,11 @@ def is_org_subject(value):
 
 
 def merge_consecutive_identical_events(events):
-    """Merge adjacent source slots with identical lesson identity into one session.
+    """Merge contiguous equal lesson slots, including 3+ slot runs.
 
-    Identity includes program/course/group/stream/date or week geometry, subject,
-    room, teacher, type, and source. Only ordinary lesson-sized slots separated
-    by a break of 0–20 minutes are eligible. ORG merges retain a dedicated
-    provenance flag; other merged subjects receive ``mergedConsecutive`` so the
-    frontend does not split the unified session a second time.
+    Lesson identity includes program/course/group/stream/week/date, title,
+    room, teacher, lesson type, source and explicit subgroup marker. A and B
+    streams or explicit 1/2 and 2/2 halves therefore never collapse together.
     """
     def identity(e):
         values=[]
@@ -102,43 +100,46 @@ def merge_consecutive_identical_events(events):
     out=[]; i=0; merged_count=0; org_count=0
     while i < len(ordered):
         first=ordered[i]
-        merged_item=None
-        if i+1 < len(ordered) and not first.get('orgMerged') and not first.get('mergedConsecutive'):
-            second=ordered[i+1]
-            try:
-                a1,b1=minutes(first,'start'),minutes(first,'end')
-                a2,b2=minutes(second,'start'),minutes(second,'end')
-                if None in (a1,b1,a2,b2): raise ValueError('missing clock')
-                d1,d2=b1-a1,b2-a2
-                gap=a2-b1
-                same=(identity(first)==identity(second)
-                      and d1>0 and d2>0
-                      and 45 <= d1 <= 130 and 45 <= d2 <= 130
-                      and 0 <= gap <= 20 and b2>a2)
-                if same:
-                    merged_item=dict(first)
-                    merged_item['end']=second['end']
-                    merged_item['double']=True
-                    merged_item['durationMinutes']=b2-a1
-                    for key in ('doubleIndex','doubleOf','doublePart'):
-                        merged_item.pop(key,None)
-                    if is_org_subject(first.get('subject')):
-                        merged_item['orgMerged']=True
-                        merged_item['doubleMergeReason']='ORG consecutive slots'
-                        org_count+=1
-                    else:
-                        merged_item['mergedConsecutive']=True
-                        merged_item['doubleMergeReason']='identical consecutive slots'
-                    merged_count+=1
-            except (KeyError,TypeError,ValueError):
-                merged_item=None
-        if merged_item is not None:
-            out.append(merged_item); i+=2; continue
-        out.append(first); i+=1
+        a1,b1=minutes(first,'start'),minutes(first,'end')
+        first_duration=(b1-a1) if a1 is not None and b1 is not None else 0
+        first_is_merged=bool(first.get('orgMerged') or first.get('mergedConsecutive'))
+        first_valid_slot=45 <= first_duration <= 130
+        first_valid_block=first_is_merged and first_duration > 130
+        if a1 is None or b1 is None or b1<=a1 or not (first_valid_slot or first_valid_block):
+            out.append(first); i+=1; continue
+        merged_item=dict(first); j=i+1; last_end=b1; slot_count=max(1,int(first.get('mergedSlotCount') or (2 if first_is_merged else 1)))
+        while j < len(ordered):
+            second=ordered[j]
+            a2,b2=minutes(second,'start'),minutes(second,'end')
+            d2=(b2-a2) if a2 is not None and b2 is not None else 0
+            second_is_merged=bool(second.get('orgMerged') or second.get('mergedConsecutive'))
+            second_valid_slot=45 <= d2 <= 130
+            second_valid_block=second_is_merged and d2 > 130
+            if (identity(first)!=identity(second) or a2 is None or b2 is None
+                    or b2<=a2 or not (second_valid_slot or second_valid_block)
+                    or not (0 <= a2-last_end <= 20)):
+                break
+            merged_item['end']=second['end']
+            last_end=b2; slot_count+=max(1,int(second.get('mergedSlotCount') or (2 if second_is_merged else 1))); j+=1
+        if slot_count<2:
+            out.append(first); i+=1; continue
+        merged_item['double']=True
+        merged_item['durationMinutes']=last_end-a1
+        merged_item['mergedSlotCount']=slot_count
+        for key in ('doubleIndex','doubleOf','doublePart'):
+            merged_item.pop(key,None)
+        if is_org_subject(first.get('subject')):
+            merged_item['orgMerged']=True
+            merged_item['doubleMergeReason']='ORG consecutive slots'
+            org_count+=1
+        else:
+            merged_item['mergedConsecutive']=True
+            merged_item['doubleMergeReason']='identical consecutive slots'
+        merged_count+=slot_count-1
+        out.append(merged_item); i=j
     if merged_count:
-        print(f'PARSER_DOUBLE_MERGE merged_pairs={merged_count} org_pairs={org_count}',file=sys.stderr)
+        print(f'PARSER_DOUBLE_MERGE merged_slots={merged_count} org_runs={org_count}',file=sys.stderr)
     return out
-
 
 def merge_org_consecutive_events(events):
     """Backward-compatible alias for the generalized identical-slot merger."""
@@ -1317,7 +1318,7 @@ def session():
     s=requests.Session()
     retry=requests.adapters.Retry(total=4,connect=4,read=4,backoff_factor=1.2,status_forcelist=(429,500,502,503,504),allowed_methods=frozenset(['GET']))
     s.mount('https://',requests.adapters.HTTPAdapter(max_retries=retry,pool_connections=20,pool_maxsize=20))
-    s.headers.update({'User-Agent':'Almazov-Student-Schedule-Sync/4.8.0-rc.1','Accept':'text/html,application/pdf,*/*'})
+    s.headers.update({'User-Agent':'Almazov-Student-Schedule-Sync/4.9.0-rc.1','Accept':'text/html,application/pdf,*/*'})
     return s
 
 def classify_pdf(text, url, hinted_course=None, hinted_stream=None, hinted_kind=None):
@@ -1542,6 +1543,19 @@ def source_preview_text(data,fmt):
     if fmt in {'txt','rtf'}:
         from universal_schedule_ingest import decode_text
         return norm(decode_text(data,fmt)[:30000])
+    if fmt == 'image':
+        # Image links are first-class official sources too. OCR is used for
+        # identity verification before a parser is allowed to publish events.
+        try:
+            import io
+            import pytesseract
+            from PIL import Image, ImageOps, ImageEnhance
+            with Image.open(io.BytesIO(data)) as original:
+                image = ImageOps.exif_transpose(original).convert('RGB')
+                image = ImageEnhance.Contrast(image).enhance(1.35)
+                return norm(pytesseract.image_to_string(image, lang='rus+eng', config='--psm 6')[:30000])
+        except Exception as exc:
+            raise RuntimeError(f'image OCR preview unavailable: {exc}') from exc
     return ''
 
 def classify_source(data,fmt,url,title,hinted_course=None,hinted_stream=None,hinted_kind=None):

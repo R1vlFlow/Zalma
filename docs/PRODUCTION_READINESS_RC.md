@@ -2,8 +2,8 @@
 
 ## Release identity
 
-- App version: `2.7.0-rc.1`
-- Schedule engine: `4.8.0-rc.1`
+- App version: `2.8.0-rc.2`
+- Schedule engine: `4.9.0-rc.1`
 - Release channel: RC; not a final store release.
 
 ## Build contract

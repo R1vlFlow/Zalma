@@ -15,6 +15,16 @@ for(const [size,name] of [[192,'assets/pwa-192.png'],[512,'assets/pwa-512.png'],
  if(image.readUInt32BE(16)!==size||image.readUInt32BE(20)!==size)throw new Error(`PWA icon dimensions invalid: ${name}`);
  if(!manifest.icons.some(icon=>icon.src===name&&icon.sizes===`${size}x${size}`))throw new Error(`PWA manifest missing icon: ${name}`);
 }
+if(process.env.REQUIRE_SPECIALIST_SNAPSHOT==='1'){
+ const specialist=JSON.parse(await readFile(join(dist,'data','program-schedules.json'),'utf8'));
+ if(specialist?.schemaVersion!==1||!specialist?.programs)throw new Error('Official multi-faculty schedule snapshot is missing/invalid');
+ for(const [program,course] of [['31.05.02',1],['31.05.02',2],['37.05.01',1],['37.05.01',2]]){
+  const item=specialist.programs?.[program]?.courses?.[String(course)];
+  if(!item||!Array.isArray(item.events)||item.events.length===0)throw new Error(`Official specialist snapshot has no validated events for ${program}/${course}`);
+  const bundle=JSON.parse(await readFile(join(dist,'data','schedules',program,`${course}.json`),'utf8'));
+  if(!Array.isArray(bundle.events)||bundle.events.length===0)throw new Error(`Static schedule bundle is empty for ${program}/${course}`);
+ }
+}
 if(process.env.REQUIRE_MINIFICATION==='1'&&version.minified!==true)throw new Error('Release build is not minified');
 if(!/^[a-f0-9]{16}$/.test(version.buildId??''))throw new Error('Missing/invalid content-derived buildId in dist/version.json');
 if(!html.includes(`data-build-id="${version.buildId}"`)||!html.includes(`name="app-build" content="${version.buildId}"`))throw new Error('HTML build marker does not match version.json');

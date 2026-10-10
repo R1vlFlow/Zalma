@@ -19,8 +19,8 @@ const [pkg, manifest, runtime, html, boot, telemetry, capacitor, androidWorkflow
 
 await check('RC version is marked pre-release', () => assert.match(pkg.version, /-rc\./));
 await check('Schedule engine version is aligned with sync workflow', () => {
-  assert.match(engineVersionFile, /^Almazov Student schedule engine: 4\.8\.0-rc\.1/m);
-  assert.match(syncWorkflow, /SCHEDULE_ENGINE_VERSION: '4\.8\.0-rc\.1'/);
+  assert.match(engineVersionFile, /^Almazov Student schedule engine: 4\.9\.0-rc\.1/m);
+  assert.match(syncWorkflow, /SCHEDULE_ENGINE_VERSION: '4\.9\.0-rc\.1'/);
   assert.match(syncWorkflow, /verify_engine_version\.py/);
 });
 await check('PWA manifest uses standalone and project-relative scope', () => {
@@ -37,8 +37,11 @@ await check('PWA install UI and platform instructions are present', () => {
   assert.match(html, /На экран/); assert.match(html, /Safari/); assert.match(boot, /beforeinstallprompt/);
 });
 await check('APK link uses the configured project release', () => {
-  assert.match(html, /github\.com\/r1vlflow\/Zalma\/releases\/download\/v2\.6\.0-rc\.1\/Zalma\.apk/);
-  assert.match(installDoc, /Build Android APK \(RC\)/);
+  const releaseTag = `v${pkg.version}`;
+  const escapedTag = releaseTag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  assert.match(html, new RegExp(`github\\.com/r1vlflow/Zalma/releases/download/${escapedTag}/Zalma\\.apk`));
+  assert.match(installDoc, new RegExp(`Releases.*${escapedTag}`));
+  assert.match(androidWorkflow, new RegExp(`default: '${escapedTag}'`));
 });
 await check('Capacitor packages and config match the web build', () => {
   assert.equal(pkg.dependencies['@capacitor/core'], '8.5.3');
@@ -83,6 +86,14 @@ await check('Page and QA workflows install Python parser dependencies', () => {
   for (const [name, body] of [['pages',pagesWorkflow],['qa',qaWorkflow],['android',androidWorkflow],['sync',syncWorkflow]]) {
     assert.match(body, /setup-python@v5/, `${name}: setup-python missing`);
     assert.match(body, /requirements-official-sync\.txt/, `${name}: parser requirements missing`);
+  }
+});
+await check('Official ingestion workflows install Russian OCR for scanned/image sources', async () => {
+  const source = await read('scripts/build_official_schedule.py');
+  assert.match(source, /if fmt == 'image':[\s\S]*?pytesseract\.image_to_string/);
+  for (const [name, body] of [['pages', pagesWorkflow], ['sync', syncWorkflow]]) {
+    assert.match(body, /tesseract-ocr-rus/, `${name}: Russian OCR language pack missing`);
+    assert.match(body, /tesseract-ocr(?:\s|$)/, `${name}: Tesseract engine missing`);
   }
 });
 await check('Workflow caches do not require lockfiles/wrappers absent before dependency scaffolding', () => {

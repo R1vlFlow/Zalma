@@ -55,6 +55,36 @@ try{
   console.warn(`static schedule snapshot generation skipped: ${error instanceof Error?error.message:String(error)}`);
 }
 
+// Publish specialty snapshots generated from the official student page. This
+// file is source data (not a UI fixture) and contributes to the build fingerprint.
+try{
+  const specialistPath=join(root,'data','program-schedules.json');
+  const specialist=JSON.parse(await readFile(specialistPath,'utf8'));
+  if(specialist?.schemaVersion!==1||!specialist?.programs||typeof specialist.programs!=='object')
+    throw new Error('Invalid data/program-schedules.json schemaVersion/programs');
+  await writeFile(join(dist,'data','program-schedules.json'),JSON.stringify(specialist));
+  for(const [program,programData] of Object.entries(specialist.programs)){
+    for(const [courseKey,courseData] of Object.entries(programData?.courses??{})){
+      const course=Number(courseKey);
+      if(!Number.isInteger(course)||course<1||course>6||!Array.isArray(courseData?.events))continue;
+      const target=join(dist,'data','schedules',program,`${course}.json`);
+      await mkdir(join(dist,'data','schedules',program),{recursive:true});
+      const events=courseData.events;
+      await writeFile(target,JSON.stringify({version:1,generatedAt:courseData.generatedAt??specialist.generatedAt??null,
+        program,course,status:courseData.status??(events.length?'live':'unpublished'),events,
+        issues:Array.isArray(courseData.issues)?courseData.issues:[],
+        message:courseData.message??(events.length?`Official specialist snapshot · ${events.length} событий`:'Официальный источник пока не опубликовал расписание.'),
+        sourceUrl:courseData.sourceUrl??specialist.sourcePage,sourceName:courseData.sourceName??programData.title}));
+    }
+  }
+  console.log(`specialist snapshots bundled from official ingestion · ${Object.keys(specialist.programs).length} programs`);
+}catch(error){
+  // Local dev can build before the first official specialist sync. Release CI
+  // runs the producer first and sets REQUIRE_SPECIALIST_SNAPSHOT=1.
+  if(process.env.REQUIRE_SPECIALIST_SNAPSHOT==='1')throw new Error(`Specialist schedule snapshot required: ${error instanceof Error?error.message:String(error)}`);
+  console.warn(`specialist snapshot generation skipped: ${error instanceof Error?error.message:String(error)}`);
+}
+
 async function walk(dir){
   const result=[];
   for(const entry of await readdir(dir,{withFileTypes:true})){

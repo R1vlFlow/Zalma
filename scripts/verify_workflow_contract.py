@@ -15,4 +15,8 @@ for needle in required:
     if needle not in text: raise SystemExit(f'WORKFLOW CONTRACT FAILED: missing {needle!r}')
 if 'scripts/sync_official.py' in text and 'scripts/build_official_schedule.py' not in text:
     raise SystemExit('WORKFLOW CONTRACT FAILED: stale sync entrypoint')
+if 'git push || true' in text:
+    raise SystemExit('WORKFLOW CONTRACT FAILED: sync workflow must not hide failure to persist official data')
+if text.index('git push') > text.index('actions/upload-pages-artifact@v3'):
+    raise SystemExit('WORKFLOW CONTRACT FAILED: official data must be persisted before an artifact is deployed')
 print('WORKFLOW CONTRACT: OK')

@@ -14,9 +14,17 @@ async function request(path,options={}){const res=await fetch(`http://127.0.0.1:
 try{
   for(let i=0;i<50;i++){try{const h=await request('/api/health');if(h.res.ok)break;}catch{}await delay(100);if(i===49)throw new Error(`server did not start: ${output}`);}
   const schedule4=await request('/api/schedule?program=31.05.01&course=4');
-  assert.equal(schedule4.res.status,200);assert.ok(schedule4.body.events.length>500);
+  assert.equal(schedule4.res.status,200);assert.ok(schedule4.body.events.length>500);assert.match(schedule4.res.headers.get('cache-control')??'',/no-cache, no-store, must-revalidate/);
   const e424=schedule4.body.events.filter(e=>e.group==='424'&&e.date==='2026-10-05'&&e.subject==='Эндокринология');
   assert.deepEqual(e424.map(e=>[e.start,e.end,e.doublePart,e.type,e.mergedConsecutive]),[['13:30','16:55',undefined,'practice',true]]);
+  const manifest=await fetch(`http://127.0.0.1:${port}/manifest.webmanifest`,{cache:'no-store'});
+  if(manifest.ok)assert.match(manifest.headers.get('cache-control')??'',/no-cache, no-store, must-revalidate/);
+  if(process.env.REQUIRE_SPECIALIST_SNAPSHOT==='1'){
+    for(const [program,course] of [['31.05.02',1],['31.05.02',2],['37.05.01',1],['37.05.01',2]]){
+      const specialist=await request(`/api/schedule?program=${program}&course=${course}`);
+      assert.equal(specialist.res.status,200);assert.ok(specialist.body.events.length>0,`empty official specialist snapshot ${program}/${course}`);
+    }
+  }
   const schedule6=await request('/api/schedule?program=31.05.01&course=6');
   const groups6=new Set(schedule6.body.events.filter(e=>['617','618'].includes(e.group)).map(e=>e.group));
   assert.deepEqual([...groups6].sort(),['617','618']);
