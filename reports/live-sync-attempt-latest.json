@@ -1,68 +1,16 @@
 {
-  "schemaVersion": 2,
-  "attemptedAt": "2026-10-11T13:55:18.506879+00:00",
-  "status": "partially-ready",
-  "stage": "source-sync-complete; specialist-parser-and-coverage-blockers-remain",
-  "networkFailure": false,
+  "schemaVersion": 1,
+  "attemptedAt": "2026-10-11T21:25:02.747025+00:00",
+  "status": "failed",
+  "stage": "official-hub-discovery",
+  "networkFailure": true,
+  "exceptionType": "ConnectTimeout",
+  "error": "discover_kug_urls: official hub education.almazovcentre.ru timed out before the page could be read",
   "officialSource": "https://education.almazovcentre.ru/about_institute/programm/specialist_programme/student/",
-  "kugSync": {
-    "status": "live-verified",
-    "pdfCount": 10,
-    "parsedPeriodCount": 62,
-    "academicWeekCount": 22,
-    "previouslyRejectedPdfsResolved": 4,
-    "resolvedCauses": [
-      "Broken Identity-H ToUnicode mapping: fallback extracts glyph text traces and spatially pairs date and period-label rows.",
-      "Generic practice keyword previously shadowed theoretical study with discrete practice: category classifier order corrected."
-    ],
-    "sourceValidationFailures": 0
-  },
-  "generalMedicineScheduleSync": {
-    "status": "live-generated-partial",
-    "validatedScheduleSources": 33,
-    "events": 11336,
-    "mappedWeekdayEvents": 9785,
-    "quarantinedMalformedPdfRows": 6,
-    "missingAssignments": [
-      {
-        "course": 4,
-        "stream": "B",
-        "group": "424",
-        "kind": "practice",
-        "reason": "Current official PDF contains groups 413–423 only; no confirmed assignment for group 424."
-      }
-    ]
-  },
-  "specialistScheduleSync": {
-    "status": "failed; recovery snapshot retained",
-    "sourceBytesDownloaded": 0,
-    "unverifiedSnapshots": [
-      "31.05.02/1",
-      "31.05.02/2",
-      "37.05.01/1",
-      "37.05.01/2"
-    ],
-    "parserFindings": [
-      "Pediatrics course 1 practice PDF yielded no parseable events.",
-      "Pediatrics course 2 lecture/practice extraction did not produce a verifiable complete snapshot.",
-      "Clinical Psychology course 1 and 2 seminar PDFs yielded no parseable events; lecture extraction has incomplete date resolution."
-    ],
-    "unpublished": [
-      "31.05.02/3",
-      "31.05.02/4",
-      "31.05.02/5",
-      "31.05.02/6",
-      "37.05.01/3",
-      "37.05.01/4",
-      "37.05.01/5",
-      "37.05.01/6"
-    ]
-  },
-  "integrity": {
-    "exactDuplicates": 0,
-    "sameGroupDateStartConflicts": 77,
-    "readiness": "not-ready",
-    "publicationAllowed": false
-  },
-  "snapshotPolicy": "Fresh confirmed rows replace old schedule data; unparsed specialist rows remain recovery-only and are never promoted to live."
+  "rawPdfBytesDownloaded": false,
+  "rawPdfFileCount": 0,
+  "officialPdfSha256Verified": 0,
+  "snapshotFilesReplaced": false,
+  "publicationAllowed": false,
+  "recoveryPolicy": "keep-last-known-snapshot; never promote cached data to live-verified"
 }

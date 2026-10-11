@@ -360,7 +360,7 @@ def write_sync_failure_diagnostic(error: Exception) -> dict:
                         or 'name-resolution' in lower
                         or 'failed to resolve' in lower)
     network_failure = any(token in lower for token in (
-        'nameresolutionerror', 'name-resolution', 'failed to resolve',
+        'nameresolutionerror', 'name-resolution', 'failed to resolve', 'connecttimeout',
         'temporary failure in name resolution', 'connectionerror', 'timed out',
         'connection refused', 'network is unreachable'))
     stage = 'official-hub-discovery' if discovery_failed else 'download-parse-or-validate'

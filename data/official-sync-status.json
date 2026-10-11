@@ -1,5 +1,5 @@
 {
-  "status": "partially-ready",
+  "status": "local-recovery",
   "dataState": "live-generated-partial",
   "engineVersion": "4.9.0-rc.1",
   "generatedAt": "2026-10-11T13:48:12.788390+00:00",
@@ -1208,5 +1208,21 @@
         "609"
       ]
     }
-  }
+  },
+  "lastLiveSyncAttempt": {
+    "attemptedAt": "2026-10-11T21:25:02.747025+00:00",
+    "command": "npm run sync:official",
+    "result": "failed-before-source-bytes",
+    "failedStage": "official-hub-discovery",
+    "exception": "ConnectTimeout",
+    "reason": "discover_kug_urls: official hub education.almazovcentre.ru timed out before the page could be read",
+    "rawPdfBytesDownloaded": false,
+    "rawPdfFileCount": 0,
+    "officialPdfSha256Verified": 0,
+    "snapshotFilesReplaced": false,
+    "publicationAllowed": false,
+    "gateStatusAfterAttempt": "BLOCKED_FOR_PRODUCTION"
+  },
+  "previousStatusBeforeFailedAttempt": "local-recovery",
+  "message": "Latest live sync failed after downloading 0 PDF files and computing 0 SHA-256 fingerprints; cached payloads were left unchanged and production publication is denied. discover_kug_urls: official hub education.almazovcentre.ru timed out before the page could be read"
 }
